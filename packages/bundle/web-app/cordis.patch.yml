@@ -260,9 +260,9 @@
     - id: ui-chat
       name: '@deepseek-ai/dsh-client-ui-chat'
 
-    # Official occupants for the generic sidebar and conversation brand slots.
-    - id: ui-brand-official
-      name: '@deepseek-ai/dsh-client-ui-brand-official'
+    # Qomicex occupants for the generic sidebar and conversation brand slots.
+    - id: ui-brand-qomicex
+      name: '@deepseek-ai/dsh-ui-brand-qomicex'
 
     - id: ui-attachment
       name: '@deepseek-ai/dsh-client-ui-attachment'
