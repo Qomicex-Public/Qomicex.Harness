@@ -1,5 +1,11 @@
-# Build Qomicex Harness brand assets: extract embedded raster layers, generate .png/.ico/.icns icon set.
-# ASCII-only on purpose: Windows PowerShell 5.1 reads BOM-less .ps1 as ANSI, which mangles CJK literals.
+# Build Qomicex Harness brand assets from the two source SVGs in brand/source.
+#
+# ASCII-only on purpose: Windows PowerShell 5.1 reads a BOM-less .ps1 as ANSI,
+# which mangles CJK literals.
+#
+# The source SVGs are NOT vector art: each is an SVG wrapper around several
+# base64-embedded PNG layers. This script extracts those layers, then derives
+# every shipped asset from the two layers named in $MARK_LAYER and $LOCKUP_LAYER.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
@@ -8,10 +14,18 @@ $brand   = Join-Path $ws 'brand'
 $src     = Join-Path $brand 'source'
 $layers  = Join-Path $src 'layers'
 $iconDir = Join-Path $brand 'icon'
+$markDir = Join-Path $brand 'mark'
+$lockDir = Join-Path $brand 'lockup'
 $candDir = Join-Path $brand 'candidates'
-New-Item -ItemType Directory -Force -Path $src, $layers, $iconDir, $candDir | Out-Null
+New-Item -ItemType Directory -Force -Path $src, $layers, $iconDir, $markDir, $lockDir, $candDir | Out-Null
 
-# ---------- 1. take the source SVGs from brand/source and classify them by declared width ----------
+# The complete artwork. The other shared layers are partial exports: mark-layer5
+# covers 41.7% of its canvas while mark-layer1 covers 71.5%, and lockup-layer1
+# covers 14.1% against 30% for lockup-layer2.
+$MARK_LAYER   = 'mark-layer1-501x625.png'
+$LOCKUP_LAYER = 'lockup-layer2-2161x520.png'
+
+# ---------- 1. classify the source SVGs by declared width ----------
 $svgs = @(Get-ChildItem -LiteralPath $src -Filter *.svg -File)
 if ($svgs.Count -eq 0) { throw "No .svg found in $src" }
 $info = foreach ($f in $svgs) {
@@ -21,7 +35,7 @@ $info = foreach ($f in $svgs) {
 }
 $markSrc   = ($info | Sort-Object W | Select-Object -First 1).File
 $lockupSrc = ($info | Sort-Object W -Descending | Select-Object -First 1).File
-Write-Host "[1] source SVGs in brand/source  (mark=$($markSrc.Name), lockup=$($lockupSrc.Name))"
+Write-Host "[1] sources: mark=$($markSrc.Name)  lockup=$($lockupSrc.Name)"
 
 # ---------- 2. extract every embedded raster layer ----------
 function Get-Layers([string]$svgPath, [string]$stem) {
@@ -44,37 +58,16 @@ $all += Get-Layers (Join-Path $src 'qomicex-mark.svg')   'mark'
 $all += Get-Layers (Join-Path $src 'qomicex-lockup.svg') 'lockup'
 Write-Host "[2] extracted $($all.Count) embedded layers -> brand/source/layers"
 
-# ---------- 3. pick the mark: the layer shared by BOTH source files, near-square, largest area ----------
-# pixel signature: coarse alpha+color downsample, robust to re-export differences
-function Get-PixelSignature([string]$p) {
-  $img = [System.Drawing.Image]::FromFile($p)
-  $bmp = New-Object System.Drawing.Bitmap $img
-  $w = $bmp.Width; $h = $bmp.Height
-  $sb = New-Object System.Text.StringBuilder
-  for ($gy = 0; $gy -lt 24; $gy++) {
-    for ($gx = 0; $gx -lt 24; $gx++) {
-      $px = $bmp.GetPixel([int]($gx * $w / 24), [int]($gy * $h / 24))
-      [void]$sb.Append(([int]($px.A / 32))).Append(([int]($px.R / 48))).Append(([int]($px.G / 48))).Append(([int]($px.B / 48))).Append(',')
-    }
-  }
-  $bmp.Dispose(); $img.Dispose()
-  return $sb.ToString()
+# ---------- 3. resolve the two chosen layers ----------
+function Resolve-Layer([string]$name) {
+  $hit = $all | Where-Object { $_.Name -eq $name } | Select-Object -First 1
+  if (-not $hit) { throw "chosen layer not found among extracted layers: $name" }
+  return $hit
 }
-
-$bySig = @{}
-foreach ($l in $all) {
-  $sig = Get-PixelSignature $l.Path
-  if (-not $bySig.ContainsKey($sig)) { $bySig[$sig] = @() }
-  $bySig[$sig] += $l
-}
-$shared = $bySig.Values | Where-Object {
-  (($_ | ForEach-Object { $_.Name.Split('-')[0] }) | Sort-Object -Unique).Count -gt 1
-}
-$markCandidate = $shared |
-  ForEach-Object { $_[0] } |
-  Where-Object { $_.H -gt 0 -and (($_.W / $_.H) -ge 0.8) -and (($_.W / $_.H) -le 1.25) } |
-  Sort-Object -Property @{Expression={$_.W * $_.H}} -Descending |
-  Select-Object -First 1
+$markLayer   = Resolve-Layer $MARK_LAYER
+$lockupLayer = Resolve-Layer $LOCKUP_LAYER
+Write-Host "[3] mark   = $($markLayer.Name) ($($markLayer.W)x$($markLayer.H))"
+Write-Host "    lockup = $($lockupLayer.Name) ($($lockupLayer.W)x$($lockupLayer.H))"
 
 # ---------- 4. render helpers ----------
 function New-Square([string]$inPath, [int]$size, [double]$contentRatio) {
@@ -95,31 +88,65 @@ function New-Square([string]$inPath, [int]$size, [double]$contentRatio) {
   return $bmp
 }
 
-# candidate comparison sheets (so a human can confirm which layer is the real mark)
+function New-Contain([string]$inPath, [int]$targetW, [int]$targetH) {
+  $img = [System.Drawing.Image]::FromFile($inPath)
+  $scale = [Math]::Min($targetW / $img.Width, $targetH / $img.Height)
+  $dw = [int][Math]::Round($img.Width * $scale)
+  $dh = [int][Math]::Round($img.Height * $scale)
+  $bmp = New-Object System.Drawing.Bitmap($targetW, $targetH, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+  $g = [System.Drawing.Graphics]::FromImage($bmp)
+  $g.Clear([System.Drawing.Color]::Transparent)
+  $g.InterpolationMode  = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+  $g.PixelOffsetMode    = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+  $g.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+  $g.DrawImage($img, [int](($targetW - $dw) / 2), [int](($targetH - $dh) / 2), $dw, $dh)
+  $g.Dispose(); $img.Dispose()
+  return $bmp
+}
+
+# ---------- 5. candidate comparison squares ----------
+Get-ChildItem $candDir -File -ErrorAction SilentlyContinue | Remove-Item -Force
 foreach ($l in ($all | Where-Object { $_.W -ge 64 })) {
   $bmp = New-Square $l.Path 512 0.9
-  $bmp.Save((Join-Path $candDir ("cand-{0}.png" -f $l.Name)), [System.Drawing.Imaging.ImageFormat]::Png)
   $bmp.Save((Join-Path $candDir ("cand-{0}" -f $l.Name)), [System.Drawing.Imaging.ImageFormat]::Png)
+  $bmp.Dispose()
 }
-Write-Host "[4] candidate squares -> brand/candidates"
+Write-Host "[5] candidate squares -> brand/candidates"
 
-# ---------- 5. icon set ----------
+# ---------- 6. application icon set ----------
 $sizes = 16, 24, 32, 48, 64, 128, 256, 512, 1024
 $png = @{}
 foreach ($s in $sizes) {
-  $bmp = New-Square $markCandidate.Path $s 0.86
+  $bmp = New-Square $markLayer.Path $s 0.86
   $p = Join-Path $iconDir ("icon-{0}.png" -f $s)
   $bmp.Save($p, [System.Drawing.Imaging.ImageFormat]::Png)
   $png[$s] = $p
   $bmp.Dispose()
 }
 Copy-Item -LiteralPath $png[1024] -Destination (Join-Path $iconDir 'icon.png') -Force
-Write-Host "[5] PNG icon set: $($sizes -join ', ')"
+Write-Host "[6] PNG icon set: $($sizes -join ', ')"
 
-# ---------- 6. .ico (PNG-compressed entries) ----------
+# ---------- 7. in-app mark sizes (sidebar and hero) ----------
+$markSizes = 20, 24, 28, 32, 48, 64, 96, 128, 256
+foreach ($s in $markSizes) {
+  $bmp = New-Square $markLayer.Path $s 0.94
+  $bmp.Save((Join-Path $markDir ("qomicex-mark-{0}.png" -f $s)), [System.Drawing.Imaging.ImageFormat]::Png)
+  $bmp.Dispose()
+}
+Write-Host "[7] in-app mark set: $($markSizes -join ', ')"
+
+# ---------- 8. lockup (horizontal logo) ----------
+$lockTargetH = 256
+$lockTargetW = [int][Math]::Round($lockupLayer.W * ($lockTargetH / $lockupLayer.H))
+$bmp = New-Contain $lockupLayer.Path $lockTargetW $lockTargetH
+$bmp.Save((Join-Path $lockDir 'qomicex-lockup.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+$bmp.Dispose()
+Copy-Item -LiteralPath $lockupLayer.Path -Destination (Join-Path $lockDir ("qomicex-lockup-{0}x{1}.png" -f $lockupLayer.W, $lockupLayer.H)) -Force
+Write-Host "[8] lockup -> brand/lockup (${lockTargetW}x${lockTargetH} plus full resolution)"
+
+# ---------- 9. .ico (PNG-compressed entries) ----------
 $icoSizes = 16, 24, 32, 48, 64, 128, 256
-$entries = foreach ($s in $icoSizes) { [pscustomobject]@{ Size = $s; Bytes = [IO.File]::ReadAllBytes($png[$s]) } }
-$entries = @($entries)
+$entries = @(foreach ($s in $icoSizes) { [pscustomobject]@{ Size = $s; Bytes = [IO.File]::ReadAllBytes($png[$s]) } })
 $msIco = New-Object System.IO.MemoryStream
 $bw = New-Object System.IO.BinaryWriter($msIco)
 $bw.Write([uint16]0); $bw.Write([uint16]1); $bw.Write([uint16]$entries.Count)
@@ -136,16 +163,15 @@ foreach ($e in $entries) { $bw.Write($e.Bytes) }
 $bw.Flush()
 [IO.File]::WriteAllBytes((Join-Path $iconDir 'icon.ico'), $msIco.ToArray())
 $bw.Dispose(); $msIco.Dispose()
-Write-Host "[6] icon.ico ($($icoSizes -join ', '))"
+Write-Host "[9] icon.ico ($($icoSizes -join ', '))"
 
-# ---------- 7. .icns (modern PNG chunk types, big-endian) ----------
+# ---------- 10. .icns (PNG chunk types, big-endian) ----------
 $icnsChunks = @(
   @{ Type = 'ic11'; Size = 32 }, @{ Type = 'ic12'; Size = 64 },
   @{ Type = 'ic07'; Size = 128 }, @{ Type = 'ic13'; Size = 256 },
   @{ Type = 'ic14'; Size = 512 }, @{ Type = 'ic08'; Size = 256 },
   @{ Type = 'ic09'; Size = 512 }, @{ Type = 'ic10'; Size = 1024 }
 )
-# ICNS is big-endian: build the byte array by hand instead of BinaryWriter (which is little-endian).
 $body = New-Object System.Collections.Generic.List[byte]
 foreach ($ch in $icnsChunks) {
   $data = [IO.File]::ReadAllBytes($png[$ch.Size])
@@ -166,16 +192,17 @@ $arr[6] = [byte](($total -shr 8) -band 0xFF)
 $arr[7] = [byte]($total -band 0xFF)
 $body.CopyTo($arr, 8)
 [IO.File]::WriteAllBytes((Join-Path $iconDir 'icon.icns'), $arr)
-Write-Host "[7] icon.icns ($total bytes)"
-Write-Host "[7] icon.icns ($total bytes)"
+Write-Host "[10] icon.icns ($total bytes)"
 
-# ---------- 8. record what was produced ----------
+# ---------- 11. record what was produced ----------
 $report = [pscustomobject]@{
-  markSource = $markCandidate.Name
-  markSize   = "$($markCandidate.W)x$($markCandidate.H)"
-  layers     = @($all | ForEach-Object { [pscustomobject]@{ file = $_.Name; w = $_.W; h = $_.H } })
+  markLayer   = $markLayer.Name
+  markSize    = "$($markLayer.W)x$($markLayer.H)"
+  lockupLayer = $lockupLayer.Name
+  lockupSize  = "$($lockupLayer.W)x$($lockupLayer.H)"
+  layers      = @($all | ForEach-Object { [pscustomobject]@{ file = $_.Name; w = $_.W; h = $_.H } })
 }
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $brand 'assets.json') -Encoding UTF8
-Write-Host "[8] brand/assets.json written"
+Write-Host "[11] brand/assets.json written"
 Write-Host ''
 Write-Host "DONE -> $brand"

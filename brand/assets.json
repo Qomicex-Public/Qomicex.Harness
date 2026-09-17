@@ -1,6 +1,8 @@
 ﻿{
-    "markSource":  "mark-layer5-496x540.png",
-    "markSize":  "496x540",
+    "markLayer":  "mark-layer1-501x625.png",
+    "markSize":  "501x625",
+    "lockupLayer":  "lockup-layer2-2161x520.png",
+    "lockupSize":  "2161x520",
     "layers":  [
                    {
                        "file":  "mark-layer1-501x625.png",
