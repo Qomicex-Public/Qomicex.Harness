@@ -1,0 +1,92 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Qomicex Harness — 品牌资产</title>
+<style>
+  :root{
+    --bg:#141416; --panel:#1d1d20; --line:#2c2c30; --fg:#e9e9ec; --dim:#8f8f98;
+    --accent:#0ad8a8; --warn:#e8b04b;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--fg);font:13px/1.6 system-ui,"Segoe UI","Microsoft YaHei",sans-serif;margin:0;padding:32px 28px 64px}
+  h1{font-size:18px;font-weight:600;margin:0 0 6px}
+  h2{font-size:12px;font-weight:600;margin:34px 0 12px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+  p{margin:0 0 10px;max-width:960px}
+  p.note{color:var(--dim)}
+  code{background:#26262a;padding:1px 6px;border-radius:4px;font:12px/1.4 ui-monospace,Consolas,monospace}
+  .warn{border-left:3px solid var(--warn);background:#2a2418;padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0;max-width:960px}
+  .warn b{color:var(--warn)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:12px}
+  figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px}
+  figure img{width:100%;height:150px;object-fit:contain;border-radius:6px;
+    background:
+      linear-gradient(45deg,#2b2b2f 25%,transparent 25%,transparent 75%,#2b2b2f 75%),
+      linear-gradient(45deg,#2b2b2f 25%,transparent 25%,transparent 75%,#2b2b2f 75%);
+    background-size:14px 14px;background-position:0 0,7px 7px}
+  figcaption{font-size:10.5px;color:var(--dim);text-align:center;margin-top:8px;word-break:break-all;line-height:1.4}
+  figcaption b{color:var(--fg);font-weight:500}
+  .pick{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .pick figcaption b{color:var(--accent)}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+  .row.light{background:#f5f5f7;border-color:#dcdce0}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .cell .sz{font-size:10px;color:var(--dim)}
+  .row.light .sz{color:#6b6b74}
+  table{border-collapse:collapse;margin-top:10px;font-size:12px;width:auto}
+  th,td{border:1px solid var(--line);padding:6px 12px;text-align:left}
+  th{background:#232326;font-weight:500;color:var(--dim)}
+  td.mono{font-family:ui-monospace,Consolas,monospace}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:6px;border:1px solid #3a3a40}
+</style>
+
+<h1>Qomicex Harness — 品牌资产</h1>
+<p class="note">由 <code>brand/</code> 下的生成脚本产出。<b>注意：原始两个 SVG 不是矢量图</b> —— 它们是 SVG 外壳 + 内嵌 base64 PNG 位图（共 11 个图层），所以无法无损缩放，也无法直接改色。</p>
+
+<div class="warn">
+  <b>需要你确认：</b>图标集用的是自动挑出的 mark 候选 <code>mark-layer5-496x540.png</code>（在 mark 与 lockup 两个文件里像素完全一致、最接近方形、面积最大的共享图层）。
+  请在下方的「全部图层」里确认它确实是你的 logo 主图形；若不是，告诉我用哪个，我重新出图标集。
+</div>
+
+<h2>图标集（深色底）</h2>
+<div class="row" id="dark"></div>
+<h2>图标集（浅色底）</h2>
+<div class="row light" id="light"></div>
+
+<h2>从原图提取的全部图层</h2>
+<p class="note">带绿框的是被选为 mark 的那一个。前缀 <code>mark-</code> 来自竖版 logo，<code>lockup-</code> 来自横版组合标。中间 4 个图层在两个文件里是同一图形。</p>
+<div class="grid" id="layers"></div>
+
+<h2>品牌色（从图形实测，非人工指定）</h2>
+<table>
+  <tr><th>取样来源</th><th>均值</th><th>说明</th></tr>
+  <tr><td class="mono">mark-layer5</td><td class="mono"><span class="sw" style="background:#0ADEAB"></span>#0ADEAB</td><td>主 mark 图形均色</td></tr>
+  <tr><td class="mono">mark-layer3 (80x75)</td><td class="mono"><span class="sw" style="background:#05C992"></span>#05C992</td><td>小图标层，饱和度高</td></tr>
+  <tr><td class="mono">mark-layer2 (135x420)</td><td class="mono"><span class="sw" style="background:#04CD95"></span>#04CD95</td><td>竖向条形层</td></tr>
+  <tr><td class="mono">lockup-layer1</td><td class="mono"><span class="sw" style="background:#2CE2B4"></span>#2CE2B4</td><td>横版组合标均色（含留白，偏亮）</td></tr>
+</table>
+<p class="note">整体落在薄荷绿/青绿区间 <code>#04CD95 – #0ADEAB</code>。建议主色取 <code>#0AD8A8</code> 附近，深色主题下可提亮到 <code>#12E0B0</code>。这个色将替换 dsh 的蓝色 <code>--dsw-static-deepseek-500: rgb(65,118,230)</code>。</p>
+
+<script>
+  const ICON_SIZES = [256,128,64,48,32,16];
+  for (const id of ['dark','light']) {
+    document.getElementById(id).innerHTML = ICON_SIZES.map(s =>
+      `<div class="cell"><img src="icon/icon-${s}.png" style="width:${s}px;height:${s}px"><span class="sz">${s}px</span></div>`
+    ).join('');
+  }
+  const LAYERS = [
+    ['mark-layer1-501x625.png',   501, 625, false],
+    ['mark-layer2-135x420.png',   135, 420, false],
+    ['mark-layer3-80x75.png',      80,  75, false],
+    ['mark-layer4-352x151.png',   352, 151, false],
+    ['mark-layer5-496x540.png',   496, 540, true ],
+    ['lockup-layer1-2853x630.png',2853,630, false],
+    ['lockup-layer2-2161x520.png',2161,520, false],
+    ['lockup-layer3-135x420.png', 135, 420, false],
+    ['lockup-layer4-80x75.png',    80,  75, false],
+    ['lockup-layer5-352x151.png', 352, 151, false],
+    ['lockup-layer6-496x540.png', 496, 540, false],
+  ];
+  document.getElementById('layers').innerHTML = LAYERS.map(([n,w,h,pick]) =>
+    `<figure class="${pick?'pick':''}"><img src="source/layers/${n}">
+     <figcaption><b>${n}</b><br>${w}×${h}${pick?' · 已选为 mark':''}</figcaption></figure>`
+  ).join('');
+</script>

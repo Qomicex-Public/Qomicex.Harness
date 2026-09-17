@@ -9,14 +9,14 @@ vi.mock('electron', () => electron)
 
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); vi.resetModules() })
 
-it.each(['dsh-app://app/index.html', 'https://shell/startup.html'])('exposes only the carrier marker to %s', async (url) => {
+it.each(['qomicex-app://app/index.html', 'https://shell/startup.html'])('exposes only the carrier marker to %s', async (url) => {
   vi.stubGlobal('location', new URL(url))
   await import('../src/preload-app.ts')
   expect(electron.contextBridge.exposeInMainWorld).toHaveBeenCalledWith('dshDesktop', { protocolVersion: 1 })
 })
 
 it('provides startup controls and a removable state subscription to shell documents', async () => {
-  vi.stubGlobal('location', new URL('dsh-app://shell/startup.html'))
+  vi.stubGlobal('location', new URL('qomicex-app://shell/startup.html'))
   await import('../src/preload-app.ts')
   const api = electron.contextBridge.exposeInMainWorld.mock.calls[0]?.[1] as DshDesktopStartupApi
   await api.locale()

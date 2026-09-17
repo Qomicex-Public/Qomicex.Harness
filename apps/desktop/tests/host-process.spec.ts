@@ -86,7 +86,7 @@ function onRequestFrame(frame) {
     const host = new DesktopHostProcess(process.execPath, runtime, runtime, undefined, process.env, failure)
     try {
       await host.start()
-      await expect(host.fetch(new Request('dsh-app://app/'))).rejects.toThrow('plugin unavailable')
+      await expect(host.fetch(new Request('qomicex-app://app/'))).rejects.toThrow('plugin unavailable')
       await host.stop()
       expect(failure).toHaveBeenCalledTimes(1)
       expect(failure).toHaveBeenCalledWith(new Error('plugin unavailable'))
@@ -115,7 +115,7 @@ function onRequestFrame(frame) {
       ...process.env, NODE_OPTIONS: '--invalid-desktop-test-option', NODE_PATH: '/unowned',
     })
     try {
-      const response = await host.fetch(new Request('dsh-app://app/environment'))
+      const response = await host.fetch(new Request('qomicex-app://app/environment'))
       expect(await response.json()).toEqual({ runtime, profile, cwd: realpathSync(profile), runAsNode: '1' })
     } finally { await host.stop() }
   })
@@ -146,7 +146,7 @@ function answer(streamId) {
     const host = new DesktopHostProcess(process.execPath, project, project)
     try {
       await expect(host.start()).resolves.toMatchObject({ dshVersion: 'clean' })
-      const response = await host.fetch(new Request('dsh-app://app/example', { method: 'POST', body: 'request' }))
+      const response = await host.fetch(new Request('qomicex-app://app/example', { method: 'POST', body: 'request' }))
       expect(response.status).toBe(200)
       await expect(response.text()).resolves.toBe('desktop:request')
       await expect(host.stop()).resolves.toBeUndefined()
@@ -171,7 +171,7 @@ function onRequestFrame(frame) {
 `)
     const host = new DesktopHostProcess(process.execPath, project, project)
     try {
-      const response = await host.fetch(new Request('dsh-app://app/large'))
+      const response = await host.fetch(new Request('qomicex-app://app/large'))
       const body = new Uint8Array(await response.arrayBuffer())
       expect(body).toHaveLength(size)
       expect(body[0]).toBe(97)
@@ -198,7 +198,7 @@ function onRequestFrame(frame) {
     })
     const host = new DesktopHostProcess(process.execPath, project, project)
     try {
-      const request = new Request('dsh-app://app/early', {
+      const request = new Request('qomicex-app://app/early', {
         method: 'POST',
         body,
         duplex: 'half',
@@ -231,10 +231,10 @@ function onRequestFrame(frame) {
 `)
     const host = new DesktopHostProcess(process.execPath, project, project)
     try {
-      const canceled = await host.fetch(new Request('dsh-app://app/cancel'))
+      const canceled = await host.fetch(new Request('qomicex-app://app/cancel'))
       await canceled.body?.cancel()
       await new Promise(resolve => setTimeout(resolve, 25))
-      const after = await host.fetch(new Request('dsh-app://app/after'))
+      const after = await host.fetch(new Request('qomicex-app://app/after'))
       await expect(after.text()).resolves.toBe('alive')
     } finally {
       await host.stop().catch(() => undefined)
@@ -249,7 +249,7 @@ function onRequestFrame(frame) {
 }
 `), projectWithHost(''))
     await invalid.start()
-    await expect(invalid.fetch(new Request('dsh-app://app/invalid'))).rejects.toThrow(/invalid Host response frame marker/u)
+    await expect(invalid.fetch(new Request('qomicex-app://app/invalid'))).rejects.toThrow(/invalid Host response frame marker/u)
     await invalid.stop().catch(() => undefined)
 
     const earlyExit = new DesktopHostProcess(process.execPath, projectWithHost(`

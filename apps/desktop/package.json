@@ -1,6 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-desktop",
-  "description": "Electron desktop shell for a bundled dsh runtime and external plugins",
+  "description": "Electron desktop shell for a bundled runtime and external plugins",
+  "author": "Qomicex",
   "version": "0.1.6-alpha.1",
   "private": true,
   "license": "MIT",
@@ -42,7 +43,6 @@
     "app-builder-lib": "26.15.3",
     "electron": "^44.0.0",
     "electron-builder": "^26.15.3",
-    "extract-zip": "^2.0.1",
     "js-yaml": "^4.2.0",
     "pnpm": "11.7.0",
     "tar": "^7.5.0",

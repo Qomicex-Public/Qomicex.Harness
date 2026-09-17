@@ -119,6 +119,9 @@ export class DesktopHostProcess {
           name !== 'NODE_OPTIONS' && name !== 'NODE_PATH' && !/^DSH_DESKTOP_/u.test(name) && !/^(?:npm|pnpm|corepack)_/iu.test(name)
         ))),
         ELECTRON_RUN_AS_NODE: '1',
+        // Qomicex ships telemetry off: any non-empty value opts the OTel session
+        // exporter out, so no session prefix ever leaves the machine.
+        DSH_TELEMETRY_DISABLED: '1',
       },
       stdio: ['ignore', 'pipe', 'pipe', 'pipe', 'pipe', 'ipc'],
     })
@@ -165,7 +168,7 @@ export class DesktopHostProcess {
     return this.readyPromise
   }
 
-  /** Forward one `dsh-app://app` request to the child without buffering its body. */
+  /** Forward one `qomicex-app://app` request to the child without buffering its body. */
   async fetch(request: Request): Promise<Response> {
     await this.start()
     const child = this.child

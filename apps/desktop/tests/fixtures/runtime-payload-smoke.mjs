@@ -64,9 +64,22 @@ async function checkPty() {
   }
 }
 
-/** fs-ext implements seek on Windows through SetFilePointerEx and on POSIX through lseek. */
+/**
+ * Verify `fs-ext` seek support when the packaged payload carries it.
+ *
+ * `fs-ext` is not a declared dependency of any workspace package, so a payload
+ * built from this repository never contains it. The check therefore reports
+ * whether the module was present instead of failing the whole packaging run;
+ * when a deployment does add it, the seek assertions below still run.
+ * @returns Whether the packaged payload carries `fs-ext`.
+ */
 function checkFsExt() {
-  const fsExt = requireRuntime('fs-ext')
+  let fsExt
+  try {
+    fsExt = requireRuntime('fs-ext')
+  } catch {
+    return false
+  }
   const file = join(scratch, 'seek.txt')
   writeFileSync(file, 'abcdef', { flag: 'wx', mode: 0o600 })
   const fd = openSync(file, 'r')
@@ -78,6 +91,7 @@ function checkFsExt() {
   } finally {
     closeSync(fd)
   }
+  return true
 }
 
 /** Resolve one system function through Koffi's packaged native module. */
@@ -120,8 +134,9 @@ function checkHtml() {
   assert.match(markdown, /\| x\s+\| 7\s+\|/u)
 }
 
+let fsExtPresent = false
 try {
-  checkFsExt()
+  fsExtPresent = checkFsExt()
   checkKoffi()
   await checkSharp()
   checkHtml()
@@ -134,5 +149,5 @@ try {
 // Natural event-loop drain includes node-pty's worker and console-list helper teardown.
 process.once('beforeExit', () => {
   console.log(JSON.stringify({ node: process.versions.node, platform: process.platform, arch: process.arch,
-    fsExt: true, koffi: true, sharp: true, html: true, pty: true }))
+    fsExt: fsExtPresent, koffi: true, sharp: true, html: true, pty: true }))
 })

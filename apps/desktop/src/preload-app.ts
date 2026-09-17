@@ -20,5 +20,5 @@ const startup: DshDesktopStartupApi = {
   resetConfiguration: () => ipcRenderer.invoke(DESKTOP_IPC.configurationReset) as Promise<void>,
 }
 
-contextBridge.exposeInMainWorld('dshDesktop', location.protocol === 'dsh-app:' && location.hostname === 'shell'
+contextBridge.exposeInMainWorld('dshDesktop', location.protocol === 'qomicex-app:' && location.hostname === 'shell'
   ? startup : { protocolVersion: 1 })

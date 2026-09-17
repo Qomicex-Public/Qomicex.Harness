@@ -7,9 +7,30 @@ import { chmod, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import extractZip from 'extract-zip'
-import { extract } from 'tar'
+import { extract as extractTar } from 'tar'
 import { resolveDesktopTargetBuildPaths } from './desktop-build-paths.mjs'
+
+/**
+ * Extract a `.zip` archive with the platform `tar` executable.
+ *
+ * `extract-zip@2.0.1` leaves its promise unsettled under Node 24 (the promise
+ * never settles, so `await` hangs and the process exits on the unsettled
+ * top-level await), which blocks every Desktop package command. libarchive's
+ * `tar` reads zip natively on Windows, macOS, and Linux and reports real
+ * failures through its exit status.
+ * @param archive - Absolute path of the archive to extract.
+ * @param destination - Absolute directory that receives the extracted tree.
+ */
+function extractZipArchive(archive: string, destination: string): void {
+  const result = spawnSync('tar', ['-xf', archive, '-C', destination], { encoding: 'utf8' })
+  if (result.error !== undefined) {
+    throw new Error(`desktop runtime: tar is unavailable to extract ${archive}: ${result.error.message}`)
+  }
+  if (result.status !== 0) {
+    const detail = result.stderr.trim() === '' ? `exit ${String(result.status)}` : result.stderr.trim()
+    throw new Error(`desktop runtime: extracting ${archive} failed: ${detail}`)
+  }
+}
 
 const NODE_VERSION = '24.17.0'
 const BUILD_PATHS = resolveDesktopTargetBuildPaths()
@@ -55,8 +76,8 @@ async function prepareNode(platform: RuntimePlatform, arch: RuntimeArch): Promis
   const extraction = BUILD_PATHS.nodeExtract
   rmSync(extraction, { recursive: true, force: true })
   mkdirSync(extraction, { recursive: true })
-  if (platform === 'win') await extractZip(archive, { dir: extraction })
-  else await extract({ cwd: extraction, file: archive })
+  if (platform === 'win') extractZipArchive(archive, extraction)
+  else await extractTar({ cwd: extraction, file: archive })
   const source = join(extraction, folder, platform === 'win' ? 'node.exe' : 'bin/node')
   const destinationRoot = join(RUNTIME_ROOT, 'node')
   const destination = join(destinationRoot, platform === 'win' ? 'node.exe' : 'node')
