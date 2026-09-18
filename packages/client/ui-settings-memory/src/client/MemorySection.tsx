@@ -170,6 +170,7 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
             labels={{
               sameFact: t('legendSameFact'),
               sameScope: t('legendSameScope'),
+              hint: t('graphControls'),
             }}
           />
         )}

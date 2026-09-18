@@ -1,9 +1,9 @@
 .wrap {
   position: relative;
-  border: 1px solid var(--dsh-border, #2a2f45);
+  border: 0.5px solid var(--dsw-alias-border-l2);
   border-radius: 8px;
   overflow: hidden;
-  background: var(--dsh-surface, #16161e);
+  background: var(--dsw-alias-bg-base);
 }
 
 .canvas {
@@ -19,14 +19,14 @@
 .legend {
   position: absolute;
   right: 10px;
-  bottom: 8px;
+  top: 8px;
   display: flex;
   gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
   font-size: 11px;
-  opacity: 0.8;
+  color: var(--dsw-alias-label-tertiary);
 }
 
 .legend li {
@@ -48,4 +48,14 @@
 
 .swatchScope {
   background: #565f89;
+}
+
+.hint {
+  position: absolute;
+  left: 10px;
+  bottom: 6px;
+  margin: 0;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+  pointer-events: none;
 }

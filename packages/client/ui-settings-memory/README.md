@@ -31,7 +31,7 @@ Open Settings and select **Memory** to see the store and the configuration. Moun
 
 Each node is one memory, sized by its importance and coloured by its lifecycle state: active, disputed, consolidated, archived, or deleted. Two kinds of link are drawn, and the legend names them. A **same fact** link joins memories whose content normalizes to the same subject and predicate, which is how the versions of one claim stay together. A **same scope** link joins memories stored under the same scope, which is what makes a project's memories read as one cluster and a different project's as another. A memory with neither a shared fact nor a shared scope is a genuine isolate and is drawn unlinked.
 
-Drag a node to move it; the node follows the pointer instead of fighting the springs. Drag the background to pan, scroll to zoom, hover a node to highlight its neighbours, and click one to open its detail panel. Click the background to clear the selection.
+The graph is a solid, not a diagram: nodes sit at different depths, nearer ones are drawn larger and their links brighter, and the camera orbits the cloud. Drag with the left button to orbit, drag with the right button to pan, scroll over the graph to zoom, and drag a node to move it; a dragged node stays where it is dropped instead of snapping back to its computed position. Hover a node to highlight its neighbours, and click one to open its detail panel; click the background to clear the selection. The graph swallows the wheel while the pointer is over it, so zooming never scrolls the settings panel underneath.
 
 ### Editing the configuration
 
@@ -53,9 +53,13 @@ The page is one localized `settings.section` contribution with id `memory`; the 
 
 ### The graph layout
 
-`src/client/force-simulation.ts` is a self-contained layout: a golden-angle spiral seeds the positions, and each step applies pairwise repulsion, a spring per edge, a pull toward the centre, and damping. It is deterministic — no randomness anywhere — because a preview that reshuffles on every render is unreadable, and determinism is also what makes it testable. Repulsion is O(n²) over every pair, which is the honest cost of the textbook algorithm; a quadtree is the upgrade if a store grows large enough for the preview to drop frames.
+`src/client/force-simulation.ts` is a self-contained layout in three dimensions: a Fibonacci sphere seeds the positions, and each step applies pairwise repulsion, a spring per edge, a pull toward the centre, and damping — all on `x`, `y`, and `z`. It is deterministic — no randomness anywhere — because a preview that reshuffles on every render is unreadable, and determinism is also what makes it testable. Repulsion is O(n²) over every pair, which is the honest cost of the textbook algorithm; a quadtree is the upgrade if a store grows large enough for the preview to drop frames.
 
-`ForceGraph.tsx` draws to a canvas rather than the DOM because each frame redraws every node, and a few hundred SVG elements per frame is where a browser starts to stutter. Hit testing therefore happens in the component: `pickNode` is the single place that maps a pointer position back to a node, and it shares the transform `fitTransform` produces with the draw pass, so the two cannot drift apart. The simulation is rebuilt only when the node or edge set changes; selection and hover redraw without relayout. The draw loop stops requesting frames once the layout settles, so a drag calls the live paint closure directly to repaint a settled graph.
+`src/client/projection.ts` owns the camera: a yaw and a pitch about the origin, an eye distance that frames the graph, and the perspective divide. It projects world points to pixels for the draw pass and turns pixels back into rays for the pointer, so the two cannot disagree about where a node is. Node radius is scaled by `pixelsPerUnit` at the node's depth, which is what makes nearer memories read as nearer.
+
+`ForceGraph.tsx` draws to a canvas rather than the DOM because each frame redraws every node, and a few hundred SVG elements per frame is where a browser starts to stutter. Every node is projected once per frame and painted farthest-first, so nearer dots cover farther ones; edges fade with depth. Hit testing runs on those same projected positions (`pickProjected`), preferring the node nearer the eye when two overlap. Dragging a node casts the pointer ray at the plane through the node that faces the eye (`intersectFacingPlane`), so the node tracks the pointer while keeping its depth. The simulation is rebuilt only when the node or edge set changes; selection, hover, and camera moves redraw without relayout. The draw loop stops requesting frames once the layout settles, so a drag calls the live paint closure directly to repaint a settled graph.
+
+Wheel zoom uses a native `addEventListener('wheel', …, { passive: false })` rather than React's `onWheel`. React registers wheel handlers on the root with `passive: true`, so `preventDefault()` inside one is ignored and the settings panel scrolls while the graph zooms; the native listener on the canvas is the only place the wheel can be stopped. A node being dragged is marked `pinned` in the simulation: the integrator skips it, so the springs rearrange the rest of the graph around it instead of pulling it back, and it keeps the position it was dropped at.
 
 ### The configuration form
 
@@ -70,7 +74,8 @@ The page is one localized `settings.section` contribution with id `memory`; the 
 | [`src/client/MemorySection.tsx`](src/client/MemorySection.tsx) | The page: mount-state branches, stats, graph, detail panel |
 | [`src/client/MemorySettingsForm.tsx`](src/client/MemorySettingsForm.tsx) | The configuration form and its field table |
 | [`src/client/ForceGraph.tsx`](src/client/ForceGraph.tsx) | Canvas renderer and pointer interactions |
-| [`src/client/force-simulation.ts`](src/client/force-simulation.ts) | The layout algorithm, viewport fitting, and the energy signal |
+| [`src/client/projection.ts`](src/client/projection.ts) | The camera: perspective projection, unprojection, and the drag plane |
+| [`src/client/force-simulation.ts`](src/client/force-simulation.ts) | The 3D layout algorithm and the energy signal |
 | [`src/client/locales.ts`](src/client/locales.ts) | Chinese and English dictionaries for every visible and accessible string |
 | [`src/client/MemorySection.module.css`](src/client/MemorySection.module.css) | Page styles |
 | [`src/client/MemorySettingsForm.module.css`](src/client/MemorySettingsForm.module.css) | Form styles |
@@ -110,7 +115,7 @@ These limits define what this page can preview and edit; they are current packag
 
 - **The graph renders only what the Remote returns** — the projection carries each memory's content truncated to 400 characters, so a long memory's node label and detail panel show a prefix; the full content is available to the agent through the recall tools, not here.
 - **The configuration form covers a curated subset of the schema** — fields whose value cannot change behaviour yet, such as the reserved vector route, are deliberately absent; adding one means adding a row to the field table, not extending a generic renderer.
-- **Node dragging does not persist** — a dragged position is a view-local adjustment and is lost when the graph is rebuilt, because the layout is derived from the store rather than stored beside it.
+- **A dragged node keeps its place only for this view** — the position is a view-local adjustment held by the running simulation; it is not written back to the store, and reopening the page lays the graph out again from the layout algorithm.
 
 <a id="dev-note"></a>
 ### Dev Note

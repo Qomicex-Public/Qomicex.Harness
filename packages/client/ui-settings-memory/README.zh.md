@@ -31,7 +31,7 @@ kind: "package-reference"
 
 每个节点是一条记忆，大小随重要性变化，颜色随生命周期状态变化：活跃、有争议、已固化、已归档或已删除。图上有两类连线，图例给出名称。**同一事实**连线连接内容归一化后具有相同主语与谓语的记忆，一条主张的各版本因此聚在一起。**同一作用域**连线连接存储在同一作用域下的记忆，这让某个项目的记忆读起来是一个簇，另一个项目是另一个簇。既无共同事实也无共同作用域的记忆是真正的孤立点，不画连线。
 
-拖动节点可移动它；节点跟随指针，而不是与弹簧较劲。拖动背景可平移，滚轮可缩放，悬停节点会高亮其邻居，点击节点打开详情面板。点击背景清除选中。
+图是一团立体的云，而不是一张平面示意图：节点处于不同深度，越近的节点画得越大、连线越亮，相机围绕这团云旋转。左键拖拽旋转视角，右键拖拽平移，在图上滚动滚轮缩放，拖动节点可移动它；拖动后的节点停在新位置，而不会被弹簧拉回计算出的原位。悬停节点会高亮其邻居，点击节点打开详情面板；点击背景清除选中。指针位于图上时滚轮被图接管，因此缩放不会连带滚动下方的设置面板。
 
 ### 编辑配置
 
@@ -53,9 +53,13 @@ kind: "package-reference"
 
 ### 图的布局
 
-`src/client/force-simulation.ts` 是自包含的布局：黄金角螺旋生成初始位置，每一步施加两两斥力、每条边一个弹簧、指向中心的拉力，以及阻尼。它是确定性的——全程无随机数——因为每次渲染都重新洗牌的预览不可读，而确定性也正是它可测的原因。斥力对每一对节点计算，复杂度 O(n²)，这是教科书算法的真实代价；若存储增长到预览掉帧，升级路径是在该文件内换成四叉树。
+`src/client/force-simulation.ts` 是自包含的三维布局：Fibonacci 球面生成初始位置，每一步施加两两斥力、每条边一个弹簧、指向中心的拉力，以及阻尼——全部在 `x`、`y`、`z` 三个轴上计算。它是确定性的——全程无随机数——因为每次渲染都重新洗牌的预览不可读，而确定性也正是它可测的原因。斥力对每一对节点计算，复杂度 O(n²)，这是教科书算法的真实代价；若存储增长到预览掉帧，升级路径是在该文件内换成四叉树。
 
-`ForceGraph.tsx` 画到 canvas 而不是 DOM，因为每帧都要重绘每个节点，而每帧几百个 SVG 元素正是浏览器开始卡顿的临界点。命中测试因此放在组件内：`pickNode` 是唯一把指针位置映射回节点的地方，它与绘制过程共用 `fitTransform` 产出的变换，两者不会漂移。只有节点或边集合变化时才重建模拟；选中与悬停只重绘、不重排。布局稳定后绘制循环停止请求帧，因此拖拽会直接调用存活的绘制闭包，让已静止的图重绘。
+`src/client/projection.ts` 持有相机：绕原点的 yaw 与 pitch、把图框进视野的眼距，以及透视除法。它把世界坐标投影成像素供绘制使用，也把像素还原成射线供指针使用，两者因此不会对节点位置产生分歧。节点半径按该深度处的 `pixelsPerUnit` 缩放，越近的记忆因此读起来越近。
+
+`ForceGraph.tsx` 画到 canvas 而不是 DOM，因为每帧都要重绘每个节点，而每帧几百个 SVG 元素正是浏览器开始卡顿的临界点。每帧把每个节点投影一次，并按由远及近的顺序绘制，因此近处的点会盖住远处的点；连线随深度变淡。命中测试跑在同一批投影位置上（`pickProjected`），两个节点重叠时优先取离眼睛更近的那个。拖动节点时把指针射线投向过该节点且面向眼睛的平面（`intersectFacingPlane`），节点因此跟随指针移动并保持自身深度。只有节点或边集合变化时才重建模拟；选中、悬停与相机移动只重绘、不重排。布局稳定后绘制循环停止请求帧，因此拖拽会直接调用存活的绘制闭包，让已静止的图重绘。
+
+滚轮缩放使用原生 `addEventListener('wheel', …, { passive: false })`，而不是 React 的 `onWheel`。React 在 root 上以 `passive: true` 注册滚轮处理器，因此在其回调里调用 `preventDefault()` 无效，图缩放的同时设置面板会一起滚动；canvas 上的原生监听器是唯一能拦住滚轮的地方。正在拖拽的节点在模拟中被标记为 `pinned`：积分器跳过它，弹簧因此围绕它重排其余部分，而不是把它拉回原位，松手后它保持被放下的位置。
 
 ### 配置表单
 
@@ -70,7 +74,8 @@ kind: "package-reference"
 | [`src/client/MemorySection.tsx`](src/client/MemorySection.tsx) | 页面：挂载状态分支、统计、关系图、详情面板 |
 | [`src/client/MemorySettingsForm.tsx`](src/client/MemorySettingsForm.tsx) | 配置表单及其字段表 |
 | [`src/client/ForceGraph.tsx`](src/client/ForceGraph.tsx) | Canvas 渲染与指针交互 |
-| [`src/client/force-simulation.ts`](src/client/force-simulation.ts) | 布局算法、视口拟合与能量信号 |
+| [`src/client/projection.ts`](src/client/projection.ts) | 相机：透视投影、反投影与拖拽平面 |
+| [`src/client/force-simulation.ts`](src/client/force-simulation.ts) | 三维布局算法与能量信号 |
 | [`src/client/locales.ts`](src/client/locales.ts) | 全部可见与无障碍文案的中英词典 |
 | [`src/client/MemorySection.module.css`](src/client/MemorySection.module.css) | 页面样式 |
 | [`src/client/MemorySettingsForm.module.css`](src/client/MemorySettingsForm.module.css) | 表单样式 |
@@ -110,7 +115,7 @@ None; this package neither assembles nor sends a provider request.
 
 - **关系图只渲染 Remote 返回的内容** —— 投影把每条记忆的内容截断到 400 字符，因此长记忆的节点标签与详情面板只显示前缀；完整内容由 agent 通过 recall 工具获取，不在此处。
 - **配置表单覆盖 schema 的精选子集** —— 值暂时无法改变行为的字段（如保留的向量路由）被有意省略；新增一个字段意味着给字段表加一行，而不是扩展通用渲染器。
-- **节点拖动不持久化** —— 拖动后的位置是视图内的临时调整，图重建时会丢失，因为布局由存储推导而来，而非与存储并存。
+- **拖动后的节点位置仅对本次视图有效** —— 该位置是视图内的临时调整，由运行中的模拟持有，不会写回存储；重新打开页面时会按布局算法重新排布。
 
 <a id="dev-note"></a>
 ### 开发备注

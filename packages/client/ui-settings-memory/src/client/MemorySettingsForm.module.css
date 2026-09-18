@@ -11,7 +11,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 6px 0;
-  border-bottom: 1px solid var(--dsh-border-soft, rgba(255, 255, 255, 0.06));
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
 }
 
 .row:last-child {
@@ -27,11 +27,12 @@
 
 .label {
   font-size: 13px;
+  color: var(--dsw-alias-label-primary);
 }
 
 .hint {
   font-size: 11px;
-  opacity: 0.6;
+  color: var(--dsw-alias-label-tertiary);
 }
 
 .rowControl {
@@ -43,39 +44,43 @@
 
 .input {
   width: 120px;
-  padding: 4px 8px;
-  border: 1px solid var(--dsh-border, #2a2f45);
-  border-radius: 6px;
-  background: var(--dsh-input-bg, #1a1b26);
-  color: inherit;
+  height: 32px;
+  padding: 0 12px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
   font: inherit;
-  font-size: 12px;
+}
+
+.input::placeholder {
+  color: var(--dsw-alias-label-tertiary);
 }
 
 .input:disabled {
-  opacity: 0.5;
+  color: var(--dsw-alias-label-dimmed);
 }
 
 .checkbox {
   width: 16px;
   height: 16px;
-  accent-color: var(--dsh-accent, #7aa2f7);
+  accent-color: var(--dsw-alias-brand-primary);
 }
 
 .muted {
   margin: 0;
-  opacity: 0.7;
   font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
 }
 
 .error {
   margin: 4px 0 0;
   font-size: 12px;
-  color: var(--dsh-danger, #f7768e);
+  color: var(--dsw-alias-label-error);
 }
 
 .ok {
   margin: 4px 0 0;
   font-size: 12px;
-  color: var(--dsh-success, #9ece6a);
+  color: var(--dsw-alias-state-success-primary);
 }

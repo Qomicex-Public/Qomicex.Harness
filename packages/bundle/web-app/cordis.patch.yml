@@ -150,6 +150,11 @@
     - id: workspace-controller
       name: '@deepseek-ai/dsh-api-workspace-controller'
 
+    # Memory inspection surface over Typert Remote: the graph, mount status,
+    # and the forget write backing the Memory Settings page.
+    - id: memory-controller
+      name: '@deepseek-ai/dsh-api-memory-controller'
+
     - id: cordis-host-runner
       name: '@deepseek-ai/dsh-cordis-host-runner'
 
