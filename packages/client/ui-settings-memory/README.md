@@ -49,7 +49,7 @@ The page is one localized `settings.section` contribution with id `memory`; the 
 
 ### Registration and data sources
 
-`apply()` registers the locale namespace, binds it, and contributes the section through `ctx.slots.inject()`. It declares `remote` and `remote.memory` so the page can reach the memory Remote namespace, and it binds the settings scope lazily through `ctx.get('settingsScope')` rather than injecting it: a deployment without a settings provider must still render the graph half, and injecting the service would hold the whole section pending on one that never arrives. The injected face exposes `loadGraph`, `loadStatus`, `forget`, and an optional `settings` handle; the component never sees `ctx`.
+`apply()` registers the locale namespace, binds it, and contributes the section through `ctx.slots.inject()`. It declares `remote`, `remote.memory`, `remote.llm`, and `remote.settings` so the page can reach the memory Remote namespace and fill the distillation dropdowns from the Models page; it binds the settings scope lazily through `ctx.get('settingsScope')` rather than injecting it: a deployment without a settings provider must still render the graph half, and injecting the service would hold the whole section pending on one that never arrives. The injected face exposes `loadGraph`, `loadStatus`, `forget`, `loadDistillTargets`, and an optional `settings` handle; the component never sees `ctx`. The provider dropdown lists the configurable providers, and the model dropdown lists the ids of the provider already chosen, so a distillation target can only be one the Models page configured.
 
 ### The graph layout
 

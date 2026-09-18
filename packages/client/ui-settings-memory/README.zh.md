@@ -49,7 +49,7 @@ kind: "package-reference"
 
 ### 注册与数据来源
 
-`apply()` 注册 locale 命名空间、绑定它，并通过 `ctx.slots.inject()` 贡献该 section。它声明 `remote` 与 `remote.memory`，以便页面访问 memory Remote 命名空间；设置 scope 用 `ctx.get('settingsScope')` 惰性绑定而非注入：没有设置服务的部署仍须渲染图那一半，而注入该服务会让整个 section 一直等待一个永不出现的服务。注入面暴露 `loadGraph`、`loadStatus`、`forget` 以及可选的 `settings` 句柄；组件永远看不到 `ctx`。
+`apply()` 注册 locale 命名空间、绑定它，并通过 `ctx.slots.inject()` 贡献该 section。它声明 `remote`、`remote.memory`、`remote.llm` 与 `remote.settings`，以便页面访问 memory Remote 命名空间，并从「模型」页填充蒸馏下拉框；设置 scope 用 `ctx.get('settingsScope')` 惰性绑定而非注入：没有设置服务的部署仍须渲染图那一半，而注入该服务会让整个 section 一直等待一个永不出现的服务。注入面暴露 `loadGraph`、`loadStatus`、`forget`、`loadDistillTargets` 以及可选的 `settings` 句柄；组件永远看不到 `ctx`。服务商下拉框列出可配置的服务商，模型下拉框列出已选服务商声明的 id，因此蒸馏目标只能是「模型」页配置过的。
 
 ### 图的布局
 

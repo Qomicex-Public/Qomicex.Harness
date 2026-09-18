@@ -40,6 +40,7 @@ function props(overrides: Partial<MemorySectionProps> = {}): MemorySectionProps 
     loadGraph: async () => ({ kind: 'ok', value: graph() }),
     loadStatus: async () => ({ mounted: true, total: 3 }),
     forget: async () => ({ kind: 'ok', value: { detail: 'done' } }),
+    loadDistillTargets: async () => ({ providers: [] }),
     settings: undefined,
     ...overrides,
   } as unknown as MemorySectionProps

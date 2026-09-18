@@ -39,6 +39,25 @@ function remoteStub() {
       status: vi.fn(async () => ({ ok: true as const, value: { mounted: true, total: 0 } })),
       forget: vi.fn(async () => ({ ok: true as const, value: { ok: true, detail: 'done' } })),
     },
+    // The distillation dropdowns read the provider directory and the settings
+    // mirror; both are declared in the plugin's inject, so the bench must
+    // provide them or the whole section stays pending.
+    llm: {
+      listConfigurableProviders: vi.fn(async () => ({
+        ok: true as const,
+        value: [{ provider: 'deepseek-official', displayName: 'DeepSeek', settingsNs: 'llm-deepseek', settingsPath: [] }],
+      })),
+    },
+    settings: {
+      describe: vi.fn(async () => ({
+        ok: true as const,
+        value: {
+          writable: true,
+          hasDocument: true,
+          namespaces: [{ ns: 'llm-deepseek', value: { models: [{ id: 'deepseek-chat' }] } }],
+        },
+      })),
+    },
   }
 }
 
@@ -66,7 +85,7 @@ describe('ui-settings-memory browser plugin', () => {
   })
 
   it('declares only the services the page uses', () => {
-    expect(inject).toEqual(['slots', 'locale', 'remote', 'remote.memory'])
+    expect(inject).toEqual(['slots', 'locale', 'remote', 'remote.memory', 'remote.llm', 'remote.settings'])
   })
 
   it('registers the memory page with localized copy', async () => {

@@ -59,6 +59,26 @@ export interface MemorySectionInjected {
   ) => Promise<LoadOutcome<{ readonly detail: string }>>
   /** The settings face, or `undefined` when no provider is mounted. */
   readonly settings: MemorySettingsFace | undefined
+  /**
+   * Providers and their configured models, for the distillation dropdowns.
+   * Empty when the deployment exposes no provider directory.
+   */
+  readonly loadDistillTargets: () => Promise<DistillTargets>
+}
+
+/** One provider and the model ids it declares, for the distillation dropdowns. */
+export interface DistillProviderTarget {
+  /** Provider route key, written to `llmDistill.provider`. */
+  readonly provider: string
+  /** Human-readable name shown in the dropdown. */
+  readonly displayName: string
+  /** Model ids this provider declares, written to `llmDistill.model`. */
+  readonly models: readonly string[]
+}
+
+/** Every provider the Models page knows about. */
+export interface DistillTargets {
+  readonly providers: readonly DistillProviderTarget[]
 }
 
 /** Full component props assembled by the Settings slot renderer. */
@@ -90,11 +110,12 @@ function toGraph(graph: MemoryGraphValue): { nodes: GraphNode[]; edges: GraphEdg
  * @returns the settings page element tree.
  */
 export function MemorySection(props: MemorySectionProps): ReactNode {
-  const { t, loadGraph, loadStatus, settings } = props
+  const { t, loadGraph, loadStatus, loadDistillTargets, settings } = props
   const [graph, setGraph] = useState<MemoryGraphValue | undefined>(undefined)
   const [mounted, setMounted] = useState<boolean | undefined>(undefined)
   const [failure, setFailure] = useState<string | undefined>(undefined)
   const [selected, setSelected] = useState<MemoryNodeView | undefined>(undefined)
+  const [distillTargets, setDistillTargets] = useState<DistillTargets>({ providers: [] })
 
   const refresh = useCallback(async (): Promise<void> => {
     const status = await loadStatus()
@@ -116,6 +137,18 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  // The provider directory is read once: it changes only when the Models page
+  // adds or removes a provider, and a stale list is preferable to a request per
+  // render. A failure leaves the dropdowns empty, which the form renders as a
+  // prompt to configure a model rather than as an error.
+  useEffect(() => {
+    let active = true
+    void loadDistillTargets()
+      .then((targets) => { if (active) setDistillTargets(targets) })
+      .catch(() => { if (active) setDistillTargets({ providers: [] }) })
+    return () => { active = false }
+  }, [loadDistillTargets])
 
   const layout = useMemo(() => (graph === undefined ? undefined : toGraph(graph)), [graph])
 
@@ -188,15 +221,7 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
       {settings === undefined
         ? <p className={css.muted}>{t('settingsUnavailable')}</p>
         : (
-          <MemorySettingsForm
-            settings={settings}
-            labels={{
-              reset: t('settingsReset'),
-              saved: t('settingsSaved'),
-              failed: t('settingsFailed'),
-              unavailable: t('settingsUnavailable'),
-            }}
-          />
+          <MemorySettingsForm settings={settings} t={t} distillTargets={distillTargets} />
         )}
     </section>
   )
