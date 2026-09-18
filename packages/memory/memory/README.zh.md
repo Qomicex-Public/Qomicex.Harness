@@ -11,7 +11,7 @@ kind: "package-reference"
 
 `dsh-memory` 为 Harness 提供跨会话持久记忆。它颠倒了常见做法：由 *Harness* 写入——观测循环自身的事件并在其上运行确定性规则；*Agent* 只读取——通过三个工具（`memory_recall`、`memory_review`、`memory_forget`）。这里刻意没有「记住」工具。
 
-基础 bundle 以 `disabled: true` 分发它。与转录存档相比，它有三个区别性属性：置信度来自 *相互独立* 的因果链，因此同一陈述重复三次仍只是一个见证；治理删除会在 provenance lineage 上立墓碑；偏好变更形成新的版本区间，而不是冲突。
+基础 bundle 以 `disabled: true` 分发它。与转录存档相比，它有三个区别性属性：置信度来自 *相互独立* 的因果链，因此同一陈述重复三次仍只是一个见证；治理删除会在 origin lineage 上立墓碑；偏好变更形成新的版本区间，而不是冲突。
 
 ## 目录
 
@@ -144,7 +144,7 @@ loop events ──▶ EventObserver ──▶ observations table
 
 ```
 Event       ≠ Observation          raw capture is not evidence
-Observation ≠ Evidence             evidence carries provenance and a chain
+Observation ≠ Evidence             evidence carries its origin and a chain
 Evidence    ≠ Belief               belief aggregates independent evidence only
 Belief      ≠ Current Truth        belief has a validity interval
 Memory      ≠ Authorization        content never grants permission

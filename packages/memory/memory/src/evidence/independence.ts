@@ -88,7 +88,7 @@ export function countIndependentEvidence(evidence: readonly Evidence[]): number 
  * Trust never escalates: an inference is capped at
  * {@link INFERENCE_RELIABILITY_CAP} no matter who repeated it, so a chain of
  * agent restatements can never bootstrap a fact into high confidence.
- * @param sourceType - Provenance class of the observation.
+ * @param sourceType - Source class of the observation.
  * @param inherited - Reliability of the observation it derives from, when any.
  * @returns Reliability in `[0, 1]`.
  */

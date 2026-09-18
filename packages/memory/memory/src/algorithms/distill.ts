@@ -140,11 +140,11 @@ export function distillFact(
       userMarked: group.some(member => member.salience.userMarked),
       pinned: group.some(member => member.salience.pinned),
     },
-    provenance: {
-      observations: [...new Set(group.flatMap(member => member.provenance.observations))],
+    origin: {
+      observations: [...new Set(group.flatMap(member => member.origin.observations))],
       derivedFrom: group.map(member => member.identity.id),
-      sessions: [...new Set(group.flatMap(member => member.provenance.sessions))],
-      generators: [...group.flatMap(member => member.provenance.generators), {
+      sessions: [...new Set(group.flatMap(member => member.origin.sessions))],
+      generators: [...group.flatMap(member => member.origin.generators), {
         name: GENERATOR_NAME,
         version: GENERATOR_VERSION,
       }],

@@ -61,7 +61,7 @@ export interface ForgettingContext {
  * Promotion does not change this value: a promoted memory keeps its own
  * `scope` and records the promotion as a separate approval, so
  * `scopeWeight(memory.scope)` is the same before and after. That is deliberate
- * — rewriting `scope` would destroy the provenance the tombstone check depends
+ * — rewriting `scope` would destroy the origin record the tombstone check depends
  * on — and it also means a promotion cannot silently make a memory harder to
  * forget, which a scope rewrite would have done.
  * @param scope - The serialized scope.

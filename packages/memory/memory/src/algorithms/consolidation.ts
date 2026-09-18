@@ -320,7 +320,7 @@ function blockedByAny(memory: Memory, tombstones: readonly import('../types.ts')
 export function candidateOf(memory: Memory): StagingCandidate {
   return {
     id: memory.identity.id,
-    sessionId: memory.provenance.sessions[0] ?? 'unknown',
+    sessionId: memory.origin.sessions[0] ?? 'unknown',
     scope: memory.scope,
     content: memory.content.raw,
     contentHash: memory.identity.contentHash,
@@ -329,7 +329,7 @@ export function candidateOf(memory: Memory): StagingCandidate {
     sourceType: memory.epistemic.evidence[0]?.sourceType ?? 'external',
     reliability: memory.epistemic.confidence,
     causalOrigin: memory.epistemic.evidence[0]?.identity.causalOrigin ?? '',
-    rawObservationId: memory.provenance.observations[0] ?? '',
+    rawObservationId: memory.origin.observations[0] ?? '',
     observedAt: memory.temporal.observedAt,
     strength: memory.salience.importance,
     tags: [],

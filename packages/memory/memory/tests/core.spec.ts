@@ -128,7 +128,7 @@ function memoryWith(roots: string[]): Memory {
       independentEvidenceCount: 1,
     },
     salience: { importance: 0.5, usageCount: 0, userMarked: false, pinned: false },
-    provenance: { observations: [], derivedFrom: [], sessions: [], generators: [] },
+    origin: { observations: [], derivedFrom: [], sessions: [], generators: [] },
     temporal: { validFrom: 1, validTo: null, observedAt: 1, expiresAt: null },
     relations: { supports: [], contradicts: [], supersedes: [], supersededBy: [] },
     retrieval: { accessCount: 0, lastAccessAt: 0, recallSuccessRate: 0 },
@@ -313,7 +313,7 @@ describe('tombstones', () => {
       targetMemoryId: 'm1',
       contentHash: 'hash-1',
       semanticKey: key,
-      targetProvenanceRoots: ['user:1'],
+      targetOriginRoots: ['user:1'],
       cutoffAt: 100,
       scope: 'global',
       reason: 'user_delete',
@@ -332,7 +332,7 @@ describe('tombstones', () => {
       targetMemoryId: 'm1',
       contentHash: 'hash-1',
       semanticKey: key,
-      targetProvenanceRoots: ['user:1'],
+      targetOriginRoots: ['user:1'],
       cutoffAt: 100,
       scope: 'global',
       reason: 'user_delete',
@@ -376,7 +376,7 @@ describe('tombstones', () => {
       targetMemoryId: 'm1',
       contentHash: 'hash-1',
       semanticKey: null,
-      targetProvenanceRoots: ['user:1'],
+      targetOriginRoots: ['user:1'],
       cutoffAt: 100,
       scope: 'global',
       reason: 'user_delete',
@@ -395,7 +395,7 @@ describe('tombstones', () => {
       targetMemoryId: 'm1',
       contentHash: 'hash-other',
       semanticKey: key,
-      targetProvenanceRoots: ['user:1'],
+      targetOriginRoots: ['user:1'],
       cutoffAt: 100,
       scope: 'global',
       reason: 'user_delete',
@@ -415,7 +415,7 @@ describe('tombstones', () => {
       targetMemoryId: 'm1',
       contentHash: 'hash-other',
       semanticKey: key,
-      targetProvenanceRoots: ['user:1'],
+      targetOriginRoots: ['user:1'],
       cutoffAt: 100,
       scope: 'global',
       reason: 'user_delete',
@@ -431,7 +431,7 @@ describe('tombstones', () => {
   it('builds a tombstone from every chain root the memory rested on', () => {
     const memory = memoryWith(['user:1', 'tool:9', 'user:1'])
     const tombstone = buildTombstone(memory, 'ts1', 'user_delete', NOW)
-    expect(tombstone.targetProvenanceRoots).toEqual(['user:1', 'tool:9'])
+    expect(tombstone.targetOriginRoots).toEqual(['user:1', 'tool:9'])
     expect(tombstone.cutoffAt).toBe(NOW)
     expect(isPermanent(tombstone)).toBe(false)
     expect(isPermanent(buildTombstone(memory, 'ts2', 'security_delete', NOW))).toBe(true)

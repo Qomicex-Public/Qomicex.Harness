@@ -5,7 +5,7 @@
  * Promotion is not a write. A memory keeps its own scope; a promotion record
  * says "this memory is now also visible above its origin". That distinction
  * matters because the alternative — rewriting `memory.scope` — would destroy
- * the record of where the fact came from, and provenance is what the tombstone
+ * the record of where the fact came from, and the origin is what the tombstone
  * check depends on.
  *
  * The check is structural first (`canPromote`: upward only, never between

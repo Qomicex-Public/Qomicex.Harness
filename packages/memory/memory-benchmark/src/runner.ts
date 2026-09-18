@@ -321,7 +321,7 @@ export async function runScenario(scenario: Scenario, options: Partial<HarnessOp
           independentEvidenceCount: 1,
         },
         salience: { importance: 0.5, usageCount: 0, userMarked: false, pinned: false },
-        provenance: { observations: [], derivedFrom: [], sessions: ['seed'], generators: [] },
+        origin: { observations: [], derivedFrom: [], sessions: ['seed'], generators: [] },
         temporal: { validFrom: harness.tick(), validTo: null, observedAt: harness.tick(), expiresAt: null },
         relations: { supports: [], contradicts: [], supersedes: [], supersededBy: [] },
         retrieval: { accessCount: 0, lastAccessAt: 0, recallSuccessRate: 0 },

@@ -135,7 +135,7 @@ export async function applyGovernanceAction(
     tombstones.push(tombstone)
 
     if (action === 'security_delete' || action === 'compliance_delete') {
-      for (const observationId of target.provenance.observations) {
+      for (const observationId of target.origin.observations) {
         const redacted = await repository.redactObservation(observationId, { redactedAt: now, reason: action })
         if (redacted) redactedObservations.push(observationId)
       }

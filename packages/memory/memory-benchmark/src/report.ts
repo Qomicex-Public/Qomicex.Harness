@@ -166,7 +166,7 @@ function retrievalLayer(runs: readonly ScenarioRun[]): Pick<BenchmarkMetrics, 'r
  *
  * - **Resurrection (D1)**: a memory observed *after* the deletion, on the
  *   deleted lineage, still live. This is the tombstone failing to stop the
- *   deleted provenance from coming back.
+ *   deleted lineage from coming back.
  * - **Residual (D2)**: a memory observed *at or before* the deletion, on the
  *   deleted lineage, still live. Nothing came back — the deletion simply did
  *   not finish its job, leaving a sibling copy the user can still recall.
@@ -193,7 +193,7 @@ function safetyLayer(
       for (const memory of run.snapshot.memories) {
         const sameFact = tombstoneKey !== undefined && factKeyOf(memory) === tombstoneKey
         const sameLineage = memory.epistemic.evidence.some(evidence =>
-          tombstone.targetProvenanceRoots.includes(evidence.identity.causalOrigin))
+          tombstone.targetOriginRoots.includes(evidence.identity.causalOrigin))
         const isOriginal = tombstone.targetMemoryId === memory.identity.id
         if (!sameFact || !sameLineage || isOriginal || memory.lifecycle.state !== 'active') continue
         // D1: came back after the cut. D2: was already there, survived the cut.

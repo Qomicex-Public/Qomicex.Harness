@@ -85,7 +85,7 @@ function memory(id: string, sources: EvidenceSourceType[], overrides: Partial<Me
       independentEvidenceCount: sources.length,
     },
     salience: { importance: 0.5, usageCount: 0, userMarked: false, pinned: false },
-    provenance: { observations: [`obs:${id}:1`, `obs:${id}:2`], derivedFrom: [], sessions: ['s1'], generators: [] },
+    origin: { observations: [`obs:${id}:1`, `obs:${id}:2`], derivedFrom: [], sessions: ['s1'], generators: [] },
     temporal: { validFrom: 1, validTo: null, observedAt: 1, expiresAt: null },
     relations: { supports: [], contradicts: [], supersedes: [], supersededBy: [] },
     retrieval: { accessCount: 0, lastAccessAt: 0, recallSuccessRate: 0 },
@@ -219,7 +219,7 @@ describe('governance operations are irreversible', () => {
     await repo.putMemory('episodic', memory('m1', ['explicit_user']))
     const outcome = await applyGovernanceAction(repo, 'm1', 'user_delete', 100)
     expect(isBlockedByTombstone(candidate(), await repo.allTombstones()).blocked).toBe(true)
-    expect(outcome.tombstone?.targetProvenanceRoots).toEqual(['root:m1:e0'])
+    expect(outcome.tombstone?.targetOriginRoots).toEqual(['root:m1:e0'])
   })
 
   it('deletes every live sibling of the same fact in the same scope', async () => {

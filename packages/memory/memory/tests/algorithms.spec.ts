@@ -56,7 +56,7 @@ function memory(id: string, overrides: Partial<Memory> = {}): Memory {
     content: { raw: `${id} raw`, kind: 'episodic', semantic: null, language: 'en' },
     epistemic: { status: 'user_stated', confidence: 0.9, evidence: [], contradictions: [], independentEvidenceCount: 0 },
     salience: { importance: 0.5, usageCount: 0, userMarked: false, pinned: false },
-    provenance: { observations: [], derivedFrom: [], sessions: [], generators: [] },
+    origin: { observations: [], derivedFrom: [], sessions: [], generators: [] },
     temporal: { validFrom: 0, validTo: null, observedAt: 0, expiresAt: null },
     relations: { supports: [], contradicts: [], supersedes: [], supersededBy: [] },
     retrieval: { accessCount: 0, lastAccessAt: 0, recallSuccessRate: 0 },

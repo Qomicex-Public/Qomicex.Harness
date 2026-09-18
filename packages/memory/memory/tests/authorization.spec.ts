@@ -50,7 +50,7 @@ function memory(id: string, scope = PROJECT, approvals: string[] = []): Memory {
     content: { raw: `${id} raw`, kind: 'episodic', semantic: null, language: 'en' },
     epistemic: { status: 'user_stated', confidence: 0.95, evidence: [evidence('e1')], contradictions: [], independentEvidenceCount: 1 },
     salience: { importance: 0.5, usageCount: 0, userMarked: false, pinned: false },
-    provenance: { observations: [], derivedFrom: [], sessions: [], generators: [] },
+    origin: { observations: [], derivedFrom: [], sessions: [], generators: [] },
     temporal: { validFrom: 1, validTo: null, observedAt: 1, expiresAt: null },
     relations: { supports: [], contradicts: [], supersedes: [], supersededBy: [] },
     retrieval: { accessCount: 0, lastAccessAt: 0, recallSuccessRate: 0 },

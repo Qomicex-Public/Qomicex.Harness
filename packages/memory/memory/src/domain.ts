@@ -71,7 +71,7 @@ export const governanceActionSchema = z.enum([
   'superseded',
 ])
 
-/** Evidence provenance classes. */
+/** Evidence source classes. */
 export const evidenceSourceTypeSchema = z.enum([
   'explicit_user',
   'tool_verified',
@@ -186,7 +186,7 @@ export const memorySchema = z.object({
     userMarked: z.boolean(),
     pinned: z.boolean(),
   }),
-  provenance: z.object({
+  origin: z.object({
     observations: z.array(z.string()),
     derivedFrom: z.array(z.string()),
     sessions: z.array(z.string()),
@@ -236,7 +236,7 @@ export const tombstoneSchema = z.object({
   targetMemoryId: z.string(),
   contentHash: z.string(),
   semanticKey: semanticKeySchema.nullable(),
-  targetProvenanceRoots: z.array(z.string()),
+  targetOriginRoots: z.array(z.string()),
   cutoffAt: z.number(),
   scope: z.string(),
   reason: governanceActionSchema,

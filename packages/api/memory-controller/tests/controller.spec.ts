@@ -83,7 +83,7 @@ function makeMemory(options: {
     },
     epistemic: { status: 'observed', confidence: 0.8, evidence: [], contradictions: [], independentEvidenceCount: 1 },
     salience: { importance: 0.5, usageCount: 0, userMarked: false, pinned: false },
-    provenance: { observations: [], derivedFrom: [], sessions: [], generators: [] },
+    origin: { observations: [], derivedFrom: [], sessions: [], generators: [] },
     temporal: { validFrom: null, validTo: null, observedAt: options.observedAt ?? 1_000, expiresAt: null },
     relations: { supports: [], contradicts: [], supersedes: [], supersededBy: [] },
     retrieval: { accessCount: 0, lastAccessAt: 0, recallSuccessRate: 0 },

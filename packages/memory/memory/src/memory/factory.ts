@@ -3,7 +3,7 @@
  *
  * The memory object is a composition of faces, and each face has exactly one
  * owner here: identity is derived from content, epistemic from evidence,
- * salience from the signal, provenance from the observation, temporal from
+ * salience from the signal, origin from the observation, temporal from
  * observation time, and the rest start empty. Nothing is optional and nothing
  * is guessed — a face with no information gets its empty value, never a
  * plausible-looking default that would later read as data.
@@ -87,7 +87,7 @@ export function buildMemory(input: BuildMemoryInput): Memory {
       userMarked: false,
       pinned: false,
     },
-    provenance: {
+    origin: {
       observations: [candidate.rawObservationId],
       derivedFrom: [],
       sessions: [candidate.sessionId],

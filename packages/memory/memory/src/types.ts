@@ -58,7 +58,7 @@ export interface ObservedEvent {
   } | null
 }
 
-/** Provenance class of one piece of evidence. */
+/** Source class of one piece of evidence. */
 export type EvidenceSourceType = 'explicit_user' | 'tool_verified' | 'agent_inference' | 'external'
 
 /**
@@ -93,7 +93,7 @@ export interface EvidenceIdentity {
 export interface Evidence {
   /** Stable evidence id. */
   id: string
-  /** Provenance class. */
+  /** Source class. */
   sourceType: EvidenceSourceType
   /** Independence facets. */
   identity: EvidenceIdentity
@@ -198,7 +198,7 @@ export interface MemorySalience {
   pinned: boolean
 }
 
-/** Generator provenance of one memory. */
+/** Generator identity of one memory. */
 export interface Generator {
   /** Producer name. */
   name: string
@@ -206,8 +206,8 @@ export interface Generator {
   version: string
 }
 
-/** Provenance face: where this memory came from. */
-export interface MemoryProvenance {
+/** Origin face: where this memory came from. */
+export interface MemoryOrigin {
   /** ObservedEvent ids that support it. */
   observations: string[]
   /** Memory ids it was distilled from. */
@@ -285,8 +285,8 @@ export interface Memory {
   epistemic: MemoryEpistemic
   /** Salience face. */
   salience: MemorySalience
-  /** Provenance face. */
-  provenance: MemoryProvenance
+  /** Origin face. */
+  origin: MemoryOrigin
   /** Temporal face. */
   temporal: MemoryTemporal
   /** Relations face. */
@@ -331,7 +331,7 @@ export interface Tombstone {
   /** Literal identity: normalized fact key, when one existed. */
   semanticKey: SemanticKey | null
   /** Lineage identity: every causal origin the deleted memory rested on. */
-  targetProvenanceRoots: string[]
+  targetOriginRoots: string[]
   /** Deletion time; observations at or before it are blocked. */
   cutoffAt: number
   /** Serialized scope the tombstone applies to. */

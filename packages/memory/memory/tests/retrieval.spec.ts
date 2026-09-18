@@ -72,7 +72,7 @@ function memory(id: string, overrides: Partial<Memory> = {}): Memory {
     content: { raw: `${id} raw`, kind: 'episodic', semantic: null, language: 'en' },
     epistemic: { status: 'user_stated', confidence: 0.9, evidence: [], contradictions: [], independentEvidenceCount: 0 },
     salience: { importance: 0.5, usageCount: 0, userMarked: false, pinned: false },
-    provenance: { observations: [`obs:${id}`], derivedFrom: [], sessions: ['s1'], generators: [] },
+    origin: { observations: [`obs:${id}`], derivedFrom: [], sessions: ['s1'], generators: [] },
     temporal: { validFrom: 0, validTo: null, observedAt: 0, expiresAt: null },
     relations: { supports: [], contradicts: [], supersedes: [], supersededBy: [] },
     retrieval: { accessCount: 0, lastAccessAt: 0, recallSuccessRate: 0 },
@@ -343,7 +343,7 @@ describe('distillation', () => {
       ...distilled!.memory,
       epistemic: { ...distilled!.memory.epistemic, evidence: [evidence('explicit_user', 'e8', 'r8')] },
     })).toBe(true)
-    expect(distilled?.memory.provenance.derivedFrom).toEqual(['a', 'b'])
+    expect(distilled?.memory.origin.derivedFrom).toEqual(['a', 'b'])
     expect(distilled?.memory.temporal.validFrom).toBe(1)
     // Both witnesses survive the merge, and the independent count reflects them.
     expect(distilled?.memory.epistemic.evidence).toHaveLength(2)

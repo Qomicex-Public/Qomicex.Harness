@@ -11,7 +11,7 @@ English | [中文](README.zh.md)
 
 dsh-memory gives the harness a persistent memory that survives sessions. The *harness* writes, by observing the loop's own events and running deterministic rules over them; the *agent* only reads, through three tools (memory_recall, memory_review, memory_forget). There is deliberately no tool for remembering.
 
-The base bundle ships it disabled: true. Three properties distinguish it from a transcript archive: confidence comes from *independent* causal chains, so restating a statement three times is one witness; a governance delete tombstones the provenance lineage; and a changed preference is a new version interval, not a conflict.
+The base bundle ships it disabled: true. Three properties distinguish it from a transcript archive: confidence comes from *independent* causal chains, so restating a statement three times is one witness; a governance delete tombstones the origin lineage; and a changed preference is a new version interval, not a conflict.
 
 ## Table of Contents
 
@@ -144,7 +144,7 @@ Ten invariants the code enforces, not just documents:
 
 ```
 Event       ≠ Observation          raw capture is not evidence
-Observation ≠ Evidence             evidence carries provenance and a chain
+Observation ≠ Evidence             evidence carries its origin and a chain
 Evidence    ≠ Belief               belief aggregates independent evidence only
 Belief      ≠ Current Truth        belief has a validity interval
 Memory      ≠ Authorization        content never grants permission

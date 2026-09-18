@@ -5,7 +5,7 @@
  * deleted memory — three conditions must all hold:
  *
  * 1. the candidate claims the same thing (same fact key, or same content hash);
- * 2. it descends from the same provenance lineage (its chain root is one of the
+ * 2. it descends from the same origin lineage (its chain root is one of the
  *    roots the deleted memory rested on);
  * 3. it was observed at or before the deletion.
  *
@@ -42,7 +42,7 @@ export function isBlockedByTombstone(
       || candidate.contentHash === tombstone.contentHash
     if (!sameFact) continue
     const sameLineage =
-      candidate.causalOrigin !== '' && tombstone.targetProvenanceRoots.includes(candidate.causalOrigin)
+      candidate.causalOrigin !== '' && tombstone.targetOriginRoots.includes(candidate.causalOrigin)
     if (!sameLineage) continue
     return { blocked: true, tombstone }
   }
@@ -72,7 +72,7 @@ export function buildTombstone(
     targetMemoryId: memory.identity.id,
     contentHash: memory.identity.contentHash,
     semanticKey: memory.identity.semanticKey,
-    targetProvenanceRoots: [...new Set(memory.epistemic.evidence.map(item => item.identity.causalOrigin))],
+    targetOriginRoots: [...new Set(memory.epistemic.evidence.map(item => item.identity.causalOrigin))],
     cutoffAt: now,
     scope: memory.scope,
     reason,
