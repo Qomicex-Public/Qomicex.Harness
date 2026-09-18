@@ -2,7 +2,14 @@
   "name": "@deepseek-ai/dsh-ui-brand-qomicex",
   "description": "Qomicex Harness brand occupants for the Web client's sidebar and hero slots",
   "version": "0.1.6-alpha.1",
-  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/client/ui-brand-qomicex"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
