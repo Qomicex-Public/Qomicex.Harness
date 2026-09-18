@@ -411,6 +411,39 @@
       config:
         allowParallelInProgress: true
 
+    # Bio-inspired global memory: the harness observes the loop and writes,
+    # the agent gets recall/review/forget tools. Disabled by default — it is an
+    # opt-in capability, and enabling it adds a storage domain, three tools, and
+    # a prompt section. Enable it in a profile patch layer with:
+    #   - id: bio-memory
+    #     disabled: false
+    - id: bio-memory
+      name: '@deepseek-ai/dsh-memory'
+      disabled: true
+      config:
+        thresholds:
+          excitability: 0.45
+          forgetDemote: 0.45
+          forgetArchive: 0.65
+          forgetHard: 0.85
+        bounds:
+          workingCapacity: 64
+          stagingCapacity: 128
+        retrieval:
+          topK: 5
+          similarityThreshold: 0.35
+          useVector: false
+        injection:
+          hotPack: true
+          recallMaxChars: 4000
+        authorization:
+          enabled: false
+          policyVersion: bio-memory-1
+        llmDistill:
+          enabled: false
+          provider: ''
+          model: ''
+
     # Persisted same-session goals reach the model and the slash menu here; the
     # domain, driver, and `/goal` command are above.
     - id: tool-goal

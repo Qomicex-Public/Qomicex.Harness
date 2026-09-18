@@ -1,0 +1,161 @@
+/**
+ * Plugin configuration. Schemastery owns this surface (Cordis validates it at
+ * load); the record schemas inside `src/domain.ts` are zod instead, matching
+ * the storage-domain split. Every default is deliberately conservative: the
+ * plugin ships disabled in the bundle patch, authorization is off, and LLM
+ * distillation is off, so enabling the plugin never changes harness behavior
+ * beyond the memory tools and prompt section it declares.
+ * @module @deepseek-ai/dsh-memory/src/config
+ */
+
+import z from '@deepseek-ai/schemastery'
+
+/** Write-gate and forgetting thresholds. */
+export interface MemoryThresholdsConfig {
+  /** Minimum excitability for a candidate to be written. */
+  excitability: number
+  /** Forget score above which a memory is demoted. */
+  forgetDemote: number
+  /** Forget score above which a memory is archived. */
+  forgetArchive: number
+  /** Forget score above which a memory is hard-forgotten. */
+  forgetHard: number
+}
+
+/** Working-memory and staging-pool bounds. */
+export interface MemoryBoundsConfig {
+  /** Working-memory slot count. */
+  workingCapacity: number
+  /** Staging candidates retained per session. */
+  stagingCapacity: number
+}
+
+/** Recall pipeline knobs. */
+export interface MemoryRetrievalConfig {
+  /** Maximum hits returned by one recall. */
+  topK: number
+  /** Minimum relevance for a hit to survive. */
+  similarityThreshold: number
+  /** Whether the vector route participates; reserved until an embedding service exists. */
+  useVector: boolean
+}
+
+/** Injection knobs for the hot pack and per-step recall. */
+export interface MemoryInjectionConfig {
+  /** Whether a hot pack is injected at the first step of a turn. */
+  hotPack: boolean
+  /** Maximum characters of one recall block. */
+  recallMaxChars: number
+}
+
+/** Authorization-plane knobs. */
+export interface MemoryAuthorizationConfig {
+  /** Whether the six-tuple policy plane gates tool calls. Off by default. */
+  enabled: boolean
+  /** Policy version stamped into audit entries. */
+  policyVersion: string
+}
+
+/** Optional LLM-assisted distillation. */
+export interface MemoryLlmDistillConfig {
+  /** Whether consolidation may call the model to distill facts. */
+  enabled: boolean
+  /** Provider route passed to the llm service; empty disables the path even when enabled. */
+  provider: string
+  /** Model id passed to the llm service; empty disables the path even when enabled. */
+  model: string
+}
+
+/** Plugin configuration. */
+export interface Config {
+  /** Write-gate and forgetting thresholds. */
+  thresholds?: MemoryThresholdsConfig
+  /** Working-memory and staging bounds. */
+  bounds?: MemoryBoundsConfig
+  /** Recall pipeline knobs. */
+  retrieval?: MemoryRetrievalConfig
+  /** Injection knobs. */
+  injection?: MemoryInjectionConfig
+  /** Authorization-plane knobs. */
+  authorization?: MemoryAuthorizationConfig
+  /** Optional LLM distillation. */
+  llmDistill?: MemoryLlmDistillConfig
+}
+
+/** Validated plugin configuration. */
+export const Config: z<Config> = z.object({
+  thresholds: z.object({
+    excitability: z.number().min(0).max(1).default(0.45),
+    forgetDemote: z.number().min(0).max(1).default(0.45),
+    forgetArchive: z.number().min(0).max(1).default(0.65),
+    forgetHard: z.number().min(0).max(1).default(0.85),
+  }).default({
+    excitability: 0.45,
+    forgetDemote: 0.45,
+    forgetArchive: 0.65,
+    forgetHard: 0.85,
+  }),
+  bounds: z.object({
+    workingCapacity: z.number().step(1).min(1).default(64),
+    stagingCapacity: z.number().step(1).min(1).default(128),
+  }).default({ workingCapacity: 64, stagingCapacity: 128 }),
+  retrieval: z.object({
+    topK: z.number().step(1).min(1).default(5),
+    similarityThreshold: z.number().min(0).max(1).default(0.35),
+    useVector: z.boolean().default(false),
+  }).default({ topK: 5, similarityThreshold: 0.35, useVector: false }),
+  injection: z.object({
+    hotPack: z.boolean().default(true),
+    recallMaxChars: z.number().step(1).min(1).default(4000),
+  }).default({ hotPack: true, recallMaxChars: 4000 }),
+  authorization: z.object({
+    enabled: z.boolean().default(false),
+    policyVersion: z.string().default('bio-memory-1'),
+  }).default({ enabled: false, policyVersion: 'bio-memory-1' }),
+  llmDistill: z.object({
+    enabled: z.boolean().default(false),
+    provider: z.string().default(''),
+    model: z.string().default(''),
+  }).default({ enabled: false, provider: '', model: '' }),
+})
+
+/**
+ * Resolve the validated config into the shape the runtime reads. Schemastery
+ * fills every default, so each nested group is present; the explicit checks
+ * keep that guarantee visible instead of asserting it.
+ * @param config - The validated plugin config.
+ * @returns Fully resolved configuration.
+ */
+export function resolveConfig(config: Config): ResolvedConfig {
+  const { thresholds, bounds, retrieval, injection, authorization, llmDistill } = config
+  if (
+    thresholds === undefined || bounds === undefined || retrieval === undefined
+    || injection === undefined || authorization === undefined || llmDistill === undefined
+  ) {
+    throw new Error('bio-memory: plugin config was not resolved against the Config schema')
+  }
+  return {
+    thresholds: { ...thresholds },
+    bounds: { ...bounds },
+    retrieval: { ...retrieval },
+    injection: { ...injection },
+    authorization: { ...authorization },
+    llmDistill: { ...llmDistill },
+  }
+}
+
+/** Configuration with every default applied. */
+export interface ResolvedConfig {
+  /** Write-gate and forgetting thresholds. */
+  thresholds: MemoryThresholdsConfig
+  /** Working-memory and staging bounds. */
+  bounds: MemoryBoundsConfig
+  /** Recall pipeline knobs. */
+  retrieval: MemoryRetrievalConfig
+  /** Injection knobs. */
+  injection: MemoryInjectionConfig
+  /** Authorization-plane knobs. */
+  authorization: MemoryAuthorizationConfig
+  /** Optional LLM distillation. */
+  llmDistill: MemoryLlmDistillConfig
+}

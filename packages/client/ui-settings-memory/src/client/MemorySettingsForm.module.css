@@ -1,0 +1,81 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--dsh-border-soft, rgba(255, 255, 255, 0.06));
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 13px;
+}
+
+.hint {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.rowControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.input {
+  width: 120px;
+  padding: 4px 8px;
+  border: 1px solid var(--dsh-border, #2a2f45);
+  border-radius: 6px;
+  background: var(--dsh-input-bg, #1a1b26);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+}
+
+.input:disabled {
+  opacity: 0.5;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--dsh-accent, #7aa2f7);
+}
+
+.muted {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.error {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--dsh-danger, #f7768e);
+}
+
+.ok {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--dsh-success, #9ece6a);
+}

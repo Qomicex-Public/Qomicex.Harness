@@ -45,6 +45,7 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
  */
 const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/api/terminal-controller': { kind: 'none', reason: 'User-owned terminal processes and screen streams never enter model requests or Session events.' },
+  'packages/api/memory-controller': { kind: 'none', reason: 'The inspection-surface API owner registers no prompt, tool, or session event; its forget write routes through the same governance and lifecycle helpers as the agent-facing memory_forget tool.' },
   'packages/client/ui-sidebar-terminal': { kind: 'none', reason: 'The browser renders user terminal screens without exposing them to the model.' },
   'packages/client/ui-brand-qomicex': { kind: 'none', reason: 'The brand occupants render a mark and a name; nothing here reaches a model request or a Session event.' },
   'packages/ssh/ssh': { kind: 'none', reason: 'The connection owner transports private provider operations; consumers own all model-facing content.' },
@@ -130,6 +131,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/client/ui-settings-models': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
   'packages/client/ui-settings-plugin-inventory': { kind: 'none', reason: 'Browser-side inventory projection; registers nothing model-facing.' },
   'packages/client/ui-settings-unarchive-sessions': { kind: 'none', reason: 'Browser-side settings page; registers nothing model-facing.' },
+  'packages/client/ui-settings-memory': { kind: 'none', reason: 'Browser-side settings page over the memory Remote namespace; the bio-memory plugin owns every model-visible tool, prompt section, and hook.' },
   'packages/client/locale': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
   'packages/client/web': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
   'packages/context/file-reference': { kind: 'indirect', reason: 'The discovery seam and grammar delegate model guidance to the composed provider.' },

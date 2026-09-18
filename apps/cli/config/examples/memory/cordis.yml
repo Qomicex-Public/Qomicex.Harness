@@ -1,0 +1,44 @@
+# Enable bio-inspired global memory for this profile.
+#
+# The memory plugin ships in the base bundle as `disabled: true`; this overlay
+# turns it on and pins the knobs a deployment cares about. Apply it with:
+#   dsh --profile web --patch ./memory.cordis.yml
+#
+# Every value below is the plugin's own default, spelled out so a reader can
+# see the whole configuration surface in one place.
+- id: bio-memory
+  disabled: false
+  config:
+    thresholds:
+      # Minimum excitability for a candidate to be written.
+      excitability: 0.45
+      # Forget-score boundaries: demote, archive, hard-forget.
+      forgetDemote: 0.45
+      forgetArchive: 0.65
+      forgetHard: 0.85
+    bounds:
+      workingCapacity: 64
+      stagingCapacity: 128
+    retrieval:
+      topK: 5
+      similarityThreshold: 0.35
+      # The vector route is reserved: no embedding service ships with dsh, so
+      # this stays false and retrieval is lexical (character-bigram BM25).
+      useVector: false
+    injection:
+      # Inject a hot pack at the first step of each turn.
+      hotPack: true
+      # Cap on one injected recall block.
+      recallMaxChars: 4000
+    authorization:
+      # The six-tuple policy plane. Off by default: enabling it lets memory
+      # gate tool calls, which is a deployment decision, not a memory default.
+      enabled: false
+      policyVersion: bio-memory-1
+    llmDistill:
+      # Optional model-assisted rephrasing during consolidation. Off by
+      # default; when enabled it needs both a provider and a model, and it can
+      # only reword a fact, never raise its confidence or trust.
+      enabled: false
+      provider: ''
+      model: ''

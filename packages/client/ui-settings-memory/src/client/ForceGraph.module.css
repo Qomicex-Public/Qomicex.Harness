@@ -1,0 +1,51 @@
+.wrap {
+  position: relative;
+  border: 1px solid var(--dsh-border, #2a2f45);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--dsh-surface, #16161e);
+}
+
+.canvas {
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.canvas:active {
+  cursor: grabbing;
+}
+
+.legend {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.swatchFact,
+.swatchScope {
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.swatchFact {
+  background: #7aa2f7;
+}
+
+.swatchScope {
+  background: #565f89;
+}

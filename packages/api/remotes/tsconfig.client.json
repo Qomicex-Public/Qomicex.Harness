@@ -78,6 +78,9 @@
       "path": "../settings-controller"
     },
     {
+      "path": "../memory-controller"
+    },
+    {
       "path": "../workspace-controller/tsconfig.client.json"
     },
     {
