@@ -1,19 +1,21 @@
 ---
 name: project-docs
-description: 项目知识中枢。通过 MCP Server 统一管理项目文档 + 提供代码感知分析。触发词：文档、规范、ADR、架构、设计、API、组件、项目结构、端点、路由。
+description: 项目知识中枢。用原生 TS 工具集统一管理项目文档 + 提供代码感知分析。触发词：文档、规范、ADR、架构、设计、API、组件、项目结构、端点、路由。
 ---
 
-# 项目知识中枢（Project Docs MCP）
+# 项目知识中枢（Project Docs）
 
 ## 概述
 
-MCP Server 提供两类能力：
+原生工具集（`@deepseek-ai/dsh-tool-project-docs`）提供两类能力，不依赖任何外部 Python 环境：
 1. **文档管理**：查询、创建 ADR、更新、整理归档、标签、生成文档
 2. **代码感知**：项目树、API 端点、前端路由、组件清单、配置摘要
 
+工具以裸名注册（无 `mcp__project-docs__` 前缀），项目根跟随当前会话工作区。
+
 ## 路由规则
 
-| 用户意图 | 调用的 MCP 工具 |
+| 用户意图 | 调用的工具 |
 |---------|----------------|
 | 查询文档 | `query_docs`（支持 `tags` 过滤，跨 docs/ 与 paths[] 外部文档检索） |
 | 创建 ADR | `create_adr` |
@@ -35,9 +37,11 @@ MCP Server 提供两类能力：
 | 看状态管理 | `stores` |
 | 看自定义 Hook | `hooks` |
 
+代码感知类工具可传 `path` 参数自定义扫描根（相对项目根），默认按通用约定目录（`src/`、`src-backend/`、`src-tauri/` 等）扫描，命中为空返回空列表。
+
 ## 在 junsi-dev-toolkit 中的使用
 
-根路由的 MCP 子代理调度会调用 `query_docs` 查询项目知识，并自动带出代码感知工具的上下文（端点、路由、组件等），注入给子技能。
+根路由的调度会调用 `query_docs` 查询项目知识，并自动带出代码感知工具的上下文（端点、路由、组件等），注入给子技能。
 
 ## 归档与标签
 
@@ -52,7 +56,3 @@ MCP Server 提供两类能力：
 - `organize_docs` 归档时会**跳过** paths[] 登记的文档（受保护，绝不移动）。
 - `index_docs(paths=["docs"])` 登记外部路径并重建索引；外部文档自动分配 `id`。
 - `tag_docs(ids=[...], tags=[...])` 给外部文档打标签；`query_docs(tags=[...])` / `list_tags` 跨内外检索（tags AND）。
-
-## 错误处理
-
-MCP Server 不可用时提示用户检查 Python 环境和 MCP 配置，不阻塞任务。

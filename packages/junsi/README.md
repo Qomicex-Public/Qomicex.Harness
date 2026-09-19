@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The `junsi/` group ships the tool packages that power the built-in **开发模式** (junsi) preset, adapted from dsh-junsi-dev-toolkit. The group covers `memory-tools` (seven project-scoped `.memory/` tools), `tool-search` (keyword search over a tool index), `git` (git passthrough with full host identity so credentials resolve), and `routing` (a systemPrompt section that routes requests to the preset's sub-skills). These packages are referenced only by the `junsi` preset's `agent.cordis.yml`, so ordinary non-JunSi sessions never load them.
+The `junsi/` group ships the tool packages that power the built-in **开发模式** (junsi) preset, adapted from dsh-junsi-dev-toolkit. The group covers `memory-tools` (seven project-scoped `.memory/` tools), `tool-search` (keyword search over a tool index), `git` (git passthrough with full host identity so credentials resolve), `project-docs` (document management plus code-aware scanners, no external Python), and `routing` (a systemPrompt section that routes requests to the preset's sub-skills). These packages are referenced only by the `junsi` preset's `agent.cordis.yml`, so ordinary non-JunSi sessions never load them.
 
 ## Table of Contents
 
@@ -26,6 +26,7 @@ The `junsi/` group ships the tool packages that power the built-in **开发模�
 | [`memory-tools/`](memory-tools/README.md) | Seven project-scoped memory tools (`store-decision` … `save-preference`) maintaining a `.memory/` directory |
 | [`tool-search/`](tool-search/README.md) | Keyword search over a tool index (`tool-search`) |
 | [`git/`](git/README.md) | Git passthrough tool (`git`) with full host identity |
+| [`project-docs/`](project-docs/README.md) | Twenty synchronous project-docs tools reading and maintaining `docs/junsi-dev-docs/` plus code-aware scanners |
 | [`routing/`](routing/README.md) | JunSi routing systemPrompt section |
 
 -----

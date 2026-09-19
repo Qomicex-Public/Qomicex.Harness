@@ -389,6 +389,7 @@
     { "path": "./packages/junsi/tool-search" },
     { "path": "./packages/junsi/git" },
     { "path": "./packages/junsi/memory-tools" },
+    { "path": "./packages/junsi/project-docs" },
     { "path": "./packages/junsi/routing" },
     { "path": "./apps/cli" },
     { "path": "./apps/desktop-host" },

@@ -20,7 +20,7 @@ const TOOL_INDEX = [
   { id: 'subagent / ralph / workflow', use: 'Cluster 多模型并行开发' },
   { id: 'tool-search', use: '本工具：按关键词找最合适的工具' },
   { id: 'schedule_create / schedule_list / schedule_delete', use: '创建/列出/删除会话级定时提醒' },
-  { id: 'mcp__project-docs__*', use: '项目文档/代码感知（架构/API/组件/路由）' },
+  { id: 'query_docs / create_adr / update_doc / api_endpoints / frontend_routes 等', use: '项目文档/代码感知（架构/API/组件/路由）' },
   { id: 'mcp__playwright__*', use: '浏览器自动化（playwright MCP）' },
 ]
 

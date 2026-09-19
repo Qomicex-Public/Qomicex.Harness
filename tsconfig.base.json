@@ -294,6 +294,7 @@
       "@deepseek-ai/dsh-junsi-routing": ["./packages/junsi/routing/src"],
       "@deepseek-ai/dsh-tool-git": ["./packages/junsi/git/src"],
       "@deepseek-ai/dsh-tool-memory": ["./packages/junsi/memory-tools/src"],
+      "@deepseek-ai/dsh-tool-project-docs": ["./packages/junsi/project-docs/src"],
       "@deepseek-ai/dsh-tool-tool-search": ["./packages/junsi/tool-search/src"],
       "@deepseek-ai/dsh-tool-wsl-pentest": ["./packages/security/wsl-pentest/src"],
       // BEGIN generated package aliases — pnpm run gen-tsconfig-paths

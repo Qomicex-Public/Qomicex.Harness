@@ -141,6 +141,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/junsi/tool-search': { kind: 'indirect', reason: 'One synchronous tool; the model-visible output is the returned index text, with no owned prompt, schema rendering, or persistent session state to structure.' },
   'packages/junsi/git': { kind: 'indirect', reason: 'One synchronous tool; the model-visible output is the returned git text, with no owned prompt, schema rendering, or persistent session state to structure.' },
   'packages/junsi/memory-tools': { kind: 'indirect', reason: 'Seven synchronous tools; each model-visible output is the returned confirmation or report text, with no owned prompt, schema rendering, or persistent in-session state to structure.' },
+  'packages/junsi/project-docs': { kind: 'indirect', reason: 'Twenty synchronous tools; each model-visible output is the returned document or code-scan report text, with no owned prompt, schema rendering, or persistent in-session state to structure.' },
   'packages/fs/fs': { kind: 'indirect', reason: 'The service interface delegates model rendering to dsh-tool-fs.' },
   'packages/fs/fs-local': { kind: 'indirect', reason: 'The provider backend delegates model rendering to dsh-tool-fs.' },
   'packages/hooks/hook-protocol': { kind: 'indirect', reason: 'Only the hook bridge plugins render decoded hook output to a model.' },
