@@ -1,0 +1,77 @@
+# Manual builder for the unsigned Windows x64 Desktop installer.
+#
+# Scope is deliberately narrow. macOS Desktop packaging resolves its Developer
+# ID certificate and notary credentials while electron-builder.config.mjs loads,
+# and the packaging scripts reject unsigned builds off Windows, so a
+# credential-free hosted runner can emit only the Windows installer. Linux is
+# not a Desktop release target (apps/desktop/README.md).
+name: Build Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_id:
+        description: Reverse-DNS application identifier for the Desktop package.
+        type: string
+        required: false
+        default: com.qomicex.harness
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # CI runs must never report to the production telemetry endpoint baked into
+  # apps/cli/cordis.yml.
+  DSH_TELEMETRY_DISABLED: '1'
+  PRIMARY_NODE_VERSION: '24'
+
+jobs:
+  desktop-windows:
+    name: Desktop (unsigned win-x64)
+    runs-on: windows-2025
+    timeout-minutes: 120
+    env:
+      DSH_DESKTOP_APP_ID: ${{ inputs.app_id }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Enable Windows Developer Mode (symlink support)
+        shell: pwsh
+        run: >-
+          reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
+          /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          dest: ${{ runner.temp }}/setup-pnpm-js-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          cache: pnpm
+
+      # node-pty and the other native addons compile here; node-gyp needs a
+      # Python interpreter on PATH.
+      - uses: actions/setup-python@v6.3.0
+        with:
+          python-version: '3.12'
+
+      - name: Install (immutable)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the unsigned Windows x64 installer
+        run: pnpm run package:desktop:win:x64:unsigned
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: qomicex-harness-win-x64
+          path: apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*
+          if-no-files-found: error
+          retention-days: 7

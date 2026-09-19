@@ -1,0 +1,64 @@
+# Manual builder for the dsh CLI npm tarballs.
+#
+# The CLI ships as the dsh family plus the vendored framework family: every
+# harness package declares @deepseek-ai/cordis as a peerDependency, so the dsh
+# tarballs alone cannot be installed.
+name: Build CLI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # CI runs must never report to the production telemetry endpoint baked into
+  # apps/cli/cordis.yml.
+  DSH_TELEMETRY_DISABLED: '1'
+  PRIMARY_NODE_VERSION: '24'
+
+jobs:
+  cli:
+    name: dsh CLI (npm tarballs)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          clean: true
+
+      - uses: pnpm/action-setup@v4
+        with:
+          dest: ${{ runner.temp }}/setup-pnpm-js-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install (immutable)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build:official
+
+      # Pack order carries no meaning; both families feed the same install.
+      - name: Pack the dsh family
+        run: pnpm run release:pack --family dsh --out dist/npm
+
+      - name: Pack the vendored framework
+        run: pnpm run release:pack --family vendor --out dist/npm-vendor
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dsh-cli-tarballs
+          path: |
+            dist/npm/*
+            dist/npm-vendor/*
+          if-no-files-found: error
+          retention-days: 7
