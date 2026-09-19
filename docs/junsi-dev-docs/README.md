@@ -1,11 +1,12 @@
 # 项目文档索引
-最后更新：2026-09-19 20:46
+最后更新：2026-09-19 21:44
 
 ## 1-决策记录
 
 *ADR 架构决策记录*
 
 - [ADR-001：内置渗透测试与 JunSi 开发模式 Agent 预设](1-决策记录/ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设.md)
+- [ADR-002：内置 junsi 预设追加上游 project-docs MCP 与 routing/shared](1-决策记录/ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared.md)
 
 ## 2-架构设计
 
@@ -105,6 +106,7 @@
 - `i18n--translation-prompt` [Translation prompt (pipeline asset)](../i18n/translation-prompt.md)  `i18n`
 - `i18n--translation-rules` [Translation rules](../i18n/translation-rules.md)  `i18n`
 - `junsi-dev-docs--1-决策记录--ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设` [ADR-001：内置渗透测试与 JunSi 开发模式 Agent 预设](1-决策记录/ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设.md)  `1-决策记录`
+- `junsi-dev-docs--1-决策记录--ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared` [ADR-002：内置 junsi 预设追加上游 project-docs MCP 与 routing/shared](1-决策记录/ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared.md)  `1-决策记录`
 - `module-graph` [Shared-instance dependency graph](../module-graph.md)
 - `persistence-catalog` [Session Persistence Event Catalog](../persistence-catalog.md)
 - `persistence-changes--2026-09-11-initial` [Initial persistence type baseline](../persistence-changes/2026-09-11-initial.md)  `persistence-changes`
@@ -247,4 +249,4 @@
 - **historical-formats** (4): [README](../persistence-changes/historical-formats/README.md), [v0](../persistence-changes/historical-formats/v0.md), [v1](../persistence-changes/historical-formats/v1.md), [v2](../persistence-changes/historical-formats/v2.md)
 - **framework** (3): [events](../user/develop/framework/events.md), [index](../user/develop/framework/index.md), [service](../user/develop/framework/service.md)
 - **practice** (3): [dynamic-cordis](../user/develop/practice/dynamic-cordis.md), [index](../user/develop/practice/index.md), [llm-adapter](../user/develop/practice/llm-adapter.md)
-- **1-决策记录** (1): [ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设](1-决策记录/ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设.md)
+- **1-决策记录** (2): [ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设](1-决策记录/ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设.md), [ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared](1-决策记录/ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared.md)
