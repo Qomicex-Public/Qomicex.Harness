@@ -136,9 +136,10 @@ export function detectAgentClaim(message: string): CaptureSignal | null {
  * Extract facts from a tool result.
  *
  * Only the harness's own structural facts are extracted: a manifest read
- * yields its declared package manager, and a directory listing yields the
- * files it actually saw. Everything else is captured as an observation and
- * left for consolidation.
+ * yields its declared package manager. Everything else is captured as an
+ * observation and left for consolidation. A search or listing is deliberately
+ * not promoted to a fact: how many entries it returned is procedural noise,
+ * not a property of the working directory worth remembering.
  * @param call - The tool call that produced the result.
  * @param result - The result content, already reduced to a JSON value.
  * @returns Zero or more signals.
@@ -157,22 +158,6 @@ export function extractFromToolResult(call: ToolCallView, result: JsonValue): Ca
           subject: 'project',
           predicate: 'uses_package_manager',
           object: normalizeToken(manifest.packageManager),
-        },
-      })
-    }
-  }
-  if (call.name === 'glob' || call.name === 'grep') {
-    const count = countMatches(result)
-    if (count !== undefined) {
-      signals.push({
-        type: 'tool_verified_fact',
-        strength: 0.7,
-        epistemic: 'tool_verified',
-        sourceType: 'tool_verified',
-        extracted: {
-          subject: 'project',
-          predicate: 'search_result_count',
-          object: count,
         },
       })
     }
@@ -220,27 +205,6 @@ function extractText(result: JsonValue): string | undefined {
         .filter(block => block.type === 'text' && typeof block.text === 'string')
         .map(block => block.text as string)
       if (texts.length > 0) return texts.join('\n')
-    }
-  }
-  return undefined
-}
-
-/**
- * Count the entries a search result reports.
- * @param result - The tool result value.
- * @returns The count, or `undefined` when the result carries no countable list.
- */
-function countMatches(result: JsonValue): number | undefined {
-  if (Array.isArray(result)) return result.length
-  if (typeof result === 'object' && result !== null) {
-    for (const key of ['files', 'matches', 'results', 'paths']) {
-      const value = result[key]
-      if (Array.isArray(value)) return value.length
-    }
-    const text = typeof result.content === 'string' ? result.content : undefined
-    if (text !== undefined) {
-      const lines = text.split('\n').filter(line => line.trim() !== '')
-      return lines.length
     }
   }
   return undefined

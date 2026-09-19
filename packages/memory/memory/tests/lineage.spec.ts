@@ -197,13 +197,16 @@ describe('signal detection', () => {
     expect(extractFromToolResult({ name: 'read', arguments: {} }, { content: JSON.stringify({ name: 'x' }) })).toEqual([])
   })
 
-  it('counts search results across the shapes a search returns', () => {
-    expect(extractFromToolResult({ name: 'glob', arguments: {} }, ['a', 'b'])[0]?.extracted?.object).toBe(2)
-    expect(extractFromToolResult({ name: 'grep', arguments: {} }, { files: ['a'] })[0]?.extracted?.object).toBe(1)
-    expect(extractFromToolResult({ name: 'grep', arguments: {} }, { matches: [] })[0]?.extracted?.object).toBe(0)
-    expect(extractFromToolResult({ name: 'grep', arguments: {} }, { results: ['a', 'b', 'c'] })[0]?.extracted?.object).toBe(3)
-    expect(extractFromToolResult({ name: 'glob', arguments: {} }, { paths: ['a'] })[0]?.extracted?.object).toBe(1)
-    expect(extractFromToolResult({ name: 'grep', arguments: {} }, { content: 'a\nb\n' })[0]?.extracted?.object).toBe(2)
+  it('does not count search results as facts', () => {
+    // A search hit count is procedural noise, not a property worth
+    // remembering; it used to be promoted as search_result_count, which
+    // spammed the store with one flimsy fact per search.
+    expect(extractFromToolResult({ name: 'glob', arguments: {} }, ['a', 'b'])).toEqual([])
+    expect(extractFromToolResult({ name: 'grep', arguments: {} }, { files: ['a'] })).toEqual([])
+    expect(extractFromToolResult({ name: 'grep', arguments: {} }, { matches: [] })).toEqual([])
+    expect(extractFromToolResult({ name: 'grep', arguments: {} }, { results: ['a', 'b', 'c'] })).toEqual([])
+    expect(extractFromToolResult({ name: 'glob', arguments: {} }, { paths: ['a'] })).toEqual([])
+    expect(extractFromToolResult({ name: 'grep', arguments: {} }, { content: 'a\nb\n' })).toEqual([])
     expect(extractFromToolResult({ name: 'grep', arguments: {} }, { other: 1 })).toEqual([])
   })
 
