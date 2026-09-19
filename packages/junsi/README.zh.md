@@ -13,12 +13,12 @@ kind: "package-group"
 
 ## 目录
 
-- [包](#包)
-- [相关文档](#相关文档)
+- [包](#packages)
+- [相关文档](#related-documentation)
 
 -----
 
-<a id="包"></a>
+<a id="packages"></a>
 ## 包
 
 | 包 | 提供内容 |
@@ -30,7 +30,7 @@ kind: "package-group"
 
 -----
 
-<a id="相关文档"></a>
+<a id="related-documentation"></a>
 ## 相关文档
 
-junsi 预设组合及其技能位于 `preset/agent-presets/presets/junsi`。工具注册契约见 [tools 子系统参考](../../docs/subsystems/tools.md)；技能加载见 [skills 子系统参考](../../docs/subsystems/skills.md)。
+junsi 预设组合及其技能位于 `preset/agent-presets/presets/junsi`。工具注册契约见 [tools 子系统参考](../../docs/subsystems/tools.zh.md)；技能加载见 [skills 子系统参考](../../docs/subsystems/skills.zh.md)。

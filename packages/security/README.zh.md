@@ -13,12 +13,12 @@ kind: "package-group"
 
 ## 目录
 
-- [包](#包)
-- [相关文档](#相关文档)
+- [包](#packages)
+- [相关文档](#related-documentation)
 
 -----
 
-<a id="包"></a>
+<a id="packages"></a>
 ## 包
 
 | 包 | 提供内容 |
@@ -27,7 +27,7 @@ kind: "package-group"
 
 -----
 
-<a id="相关文档"></a>
+<a id="related-documentation"></a>
 ## 相关文档
 
-pentest 预设组合及其 OWASP WSTG 技能位于 `preset/agent-presets/presets/pentest`。基础进程隔离栈见 [sandbox 子系统参考](../../docs/subsystems/sandbox.md)。
+pentest 预设组合及其 OWASP WSTG 技能位于 `preset/agent-presets/presets/pentest`。基础进程隔离栈见 [sandbox 子系统参考](../../docs/subsystems/sandbox.zh.md)。
