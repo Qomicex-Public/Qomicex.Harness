@@ -289,6 +289,13 @@
       "@deepseek-ai/dsh-session-log-export/client": ["./packages/session-query/session-log-export/src/client"],
       "@deepseek-ai/dsh-compaction-image-offload/projection": ["./packages/compaction/compaction-image-offload/src/projection.ts"],
       "@deepseek-ai/dsh-session-format-catalog/message-projections": ["./packages/session/session-format-catalog/src/message-projections.ts"],
+      // JunSi / pentest built-in preset tool packages: names differ from their
+      // directories, so they stay hand-written like the controller aliases above.
+      "@deepseek-ai/dsh-junsi-routing": ["./packages/junsi/routing/src"],
+      "@deepseek-ai/dsh-tool-git": ["./packages/junsi/git/src"],
+      "@deepseek-ai/dsh-tool-memory": ["./packages/junsi/memory-tools/src"],
+      "@deepseek-ai/dsh-tool-tool-search": ["./packages/junsi/tool-search/src"],
+      "@deepseek-ai/dsh-tool-wsl-pentest": ["./packages/security/wsl-pentest/src"],
       // BEGIN generated package aliases — pnpm run gen-tsconfig-paths
       "@deepseek-ai/dsh-acp": ["./packages/acp/acp/src"],
       "@deepseek-ai/dsh-acp-app": ["./packages/bundle/acp-app/src"],

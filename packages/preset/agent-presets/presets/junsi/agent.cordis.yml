@@ -1,0 +1,175 @@
+# The `junsi` agent preset: JunSi development mode, adapted as a built-in preset.
+#
+# This is the JunSi 开发工具包 workflow as a shipped preset. It inherits the
+# standard mode's full capability surface (shell, filesystem, jobs, goals, plan,
+# compaction, delegation) and adds the four built-in JunSi tool plugins plus the
+# routing prompt section and diagnostics skills. The JunSi tool packages are
+# referenced only by this preset, so ordinary non-JunSi sessions never load them.
+#
+# All capabilities mount through the same standing per-scope composition rules
+# as the shipped `standard` preset: rows that publish a service live inside an
+# `isolate` realm group, plain tool rows register into the preset's scoped layer
+# of the host registry, and no row publishes into the root realm.
+
+# ── identity ────────────────────────────────────────────────────────────────
+
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    suffix: Your working directory is {{cwd}}.
+    prefix: >-
+      You are a helpful software engineer assistant.
+      You are a coding agent powered by the {{model}} model. You carry the
+      JunSi 开发模式 (junsi-dev-toolkit): route requests to the right sub-skill,
+      keep decisions/progress in `.memory/`, and follow the task-completion
+      checklist. Before starting, check whether the remote repo already
+      implements/fixes the user's request.
+
+- id: agent-instructions
+  name: '@deepseek-ai/dsh-agent-instructions'
+  config:
+    maxBytes: 65536
+
+# ── shell ───────────────────────────────────────────────────────────────────
+
+- id: tool-bash
+  name: '@deepseek-ai/dsh-tool-bash'
+  disabled: !!js process.platform === 'win32'
+
+- id: tool-pwsh
+  name: '@deepseek-ai/dsh-tool-pwsh'
+  disabled: !!js process.platform !== 'win32'
+
+# ── filesystem ──────────────────────────────────────────────────────────────
+
+- id: tool-fs
+  name: '@deepseek-ai/dsh-tool-fs'
+
+- id: tool-fs-search
+  name: '@deepseek-ai/dsh-tool-fs-search'
+  config:
+    sampleOverCapGlobResults: false
+
+# ── background jobs ─────────────────────────────────────────────────────────
+
+- id: tool-jobs
+  name: '@deepseek-ai/dsh-tool-jobs'
+
+# ── skills ──────────────────────────────────────────────────────────────────
+
+# Skills are bundled under this preset's `skills/` directory and discovered by
+# `skill-filesystem`; no `customSkillDirs` is needed.
+- id: skill-filesystem
+  name: '@deepseek-ai/dsh-skill-filesystem'
+
+- id: tool-skill
+  name: '@deepseek-ai/dsh-tool-skill'
+
+# ── goals ───────────────────────────────────────────────────────────────────
+
+- id: command-goal
+  name: '@deepseek-ai/dsh-command-goal'
+
+- id: tool-goal
+  name: '@deepseek-ai/dsh-tool-goal'
+
+# ── plan mode ───────────────────────────────────────────────────────────────
+
+- id: planning
+  name: cordis:group
+  group: true
+  isolate:
+    planMode: true
+  config:
+    - id: plan-mode
+      name: '@deepseek-ai/dsh-plan-mode'
+      config:
+        section: |
+              You are in plan mode. Stay in plan mode until exit_plan_mode succeeds or the user switches the session mode. Imperative language to implement changes means plan the implementation, not execute it. A user's conversational agreement — including an answer confirming something you asked — approves nothing and does not end plan mode; fold the confirmed decision into the plan and submit it through exit_plan_mode.
+
+              Explore first. Use non-mutating reads, searches, static analysis, and checks to ground the plan in the actual repository. Do not edit or write files, change configuration, run formatters or code generation that rewrites tracked files, commit, or otherwise carry out the plan. Prefer existing functions and patterns over new machinery.
+
+              The tool catalog stays the same across modes for request-cache stability. These plan-mode rules override any later tool description or guidance that suggests using mutation tools; those tools remain listed to keep the tool catalog unchanged.
+
+# ── compaction ──────────────────────────────────────────────────────────────
+
+- id: compaction
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+    toolResultPruner: true
+  config:
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+
+    - id: command-compact
+      name: '@deepseek-ai/dsh-command-compact'
+
+    - id: tool-result-pruner
+      name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+      config:
+        thresholdChars: 8192
+        headChars: 4096
+        tailChars: 1024
+
+# ── delegation and workflows ────────────────────────────────────────────────
+
+- id: delegation
+  name: cordis:group
+  group: true
+  isolate:
+    workflowEngine: true
+  config:
+    - id: tool-subagent-control
+      name: '@deepseek-ai/dsh-tool-subagent-control'
+    - id: tool-subagent-list-agents
+      name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
+    - id: tool-subagent
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config: { provider: spawn, toolName: subagent, backgroundMode: continuable }
+    - id: tool-subagent-fork
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config: { provider: fork, toolName: subagent_fork, backgroundMode: continuable }
+    - id: tool-workflow
+      name: '@deepseek-ai/dsh-tool-workflow'
+    - id: tool-ralph
+      name: '@deepseek-ai/dsh-tool-ralph'
+      config: { subagentProvider: spawn, maxRounds: 64 }
+
+# ── remaining model-facing rows ─────────────────────────────────────────────
+
+- id: tool-ask-user
+  name: '@deepseek-ai/dsh-tool-ask-user'
+
+- id: tool-todo
+  name: '@deepseek-ai/dsh-tool-todo'
+  config: { allowParallelInProgress: true }
+
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config: { fetch: false, searchTimeoutMs: 60000 }
+
+# ── schedule ────────────────────────────────────────────────────────────────
+
+- id: schedule
+  name: '@deepseek-ai/dsh-schedule'
+
+# ── JunSi built-in tool plugins ─────────────────────────────────────────────
+
+- id: memory-tools
+  name: '@deepseek-ai/dsh-tool-memory'
+- id: tool-search
+  name: '@deepseek-ai/dsh-tool-tool-search'
+- id: git
+  name: '@deepseek-ai/dsh-tool-git'
+- id: routing
+  name: '@deepseek-ai/dsh-junsi-routing'
+- id: mcp-playwright
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: playwright
+    transport: stdio
+    command: npx
+    args:
+      - '@playwright/mcp@latest'

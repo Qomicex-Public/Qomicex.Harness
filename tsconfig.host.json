@@ -385,6 +385,11 @@
     { "path": "./packages/lsp/lsp" },
     { "path": "./packages/lsp/lsp-stdio" },
     { "path": "./packages/lsp/tool-lsp" },
+    { "path": "./packages/security/wsl-pentest" },
+    { "path": "./packages/junsi/tool-search" },
+    { "path": "./packages/junsi/git" },
+    { "path": "./packages/junsi/memory-tools" },
+    { "path": "./packages/junsi/routing" },
     { "path": "./apps/cli" },
     { "path": "./apps/desktop-host" },
     { "path": "./apps/desktop" }

@@ -1,0 +1,49 @@
+# MAPPING_TABLE — 移植映射表
+# 源：C:\Project\dsh-junsi-dev-toolkit\plugins\memory-tools.mjs（515 行）
+# 目标：packages/junsi/memory-tools/src/index.ts（@deepseek-ai/dsh-tool-memory）
+# 策略：逐字翻译，仅适配目标 API 类型与 TS 严格性。
+
+## 模块形态
+source  : preset-local ESM 插件（仅 Node builtins + tools 服务）
+target  : function plugin（name/inject/apply，无 default export，无 Config）
+plugin-name : memory-tools            -> tool-memory
+inject  : ['tools']
+
+## 依赖
+source  : node:fs/promises, node:path
+target  : node:fs/promises, node:path, @deepseek-ai/cordis(Context),
+          @deepseek-ai/dsh-tools(defineTool/ToolRunContext)
+
+## 核心常量（原样保留）
+LIMITS.indexLines: 200
+LIMITS.indexBytes: 25KB
+LIMITS.handoffBytes: 12KB
+LIMITS.historyMax: 20
+LIMITS.compactPreference: 800
+LIMITS.doctorHandoffStaleDays: 7
+
+## 私有 helper 逐字保留
+workspaceOf            JS 可选链 -> TS 安全链 exec?.agent?.session?.header?.cwd（目标确认该链存在）
+memoryDir / ensureMemoryDir / readOrEmpty / timestamp / slugify
+decisionFiles / readDecisionTitle / measureText
+listRecentDecisions / writeIndex / archiveProgress / appendSessionTrace / archiveHandoff / ensureGitignore
+
+## 7 个工具映射
+store-decision    params(title/scenario/decision/impact)   -> 决策文件 `## 决策记录：{title}`
+save-progress     params(task/stage/done/todo/next/files)   -> current.md + INDEX.md + session trace
+prepare-handoff   params(task/status/done/pending/files/decisions/next) -> HANDOFF.md + index + trace
+restore-handoff   params(complete)                          -> 读取，complete=true 调用 archiveHandoff('handoff-done')
+list-decisions    params(keyword/limit)                     -> AND/OR 匹配，limit 钳制 1..50
+memory-doctor     params()                                  -> 审计输出
+save-preference   params(preference)                        -> preferences.md 合并追加（>compactPreference*3 拒绝）
+
+## 边界（逐字保留）
+超限拒绝 / historyMax 裁剪 / slug 长度 40 / limit 钳制 20/50 / 大 preferences 拒绝
+
+## 架构适配点
+source buildParameters() 手写 JSON schema -> target 用 defineTool 的 parameters DSL（snake_case 同源）
+source ctx.tools.register({...})          -> target ctx.tools.register(defineTool({...})) + output render
+source register 回调直接压缩             -> target 抽象为 apply 内 register()，7 个工具带 typed args object
+
+## 备注
+测试：tests/memory-tools.spec.ts（vitest，真实临时目录，exec={agent:{session:{header:{cwd:tmpDir}}}}）
