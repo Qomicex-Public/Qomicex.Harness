@@ -25,10 +25,16 @@ body[data-dsh-p13n-bg='image'] {
   background-repeat: no-repeat;
 }
 
-/* The app frame paints an opaque base; let the canvas show through instead. */
+/* The app frame paints an opaque base; let the canvas show through instead.
+   The sidebar grid item is a second opaque layer over the same canvas, so a
+   background must transparentize it too or the sidebar column keeps a solid
+   band where the paint would otherwise show. */
 body[data-dsh-p13n-bg='solid'] [data-dsh-app],
 body[data-dsh-p13n-bg='gradient'] [data-dsh-app],
-body[data-dsh-p13n-bg='image'] [data-dsh-app] {
+body[data-dsh-p13n-bg='image'] [data-dsh-app],
+body[data-dsh-p13n-bg='solid'] [data-dsh-sidebar-col],
+body[data-dsh-p13n-bg='gradient'] [data-dsh-sidebar-col],
+body[data-dsh-p13n-bg='image'] [data-dsh-sidebar-col] {
   background-color: transparent;
 }
 
@@ -63,7 +69,6 @@ body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-sidebar='on'] [data-dsh-app] 
 }
 
 body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-sidebar='on'] [data-dsh-sidebar-col] {
-  background-color: transparent;
   border-right-color: color-mix(in srgb, var(--dsw-alias-border-l3) 55%, transparent);
 }
 
