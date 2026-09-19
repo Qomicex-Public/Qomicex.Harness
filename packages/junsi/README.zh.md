@@ -9,7 +9,7 @@ kind: "package-group"
 
 ## 摘要
 
-`junsi/` 组持有支撑内置**开发模式**（junsi）预设的工具包，移植自 dsh-junsi-dev-toolkit。该组包含 `memory-tools`（七个项目级 `.memory/` 工具）、`tool-search`（在工具索引中按关键词检索）、`git`（以完整宿主身份透传 git，使凭据可解析）与 `routing`（将请求路由到预设子技能的一段 systemPrompt）。这些包仅在 `junsi` 预设的 `agent.cordis.yml` 中引用，普通非 JunSi 会话不会加载它们。
+`junsi/` 组持有支撑内置**开发模式**（junsi）预设的工具包，移植自 dsh-junsi-dev-toolkit。该组包含 `memory-tools`（七个项目级 `.memory/` 工具）、`tool-search`（在工具索引中按关键词检索）、`git`（以完整宿主身份透传 git，使凭据可解析）、`project-docs`（文档管理与代码感知扫描器，无外部 Python）与 `routing`（将请求路由到预设子技能的一段 systemPrompt）。这些包仅在 `junsi` 预设的 `agent.cordis.yml` 中引用，普通非 JunSi 会话不会加载它们。
 
 ## 目录
 
@@ -26,6 +26,7 @@ kind: "package-group"
 | [`memory-tools/`](memory-tools/README.zh.md) | 七个项目级记忆工具（`store-decision` … `save-preference`），维护 `.memory/` 目录 |
 | [`tool-search/`](tool-search/README.zh.md) | 在工具索引中按关键词检索（`tool-search`） |
 | [`git/`](git/README.zh.md) | 以完整宿主身份透传 git 的工具（`git`） |
+| [`project-docs/`](project-docs/README.zh.md) | 二十个同步 project-docs 工具，读写维护 `docs/junsi-dev-docs/` 并含代码感知扫描器 |
 | [`routing/`](routing/README.zh.md) | JunSi 路由 systemPrompt 段 |
 
 -----

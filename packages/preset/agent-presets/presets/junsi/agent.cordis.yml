@@ -173,18 +173,5 @@
     command: npx
     args:
       - '@playwright/mcp@latest'
-- id: mcp-project-docs
-  name: '@deepseek-ai/dsh-mcp-client'
-  config:
-    serverName: project-docs
-    transport: stdio
-    command: python
-    # Development-machine path to the bundled project-docs MCP server; deployers
-    # must repoint `args` to the installed location of mcp-server.py (requires
-    # `pip install mcp pydantic`). Missing Python or a stale path fails the server
-    # start loudly rather than silently.
-    args:
-      - 'C:/Project/Qomicex.Harness/packages/junsi/project-docs/mcp-server.py'
-    cwd: !!js process.cwd()
-    env:
-      PYTHONUNBUFFERED: '1'
+- id: project-docs
+  name: '@deepseek-ai/dsh-tool-project-docs'

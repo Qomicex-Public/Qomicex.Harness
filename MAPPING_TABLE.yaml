@@ -48,3 +48,69 @@ source register 回调直接压缩             -> target 抽象为 apply 内 reg
 
 ## 备注
 测试：tests/memory-tools.spec.ts（vitest，真实临时目录，exec={agent:{session:{header:{cwd:tmpDir}}}}）
+
+# ─────────────────────────────────────────────────────────────────────────
+# project-docs: Python MCP → TS native tool package
+# 源：packages/junsi/project-docs/mcp-server.py（1327 行，含上游 set_project_root 前的旧版）
+# 目标：packages/junsi/project-docs/src/index.ts（@deepseek-ai/dsh-tool-project-docs）
+# 策略：适配新架构——不是 MCP 服务，而是 defineTool 函数插件；项目根不再探测/可变，
+#       改用 exec.agent.session.header.cwd（同 memory-tools.workspaceOf），根除 cwd 错位。
+# 决策：store-decision 2026-09-19（project-docs 从 Python MCP 移植为 TS 原生工具包）
+
+## 模块形态
+source  : MCP stdio 服务（mcp.server.Server + list_tools/call_tool + 全局 PROJECT_ROOT）
+target  : function plugin（name/inject/apply，无 default export）
+plugin-name : project-docs（MCP serverName） -> tool-project-docs（包名 @deepseek-ai/dsh-tool-project-docs）
+inject  : ['tools']
+
+## 依赖
+source  : mcp、pydantic、os/re/subprocess/shutil/datetime/pathlib（外部 pip 依赖，不可靠）
+target  : node:fs/promises, node:path, node:os, node:util（零外部依赖）
+          + @deepseek-ai/cordis(Context) + @deepseek-ai/dsh-tools(defineTool/ToolRunContext)
+
+## 项目根（关键映射，架构级变更）
+source  : detect_project_root() 从 cwd 向上找 package.json/AGENTS.md/.git；全局可变 PROJECT_ROOT/DOCS_ROOT
+          上游新加 set_project_root(path) 运行时改全局（绕过 HOME 误判）
+target  : projectRootOf(exec) = exec.agent?.session.header.cwd ?? process.cwd()，一次性解析，无全局可变态
+          -> 不需要 set_project_root；每个工具独立解析根，天然跟随会话工作区
+
+## 20 个工具映射（裸名，去掉 mcp__project-docs__ 前缀）
+文档类（10）：
+  query_docs         keywords/category/tags            -> search_docs：扫描 docs/junsi-dev-docs + paths[] 外部
+  create_adr         title/background/decision/alternatives/impacts -> ADR-NNN-*.md（自动编号）
+  update_doc         doc_path/content/change_description -> 已存在则追加"### date 更新"，否则创建
+  index_docs         dry_run/roots/include_root/paths   -> run_index_docs：重建 docs-index.json
+  organize_docs      dry_run/assignments/roots/include_root -> run_organize：默认 dry_run 预览
+  revert_docs        dry_run/paths                     -> run_revert：按 original_path 回滚
+  tag_docs           paths/ids/tags/mode              -> 改写 docs[].explicit_tags 写回索引
+  list_tags          tag                              -> 列 tag 及其文档
+  generate_docs      doc_type/content/target_path/append_to_existing -> 写专题文档
+代码感知（10，全部加可选 path 参数自定义扫描根）：
+  project_tree       subpath/depth/path               -> _safe_listdir 层次树
+  api_endpoints      path                             -> 扫后端 C#/Java/Kotlin 端点（通用相对路径）
+  frontend_routes    path                             -> 扫前端 TSX <Route>/路径对象
+  component_inventory dir/path                        -> 扫 React 组件/Props 接口
+  project_config     path                             -> package.json/.csproj/Cargo.toml 摘要
+  tauri_commands     path                             -> 扫 src-tauri #[tauri::command]
+  tauri_capabilities path                             -> 扫 src-tauri/capabilities/*.json
+  api_client         path                             -> 扫 src/api 前端请求
+  stores             path                             -> 扫 src/stores
+  hooks              path                             -> 扫 src/hooks use*
+  code_context       path(必填)                       -> 单文件语言/层/定义/导出
+
+## 代码感知路径（关键映射，架构级变更）
+source  : 硬编码 Qomicex.Tauri 专属目录（src-backend/Qomicex.Launcher.Backend.Neo、src-tauri 等）
+          扫描根固定 PROJECT_ROOT
+target  : 通用相对路径约定（src/、src-backend/、src-tauri/ 等），命中为空返回空列表
+          每工具加可选 path 参数：基础扫描根（默认项目根）；存在则扫描 {root}/{path}
+
+## 架构适配点
+source mcp Tool(name/description/inputSchema) -> target defineTool({name/description/parameters/output/execute})
+source 全局最新 PROJECT_ROOT/DOCS_ROOT        -> target 每 execute 内 projectRootOf(exec) 派生 DOCS_ROOT
+source JSON dump/list[TextContent]            -> target string 返回 + generic text 卡片
+
+## 备注
+测试：tests/project-docs.spec.ts（vitest，真实临时目录工作区，exec={agent:{session:{header:{cwd:tmpDir}}}}）
+删除：mcp-server.py / requirements.txt / start-mcp.bat / start-mcp.sh
+preset 改动：agent.cordis.yml 删 mcp-project-docs(dsh-mcp-client) 行，加原生 @deepseek-ai/dsh-tool-project-docs
+routing/tool-search 改动：mcp__project-docs__* 改为裸工具名（query_docs/create_adr/update_doc 等）

@@ -33,7 +33,7 @@ const ROUTING_TEXT = `# junsi-dev-toolkit 开发任务路由
 
 memory 工具（\`store-decision\`/\`save-progress\`/\`prepare-handoff\`/\`restore-handoff\`/\`list-decisions\`/\`memory-doctor\`/\`save-preference\`）把数据写入当前工作区 \`.memory/\` 目录。
 
-项目文档/API/组件/路由/ADR 相关请求使用 \`mcp__project-docs__*\` 工具（query_docs/create_adr/update_doc 等）。通用 AI 合规规则见 \`shared/ai-compliance\` 技能。`
+项目文档/API/组件/路由/ADR 相关请求使用 project-docs 工具（\`query_docs\`/\`create_adr\`/\`update_doc\` 等）。通用 AI 合规规则见 \`shared/ai-compliance\` 技能。`
 
 export function apply(ctx: Context): void {
   ctx.effect(() => ctx.systemPrompt.section({

@@ -7924,6 +7924,19 @@ importers:
         specifier: workspace:^
         version: link:../../core/tools
 
+  packages/junsi/project-docs:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:^
+        version: link:../../core/tools
+
   packages/junsi/routing:
     dependencies:
       '@deepseek-ai/schemastery':
