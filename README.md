@@ -13,7 +13,7 @@ It keeps the upstream **everything-is-a-plugin** architecture and the [Cordis](h
 
 ## What this distribution adds
 
-Every runtime addition is an ordinary dsh plugin mounted from a profile bundle like any other; `@deepseek-ai/dsh-memory` ships disabled.
+Every runtime addition is an ordinary dsh plugin mounted from a profile bundle like any other. The `base` bundle ships `@deepseek-ai/dsh-memory` disabled as an opt-in capability; the Web bundle enables it, because the Memory Settings page edits that plugin's configuration and previews its store.
 
 | Plugin | Package | What it does |
 |---|---|---|

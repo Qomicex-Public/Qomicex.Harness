@@ -13,7 +13,7 @@ Qomicex Harness 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-h
 
 ## 本发行版新增
 
-运行期新增项都是普通的 dsh 插件，与其他插件一样由 profile 的 bundle 列表挂载；`@deepseek-ai/dsh-memory` 默认关闭。
+运行期新增项都是普通的 dsh 插件，与其他插件一样由 profile 的 bundle 列表挂载。`base` bundle 把 `@deepseek-ai/dsh-memory` 作为可选能力默认关闭；Web bundle 会启用它，因为记忆设置页要编辑该插件的配置并预览其存储。
 
 | 插件 | 包 | 作用 |
 |---|---|---|
