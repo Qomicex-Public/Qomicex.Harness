@@ -212,6 +212,7 @@ export function AppFrame({
       data-rightbar-fullscreen={layoutInfo.rightbarFullscreen || undefined}
       data-rightbar-instant={layoutInfo.rightbarInstant || undefined}
       data-dragging={dragging || undefined}
+      data-dsh-app=""
     >
       <DocumentTitle
         productTitle={productTitle}

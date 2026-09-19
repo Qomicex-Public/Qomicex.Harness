@@ -380,6 +380,15 @@
     - id: timeout-policy
       name: '@deepseek-ai/dsh-tool-call-timeout-policy'
 
+    # Catastrophic shell-command gate (deny user-home/drive-root/harness-home
+    # deletion, disk formatting, raw device writes, fork bombs; ask before
+    # recursive force deletion, force-push, destructive SQL, host power). Its
+    # user-owned layer — master switch, keyword/pattern rules, inline check
+    # script, allow paths — is the Security Review settings page over the
+    # `shell-command-guard` settings namespace.
+    - id: shell-command-guard
+      name: '@deepseek-ai/dsh-shell-command-guard'
+
     - id: spill-local
       name: '@deepseek-ai/dsh-spill-local'
 

@@ -1,0 +1,2666 @@
+{
+  "version": 2,
+  "updated": "2026-09-19 12:30",
+  "paths": [
+    {
+      "id": "docs",
+      "path": "docs"
+    },
+    {
+      "id": "BENCHMARK",
+      "path": "BENCHMARK.md"
+    },
+    {
+      "id": "BRAND_GUIDELINES",
+      "path": "BRAND_GUIDELINES.md"
+    },
+    {
+      "id": "SAFETY",
+      "path": "SAFETY.md"
+    },
+    {
+      "id": "THIRD_PARTY_NOTICES",
+      "path": "THIRD_PARTY_NOTICES.md"
+    }
+  ],
+  "docs": [
+    {
+      "path": "BENCHMARK.md",
+      "id": "BENCHMARK",
+      "external": true,
+      "title": "Running benchmarks",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": null,
+      "i18n": null,
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "BRAND_GUIDELINES.md",
+      "id": "BRAND_GUIDELINES",
+      "external": true,
+      "title": "DeepSeek Harness Brand Asset Usage Guidelines",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "BRAND_GUIDELINES.zh.md",
+      "i18n": "BRAND_GUIDELINES.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "SAFETY.md",
+      "id": "SAFETY",
+      "external": true,
+      "title": "Safety",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "SAFETY.zh.md",
+      "i18n": "SAFETY.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "id": "THIRD_PARTY_NOTICES",
+      "external": true,
+      "title": "Third-Party Notices",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": null,
+      "i18n": null,
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/AGENTS.md",
+      "id": "AGENTS",
+      "external": true,
+      "title": "AGENTS.md — The documentation standard",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": null,
+      "i18n": null,
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/agent-lifecycle.md",
+      "id": "agent-lifecycle",
+      "external": true,
+      "title": "Agent Turn And Step Lifecycle",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/agent-lifecycle.zh.md",
+      "i18n": "docs/agent-lifecycle.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/api-gateway.md",
+      "id": "api-gateway",
+      "external": true,
+      "title": "API Gateway",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/api-gateway.zh.md",
+      "i18n": "docs/api-gateway.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/architecture.md",
+      "id": "architecture",
+      "external": true,
+      "title": "DeepSeek Harness Architecture",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/architecture.zh.md",
+      "i18n": "docs/architecture.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/capability-seams.md",
+      "id": "capability-seams",
+      "external": true,
+      "title": "Capability Seams And Core Services",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/capability-seams.zh.md",
+      "i18n": "docs/capability-seams.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/config-catalog.md",
+      "id": "config-catalog",
+      "external": true,
+      "title": "Plugin Config Catalog",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/config-catalog.zh.md",
+      "i18n": "docs/config-catalog.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/cookbook/adding-a-package.md",
+      "id": "cookbook--adding-a-package",
+      "external": true,
+      "title": "Cookbook: adding a workspace package",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/adding-a-package.zh.md",
+      "i18n": "docs/cookbook/adding-a-package.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/adding-a-remote-api.md",
+      "id": "cookbook--adding-a-remote-api",
+      "external": true,
+      "title": "Cookbook: adding a Remote API",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/adding-a-remote-api.zh.md",
+      "i18n": "docs/cookbook/adding-a-remote-api.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/adding-a-session-format-version.md",
+      "id": "cookbook--adding-a-session-format-version",
+      "external": true,
+      "title": "Cookbook: adding a Session log format version",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/adding-a-session-format-version.zh.md",
+      "i18n": "docs/cookbook/adding-a-session-format-version.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/adding-a-settings-card.md",
+      "id": "cookbook--adding-a-settings-card",
+      "external": true,
+      "title": "Cookbook: adding a settings card",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/adding-a-settings-card.zh.md",
+      "i18n": "docs/cookbook/adding-a-settings-card.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/adding-a-tool.md",
+      "id": "cookbook--adding-a-tool",
+      "external": true,
+      "title": "Tool authoring reference",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/adding-a-tool.zh.md",
+      "i18n": "docs/cookbook/adding-a-tool.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/adding-a-vendored-package.md",
+      "id": "cookbook--adding-a-vendored-package",
+      "external": true,
+      "title": "Cookbook: adding a vendored package",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/adding-a-vendored-package.zh.md",
+      "i18n": "docs/cookbook/adding-a-vendored-package.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/adding-an-llm-adapter.md",
+      "id": "cookbook--adding-an-llm-adapter",
+      "external": true,
+      "title": "Cookbook: adding an LLM adapter",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/adding-an-llm-adapter.zh.md",
+      "i18n": "docs/cookbook/adding-an-llm-adapter.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/extension-cookbook.md",
+      "id": "cookbook--extension-cookbook",
+      "external": true,
+      "title": "Cookbook: extension plugin shapes",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/extension-cookbook.zh.md",
+      "i18n": "docs/cookbook/extension-cookbook.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/maintaining-dsh-code-review.md",
+      "id": "cookbook--maintaining-dsh-code-review",
+      "external": true,
+      "title": "Maintaining the dsh-code-review skill",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/maintaining-dsh-code-review.zh.md",
+      "i18n": "docs/cookbook/maintaining-dsh-code-review.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/responding-to-pr-review-on-a-stack.md",
+      "id": "cookbook--responding-to-pr-review-on-a-stack",
+      "external": true,
+      "title": "Responding to review across a stacked PR chain",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/responding-to-pr-review-on-a-stack.zh.md",
+      "i18n": "docs/cookbook/responding-to-pr-review-on-a-stack.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cookbook/reviewing-persistence-type-changes.md",
+      "id": "cookbook--reviewing-persistence-type-changes",
+      "external": true,
+      "title": "Cookbook: reviewing persistence-type changes",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cookbook/reviewing-persistence-type-changes.zh.md",
+      "i18n": "docs/cookbook/reviewing-persistence-type-changes.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cookbook"
+      ]
+    },
+    {
+      "path": "docs/cordis-api/context.md",
+      "id": "cordis-api--context",
+      "external": true,
+      "title": "Context",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-api/context.zh.md",
+      "i18n": "docs/cordis-api/context.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-api"
+      ]
+    },
+    {
+      "path": "docs/cordis-api/events.md",
+      "id": "cordis-api--events",
+      "external": true,
+      "title": "Events",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-api/events.zh.md",
+      "i18n": "docs/cordis-api/events.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-api"
+      ]
+    },
+    {
+      "path": "docs/cordis-api/fiber.md",
+      "id": "cordis-api--fiber",
+      "external": true,
+      "title": "Fiber",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-api/fiber.zh.md",
+      "i18n": "docs/cordis-api/fiber.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-api"
+      ]
+    },
+    {
+      "path": "docs/cordis-api/inherited.md",
+      "id": "cordis-api--inherited",
+      "external": true,
+      "title": "Inherited Cordis API",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": null,
+      "i18n": null,
+      "schema": null,
+      "tags": [
+        "cordis-api"
+      ]
+    },
+    {
+      "path": "docs/cordis-api/registry.md",
+      "id": "cordis-api--registry",
+      "external": true,
+      "title": "Registry",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-api/registry.zh.md",
+      "i18n": "docs/cordis-api/registry.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-api"
+      ]
+    },
+    {
+      "path": "docs/cordis-api/service.md",
+      "id": "cordis-api--service",
+      "external": true,
+      "title": "Service",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-api/service.zh.md",
+      "i18n": "docs/cordis-api/service.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-api"
+      ]
+    },
+    {
+      "path": "docs/cordis-primer.md",
+      "id": "cordis-primer",
+      "external": true,
+      "title": "Cordis Primer",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-primer.zh.md",
+      "i18n": "docs/cordis-primer.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/cordis-tutorial/01-first-plugin.md",
+      "id": "cordis-tutorial--01-first-plugin",
+      "external": true,
+      "title": "1. Your first plugin",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-tutorial/01-first-plugin.zh.md",
+      "i18n": "docs/cordis-tutorial/01-first-plugin.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-tutorial"
+      ]
+    },
+    {
+      "path": "docs/cordis-tutorial/02-lifecycle-and-effects.md",
+      "id": "cordis-tutorial--02-lifecycle-and-effects",
+      "external": true,
+      "title": "2. Lifecycle and effects",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-tutorial/02-lifecycle-and-effects.zh.md",
+      "i18n": "docs/cordis-tutorial/02-lifecycle-and-effects.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-tutorial"
+      ]
+    },
+    {
+      "path": "docs/cordis-tutorial/03-services.md",
+      "id": "cordis-tutorial--03-services",
+      "external": true,
+      "title": "3. Services",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-tutorial/03-services.zh.md",
+      "i18n": "docs/cordis-tutorial/03-services.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-tutorial"
+      ]
+    },
+    {
+      "path": "docs/cordis-tutorial/04-events.md",
+      "id": "cordis-tutorial--04-events",
+      "external": true,
+      "title": "4. Events",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-tutorial/04-events.zh.md",
+      "i18n": "docs/cordis-tutorial/04-events.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-tutorial"
+      ]
+    },
+    {
+      "path": "docs/cordis-tutorial/05-config.md",
+      "id": "cordis-tutorial--05-config",
+      "external": true,
+      "title": "5. Configuration",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-tutorial/05-config.zh.md",
+      "i18n": "docs/cordis-tutorial/05-config.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-tutorial"
+      ]
+    },
+    {
+      "path": "docs/cordis-tutorial/06-composition-and-hmr.md",
+      "id": "cordis-tutorial--06-composition-and-hmr",
+      "external": true,
+      "title": "6. Composition and HMR",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-tutorial/06-composition-and-hmr.zh.md",
+      "i18n": "docs/cordis-tutorial/06-composition-and-hmr.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-tutorial"
+      ]
+    },
+    {
+      "path": "docs/cordis-tutorial/07-into-the-harness.md",
+      "id": "cordis-tutorial--07-into-the-harness",
+      "external": true,
+      "title": "7. Into the harness",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-tutorial/07-into-the-harness.zh.md",
+      "i18n": "docs/cordis-tutorial/07-into-the-harness.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-tutorial"
+      ]
+    },
+    {
+      "path": "docs/cordis-tutorial/index.md",
+      "id": "cordis-tutorial--index",
+      "external": true,
+      "title": "Cordis tutorial",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/cordis-tutorial/index.zh.md",
+      "i18n": "docs/cordis-tutorial/index.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "cordis-tutorial"
+      ]
+    },
+    {
+      "path": "docs/deepseek-llm-api-wire-extensions.md",
+      "id": "deepseek-llm-api-wire-extensions",
+      "external": true,
+      "title": "Official DeepSeek LLM API wire extensions",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/deepseek-llm-api-wire-extensions.zh.md",
+      "i18n": "docs/deepseek-llm-api-wire-extensions.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/defensive-patterns.md",
+      "id": "defensive-patterns",
+      "external": true,
+      "title": "Defensive patterns",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/defensive-patterns.zh.md",
+      "i18n": "docs/defensive-patterns.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/development.md",
+      "id": "development",
+      "external": true,
+      "title": "Development guide",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/development.zh.md",
+      "i18n": "docs/development.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/event-producer-consumer.md",
+      "id": "event-producer-consumer",
+      "external": true,
+      "title": "Event Producer And Consumer Matrix",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/event-producer-consumer.zh.md",
+      "i18n": "docs/event-producer-consumer.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/glossary.md",
+      "id": "glossary",
+      "external": true,
+      "title": "Glossary",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/glossary.zh.md",
+      "i18n": "docs/glossary.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/graph-atlas.md",
+      "id": "graph-atlas",
+      "external": true,
+      "title": "Documentation Graph Index",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/graph-atlas.zh.md",
+      "i18n": "docs/graph-atlas.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/i18n/README.md",
+      "id": "i18n--README",
+      "external": true,
+      "title": "Bilingual documentation",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/i18n/README.zh.md",
+      "i18n": "docs/i18n/README.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "i18n"
+      ]
+    },
+    {
+      "path": "docs/i18n/style-samples.md",
+      "id": "i18n--style-samples",
+      "external": true,
+      "title": "翻译语体样例（style samples）",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": null,
+      "i18n": null,
+      "schema": null,
+      "tags": [
+        "i18n"
+      ]
+    },
+    {
+      "path": "docs/i18n/terminology.md",
+      "id": "i18n--terminology",
+      "external": true,
+      "title": "Terminology",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": null,
+      "i18n": null,
+      "schema": null,
+      "tags": [
+        "i18n"
+      ]
+    },
+    {
+      "path": "docs/i18n/translation-prompt.md",
+      "id": "i18n--translation-prompt",
+      "external": true,
+      "title": "Translation prompt (pipeline asset)",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": null,
+      "i18n": null,
+      "schema": null,
+      "tags": [
+        "i18n"
+      ]
+    },
+    {
+      "path": "docs/i18n/translation-rules.md",
+      "id": "i18n--translation-rules",
+      "external": true,
+      "title": "Translation rules",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/i18n/translation-rules.zh.md",
+      "i18n": "docs/i18n/translation-rules.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "i18n"
+      ]
+    },
+    {
+      "path": "docs/module-graph.md",
+      "id": "module-graph",
+      "external": true,
+      "title": "Shared-instance dependency graph",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/module-graph.zh.md",
+      "i18n": "docs/module-graph.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/persistence-catalog.md",
+      "id": "persistence-catalog",
+      "external": true,
+      "title": "Session Persistence Event Catalog",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-catalog.zh.md",
+      "i18n": "docs/persistence-catalog.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/persistence-changes/2026-09-11-initial.md",
+      "id": "persistence-changes--2026-09-11-initial",
+      "external": true,
+      "title": "Initial persistence type baseline",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/2026-09-11-initial.zh.md",
+      "i18n": "docs/persistence-changes/2026-09-11-initial.i18n.yaml",
+      "schema": "docs/persistence-changes/2026-09-11-initial.schema.json",
+      "tags": [
+        "persistence-changes"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/2026-09-12-auto-review-error-metadata.md",
+      "id": "persistence-changes--2026-09-12-auto-review-error-metadata",
+      "external": true,
+      "title": "2026-09-12-auto-review-error-metadata",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/2026-09-12-auto-review-error-metadata.zh.md",
+      "i18n": "docs/persistence-changes/2026-09-12-auto-review-error-metadata.i18n.yaml",
+      "schema": "docs/persistence-changes/2026-09-12-auto-review-error-metadata.schema.json",
+      "tags": [
+        "persistence-changes"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/2026-09-14-image-offload.md",
+      "id": "persistence-changes--2026-09-14-image-offload",
+      "external": true,
+      "title": "2026-09-14-image-offload",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/2026-09-14-image-offload.zh.md",
+      "i18n": "docs/persistence-changes/2026-09-14-image-offload.i18n.yaml",
+      "schema": "docs/persistence-changes/2026-09-14-image-offload.schema.json",
+      "tags": [
+        "persistence-changes"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/README.md",
+      "id": "persistence-changes--README",
+      "external": true,
+      "title": "Persistence-type change records",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/README.zh.md",
+      "i18n": "docs/persistence-changes/README.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "persistence-changes"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/historical-formats/README.md",
+      "id": "persistence-changes--historical-formats--README",
+      "external": true,
+      "title": "Session persistence formats",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/historical-formats/README.zh.md",
+      "i18n": "docs/persistence-changes/historical-formats/README.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "historical-formats",
+        "persistence-changes"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/historical-formats/v0.md",
+      "id": "persistence-changes--historical-formats--v0",
+      "external": true,
+      "title": "Session V0 persistence format",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/historical-formats/v0.zh.md",
+      "i18n": "docs/persistence-changes/historical-formats/v0.i18n.yaml",
+      "schema": "docs/persistence-changes/historical-formats/v0.schema.json",
+      "tags": [
+        "historical-formats",
+        "persistence-changes"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/historical-formats/v1.md",
+      "id": "persistence-changes--historical-formats--v1",
+      "external": true,
+      "title": "Session V1 persistence format",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/historical-formats/v1.zh.md",
+      "i18n": "docs/persistence-changes/historical-formats/v1.i18n.yaml",
+      "schema": "docs/persistence-changes/historical-formats/v1.schema.json",
+      "tags": [
+        "historical-formats",
+        "persistence-changes"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/historical-formats/v2.md",
+      "id": "persistence-changes--historical-formats--v2",
+      "external": true,
+      "title": "Session V2 persistence format",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/historical-formats/v2.zh.md",
+      "i18n": "docs/persistence-changes/historical-formats/v2.i18n.yaml",
+      "schema": "docs/persistence-changes/historical-formats/v2.schema.json",
+      "tags": [
+        "historical-formats",
+        "persistence-changes"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/README.md",
+      "id": "persistence-changes--releases--README",
+      "external": true,
+      "title": "Persistence changes across DSH prereleases",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/README.zh.md",
+      "i18n": "docs/persistence-changes/releases/README.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.0.1-rc.1.md",
+      "id": "persistence-changes--releases--dsh-v0.0.1-rc.1",
+      "external": true,
+      "title": "Persistence release: dsh-v0.0.1-rc.1",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.0.1-rc.1.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.0.1-rc.1.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.0.1-rc.1.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.0.1-rc.2.md",
+      "id": "persistence-changes--releases--dsh-v0.0.1-rc.2",
+      "external": true,
+      "title": "Persistence release: dsh-v0.0.1-rc.2",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.0.1-rc.2.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.0.1-rc.2.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.0.1-rc.2.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.0.1-rc.3.md",
+      "id": "persistence-changes--releases--dsh-v0.0.1-rc.3",
+      "external": true,
+      "title": "Persistence release: dsh-v0.0.1-rc.3",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.0.1-rc.3.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.0.1-rc.3.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.0.1-rc.3.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.0.1-rc.4.md",
+      "id": "persistence-changes--releases--dsh-v0.0.1-rc.4",
+      "external": true,
+      "title": "Persistence release: dsh-v0.0.1-rc.4",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.0.1-rc.4.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.0.1-rc.4.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.0.1-rc.4.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.0.1-rc.5.md",
+      "id": "persistence-changes--releases--dsh-v0.0.1-rc.5",
+      "external": true,
+      "title": "Persistence release: dsh-v0.0.1-rc.5",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.0.1-rc.5.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.0.1-rc.5.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.0.1-rc.5.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.0-rc.1.md",
+      "id": "persistence-changes--releases--dsh-v0.1.0-rc.1",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.0-rc.1",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.0-rc.1.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.0-rc.1.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.0-rc.1.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.0-rc.2.md",
+      "id": "persistence-changes--releases--dsh-v0.1.0-rc.2",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.0-rc.2",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.0-rc.2.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.0-rc.2.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.0-rc.2.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.0-rc.3.md",
+      "id": "persistence-changes--releases--dsh-v0.1.0-rc.3",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.0-rc.3",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.0-rc.3.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.0-rc.3.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.0-rc.3.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.0-rc.5.md",
+      "id": "persistence-changes--releases--dsh-v0.1.0-rc.5",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.0-rc.5",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.0-rc.5.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.0-rc.5.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.0-rc.5.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.0-rc.6.md",
+      "id": "persistence-changes--releases--dsh-v0.1.0-rc.6",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.0-rc.6",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.0-rc.6.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.0-rc.6.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.0-rc.6.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.0-rc.7.md",
+      "id": "persistence-changes--releases--dsh-v0.1.0-rc.7",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.0-rc.7",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.0-rc.7.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.0-rc.7.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.0-rc.7.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.0-rc.8.md",
+      "id": "persistence-changes--releases--dsh-v0.1.0-rc.8",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.0-rc.8",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.0-rc.8.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.0-rc.8.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.0-rc.8.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.1-rc.1.md",
+      "id": "persistence-changes--releases--dsh-v0.1.1-rc.1",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.1-rc.1",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.1-rc.1.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.1-rc.1.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.1-rc.1.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.1-rc.2.md",
+      "id": "persistence-changes--releases--dsh-v0.1.1-rc.2",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.1-rc.2",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.1-rc.2.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.1-rc.2.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.1-rc.2.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.1.md",
+      "id": "persistence-changes--releases--dsh-v0.1.2-alpha.1",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.2-alpha.1",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.1.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.1.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.1.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.2.md",
+      "id": "persistence-changes--releases--dsh-v0.1.2-alpha.2",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.2-alpha.2",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.2.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.2.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.2.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.3.md",
+      "id": "persistence-changes--releases--dsh-v0.1.2-alpha.3",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.2-alpha.3",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.3.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.3.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.3.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.4.md",
+      "id": "persistence-changes--releases--dsh-v0.1.2-alpha.4",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.2-alpha.4",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.4.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.4.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.4.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.5.md",
+      "id": "persistence-changes--releases--dsh-v0.1.2-alpha.5",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.2-alpha.5",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.5.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.5.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.2-alpha.5.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.2-rc.1.md",
+      "id": "persistence-changes--releases--dsh-v0.1.2-rc.1",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.2-rc.1",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.2-rc.1.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.2-rc.1.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.2-rc.1.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.3-alpha.1.md",
+      "id": "persistence-changes--releases--dsh-v0.1.3-alpha.1",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.3-alpha.1",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.3-alpha.1.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.3-alpha.1.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.3-alpha.1.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.3-alpha.2.md",
+      "id": "persistence-changes--releases--dsh-v0.1.3-alpha.2",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.3-alpha.2",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.3-alpha.2.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.3-alpha.2.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.3-alpha.2.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.5-alpha.1.md",
+      "id": "persistence-changes--releases--dsh-v0.1.5-alpha.1",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.5-alpha.1",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.5-alpha.1.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.5-alpha.1.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.5-alpha.1.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.5-alpha.2.md",
+      "id": "persistence-changes--releases--dsh-v0.1.5-alpha.2",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.5-alpha.2",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.5-alpha.2.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.5-alpha.2.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.5-alpha.2.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.5-rc.1.md",
+      "id": "persistence-changes--releases--dsh-v0.1.5-rc.1",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.5-rc.1",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.5-rc.1.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.5-rc.1.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.5-rc.1.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/persistence-changes/releases/dsh-v0.1.5-rc.2.md",
+      "id": "persistence-changes--releases--dsh-v0.1.5-rc.2",
+      "external": true,
+      "title": "Persistence release: dsh-v0.1.5-rc.2",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/persistence-changes/releases/dsh-v0.1.5-rc.2.zh.md",
+      "i18n": "docs/persistence-changes/releases/dsh-v0.1.5-rc.2.i18n.yaml",
+      "schema": "docs/persistence-changes/releases/dsh-v0.1.5-rc.2.schema.json",
+      "tags": [
+        "persistence-changes",
+        "releases"
+      ]
+    },
+    {
+      "path": "docs/postmortem/0001-acp-default-export-drops-inject.md",
+      "id": "postmortem--0001-acp-default-export-drops-inject",
+      "external": true,
+      "title": "Post-mortem 0001: ACP server crashed on connect — `export default` dropped the plugin's `inject`",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/postmortem/0001-acp-default-export-drops-inject.zh.md",
+      "i18n": "docs/postmortem/0001-acp-default-export-drops-inject.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "postmortem"
+      ]
+    },
+    {
+      "path": "docs/postmortem/0002-js-expression-disabled-filesystem-tools.md",
+      "id": "postmortem--0002-js-expression-disabled-filesystem-tools",
+      "external": true,
+      "title": "Post-mortem 0002: Filesystem snapshot tools were permanently disabled",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/postmortem/0002-js-expression-disabled-filesystem-tools.zh.md",
+      "i18n": "docs/postmortem/0002-js-expression-disabled-filesystem-tools.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "postmortem"
+      ]
+    },
+    {
+      "path": "docs/postmortem/0003-web-agent-gui-feedback-loop.md",
+      "id": "postmortem--0003-web-agent-gui-feedback-loop",
+      "external": true,
+      "title": "Post-mortem 0003: Web agent validated a replacement server instead of its current GUI",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/postmortem/0003-web-agent-gui-feedback-loop.zh.md",
+      "i18n": "docs/postmortem/0003-web-agent-gui-feedback-loop.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "postmortem"
+      ]
+    },
+    {
+      "path": "docs/postmortem/0004-landlock-partial-notice-misclassified-child-failures.md",
+      "id": "postmortem--0004-landlock-partial-notice-misclassified-child-failures",
+      "external": true,
+      "title": "Post-mortem 0004: Landlock partial-enforcement notice misclassified child failures",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/postmortem/0004-landlock-partial-notice-misclassified-child-failures.zh.md",
+      "i18n": "docs/postmortem/0004-landlock-partial-notice-misclassified-child-failures.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "postmortem"
+      ]
+    },
+    {
+      "path": "docs/postmortem/README.md",
+      "id": "postmortem--README",
+      "external": true,
+      "title": "Post-mortems",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/postmortem/README.zh.md",
+      "i18n": "docs/postmortem/README.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "postmortem"
+      ]
+    },
+    {
+      "path": "docs/rescope.md",
+      "id": "rescope",
+      "external": true,
+      "title": "Vendored package rescope",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/rescope.zh.md",
+      "i18n": "docs/rescope.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/session-format-status.md",
+      "id": "session-format-status",
+      "external": true,
+      "title": "Session format version and release status",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/session-format-status.zh.md",
+      "i18n": "docs/session-format-status.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/subsystems/README.md",
+      "id": "subsystems--README",
+      "external": true,
+      "title": "Subsystems",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/README.zh.md",
+      "i18n": "docs/subsystems/README.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/agent-team.md",
+      "id": "subsystems--agent-team",
+      "external": true,
+      "title": "Agent Teams",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/agent-team.zh.md",
+      "i18n": "docs/subsystems/agent-team.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/approval.md",
+      "id": "subsystems--approval",
+      "external": true,
+      "title": "User Approval",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/approval.zh.md",
+      "i18n": "docs/subsystems/approval.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/attachment.md",
+      "id": "subsystems--attachment",
+      "external": true,
+      "title": "Durable Attachments",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/attachment.zh.md",
+      "i18n": "docs/subsystems/attachment.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/browser-use.md",
+      "id": "subsystems--browser-use",
+      "external": true,
+      "title": "Browser use",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/browser-use.zh.md",
+      "i18n": "docs/subsystems/browser-use.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/client-modules.md",
+      "id": "subsystems--client-modules",
+      "external": true,
+      "title": "Client Modules",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/client-modules.zh.md",
+      "i18n": "docs/subsystems/client-modules.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/client-resources.md",
+      "id": "subsystems--client-resources",
+      "external": true,
+      "title": "Client Resources",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/client-resources.zh.md",
+      "i18n": "docs/subsystems/client-resources.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/commands.md",
+      "id": "subsystems--commands",
+      "external": true,
+      "title": "Human Commands",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/commands.zh.md",
+      "i18n": "docs/subsystems/commands.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/compaction.md",
+      "id": "subsystems--compaction",
+      "external": true,
+      "title": "Compaction",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/compaction.zh.md",
+      "i18n": "docs/subsystems/compaction.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/computer-use.md",
+      "id": "subsystems--computer-use",
+      "external": true,
+      "title": "Computer use",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/computer-use.zh.md",
+      "i18n": "docs/subsystems/computer-use.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/conversation.md",
+      "id": "subsystems--conversation",
+      "external": true,
+      "title": "Conversation assembly",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/conversation.zh.md",
+      "i18n": "docs/subsystems/conversation.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/core.md",
+      "id": "subsystems--core",
+      "external": true,
+      "title": "Core",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/core.zh.md",
+      "i18n": "docs/subsystems/core.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/credentials.md",
+      "id": "subsystems--credentials",
+      "external": true,
+      "title": "User Credentials",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/credentials.zh.md",
+      "i18n": "docs/subsystems/credentials.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/extensions.md",
+      "id": "subsystems--extensions",
+      "external": true,
+      "title": "Extensions",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/extensions.zh.md",
+      "i18n": "docs/subsystems/extensions.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/feedback.md",
+      "id": "subsystems--feedback",
+      "external": true,
+      "title": "Message Feedback",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/feedback.zh.md",
+      "i18n": "docs/subsystems/feedback.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/filesystem.md",
+      "id": "subsystems--filesystem",
+      "external": true,
+      "title": "Filesystem",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/filesystem.zh.md",
+      "i18n": "docs/subsystems/filesystem.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/goal.md",
+      "id": "subsystems--goal",
+      "external": true,
+      "title": "Same-session goals",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/goal.zh.md",
+      "i18n": "docs/subsystems/goal.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/invariants.md",
+      "id": "subsystems--invariants",
+      "external": true,
+      "title": "Runtime Invariants",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/invariants.zh.md",
+      "i18n": "docs/subsystems/invariants.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/jobs.md",
+      "id": "subsystems--jobs",
+      "external": true,
+      "title": "Background Job Runtime",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/jobs.zh.md",
+      "i18n": "docs/subsystems/jobs.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/llm-streaming.md",
+      "id": "subsystems--llm-streaming",
+      "external": true,
+      "title": "LLM Streaming",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/llm-streaming.zh.md",
+      "i18n": "docs/subsystems/llm-streaming.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/lsp.md",
+      "id": "subsystems--lsp",
+      "external": true,
+      "title": "LSP navigation",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/lsp.zh.md",
+      "i18n": "docs/subsystems/lsp.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/mcp.md",
+      "id": "subsystems--mcp",
+      "external": true,
+      "title": "MCP",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/mcp.zh.md",
+      "i18n": "docs/subsystems/mcp.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/permission-presets.md",
+      "id": "subsystems--permission-presets",
+      "external": true,
+      "title": "Permission Presets",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/permission-presets.zh.md",
+      "i18n": "docs/subsystems/permission-presets.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/persistence.md",
+      "id": "subsystems--persistence",
+      "external": true,
+      "title": "Session Persistence",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/persistence.zh.md",
+      "i18n": "docs/subsystems/persistence.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/plan.md",
+      "id": "subsystems--plan",
+      "external": true,
+      "title": "Plan Mode",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/plan.zh.md",
+      "i18n": "docs/subsystems/plan.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/ptc-runtime.md",
+      "id": "subsystems--ptc-runtime",
+      "external": true,
+      "title": "PTC runtime",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/ptc-runtime.zh.md",
+      "i18n": "docs/subsystems/ptc-runtime.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/sandbox.md",
+      "id": "subsystems--sandbox",
+      "external": true,
+      "title": "Process Sandbox",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/sandbox.zh.md",
+      "i18n": "docs/subsystems/sandbox.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/schedule.md",
+      "id": "subsystems--schedule",
+      "external": true,
+      "title": "Session-local Schedule",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/schedule.zh.md",
+      "i18n": "docs/subsystems/schedule.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/scope.md",
+      "id": "subsystems--scope",
+      "external": true,
+      "title": "Scoped Registration",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/scope.zh.md",
+      "i18n": "docs/subsystems/scope.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/session-projection.md",
+      "id": "subsystems--session-projection",
+      "external": true,
+      "title": "Session Projections",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/session-projection.zh.md",
+      "i18n": "docs/subsystems/session-projection.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/session-query.md",
+      "id": "subsystems--session-query",
+      "external": true,
+      "title": "Session Query",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/session-query.zh.md",
+      "i18n": "docs/subsystems/session-query.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/session-reference.md",
+      "id": "subsystems--session-reference",
+      "external": true,
+      "title": "Session References",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/session-reference.zh.md",
+      "i18n": "docs/subsystems/session-reference.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/session-telemetry.md",
+      "id": "subsystems--session-telemetry",
+      "external": true,
+      "title": "SessionTelemetryBackend",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/session-telemetry.zh.md",
+      "i18n": "docs/subsystems/session-telemetry.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/session-title.md",
+      "id": "subsystems--session-title",
+      "external": true,
+      "title": "Session Titles",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/session-title.zh.md",
+      "i18n": "docs/subsystems/session-title.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/session.md",
+      "id": "subsystems--session",
+      "external": true,
+      "title": "Sessions",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/session.zh.md",
+      "i18n": "docs/subsystems/session.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/settings.md",
+      "id": "subsystems--settings",
+      "external": true,
+      "title": "User Settings",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/settings.zh.md",
+      "i18n": "docs/subsystems/settings.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/shell.md",
+      "id": "subsystems--shell",
+      "external": true,
+      "title": "Shell Executor",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/shell.zh.md",
+      "i18n": "docs/subsystems/shell.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/sidebar-right.md",
+      "id": "subsystems--sidebar-right",
+      "external": true,
+      "title": "Right Sidebar",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/sidebar-right.zh.md",
+      "i18n": "docs/subsystems/sidebar-right.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/skills.md",
+      "id": "subsystems--skills",
+      "external": true,
+      "title": "Skills",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/skills.zh.md",
+      "i18n": "docs/subsystems/skills.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/slots.md",
+      "id": "subsystems--slots",
+      "external": true,
+      "title": "Web Client Slots",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/slots.zh.md",
+      "i18n": "docs/subsystems/slots.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/spill.md",
+      "id": "subsystems--spill",
+      "external": true,
+      "title": "Spill Storage",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/spill.zh.md",
+      "i18n": "docs/subsystems/spill.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/ssh.md",
+      "id": "subsystems--ssh",
+      "external": true,
+      "title": "SSH",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/ssh.zh.md",
+      "i18n": "docs/subsystems/ssh.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/storage.md",
+      "id": "subsystems--storage",
+      "external": true,
+      "title": "Storage",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/storage.zh.md",
+      "i18n": "docs/subsystems/storage.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/subagent.md",
+      "id": "subsystems--subagent",
+      "external": true,
+      "title": "Subagent",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/subagent.zh.md",
+      "i18n": "docs/subsystems/subagent.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/subprocess.md",
+      "id": "subsystems--subprocess",
+      "external": true,
+      "title": "Subprocess",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/subprocess.zh.md",
+      "i18n": "docs/subsystems/subprocess.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/system-prompt.md",
+      "id": "subsystems--system-prompt",
+      "external": true,
+      "title": "System Prompt Assembly",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/system-prompt.zh.md",
+      "i18n": "docs/subsystems/system-prompt.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/terminal.md",
+      "id": "subsystems--terminal",
+      "external": true,
+      "title": "Persistent PTY Sessions",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/terminal.zh.md",
+      "i18n": "docs/subsystems/terminal.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/todo.md",
+      "id": "subsystems--todo",
+      "external": true,
+      "title": "Todo",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/todo.zh.md",
+      "i18n": "docs/subsystems/todo.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/token-meter.md",
+      "id": "subsystems--token-meter",
+      "external": true,
+      "title": "Token Meter",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/token-meter.zh.md",
+      "i18n": "docs/subsystems/token-meter.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/tools.md",
+      "id": "subsystems--tools",
+      "external": true,
+      "title": "Tools",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/tools.zh.md",
+      "i18n": "docs/subsystems/tools.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/typert.md",
+      "id": "subsystems--typert",
+      "external": true,
+      "title": "Typert remote calls",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/typert.zh.md",
+      "i18n": "docs/subsystems/typert.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/user-questions.md",
+      "id": "subsystems--user-questions",
+      "external": true,
+      "title": "User Interaction",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/user-questions.zh.md",
+      "i18n": "docs/subsystems/user-questions.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/web-client.md",
+      "id": "subsystems--web-client",
+      "external": true,
+      "title": "Web Client architecture",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/web-client.zh.md",
+      "i18n": "docs/subsystems/web-client.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/web-server.md",
+      "id": "subsystems--web-server",
+      "external": true,
+      "title": "HTTP Server",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/web-server.zh.md",
+      "i18n": "docs/subsystems/web-server.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/web.md",
+      "id": "subsystems--web",
+      "external": true,
+      "title": "Web Access",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/web.zh.md",
+      "i18n": "docs/subsystems/web.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/webhook.md",
+      "id": "subsystems--webhook",
+      "external": true,
+      "title": "Webhook runtime",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/webhook.zh.md",
+      "i18n": "docs/subsystems/webhook.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/workflow.md",
+      "id": "subsystems--workflow",
+      "external": true,
+      "title": "Workflow",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/workflow.zh.md",
+      "i18n": "docs/subsystems/workflow.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/subsystems/workspace.md",
+      "id": "subsystems--workspace",
+      "external": true,
+      "title": "Workspaces",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/subsystems/workspace.zh.md",
+      "i18n": "docs/subsystems/workspace.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "subsystems"
+      ]
+    },
+    {
+      "path": "docs/testing.md",
+      "id": "testing",
+      "external": true,
+      "title": "Testing policy",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/testing.zh.md",
+      "i18n": "docs/testing.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/tool-catalog.md",
+      "id": "tool-catalog",
+      "external": true,
+      "title": "Tool Schema Catalog",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/tool-catalog.zh.md",
+      "i18n": "docs/tool-catalog.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/tool-execution-pipeline.md",
+      "id": "tool-execution-pipeline",
+      "external": true,
+      "title": "Tool Execution Pipeline",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/tool-execution-pipeline.zh.md",
+      "i18n": "docs/tool-execution-pipeline.i18n.yaml",
+      "schema": null,
+      "tags": []
+    },
+    {
+      "path": "docs/user/develop/basic/config.md",
+      "id": "user--develop--basic--config",
+      "external": true,
+      "title": "Plugin configuration",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/basic/config.zh.md",
+      "i18n": "docs/user/develop/basic/config.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "basic",
+        "develop",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/develop/basic/index.md",
+      "id": "user--develop--basic--index",
+      "external": true,
+      "title": "Your first plugin",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/basic/index.zh.md",
+      "i18n": "docs/user/develop/basic/index.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "basic",
+        "develop",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/develop/basic/publish.md",
+      "id": "user--develop--basic--publish",
+      "external": true,
+      "title": "Package and install a plugin",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/basic/publish.zh.md",
+      "i18n": "docs/user/develop/basic/publish.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "basic",
+        "develop",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/develop/basic/tool.md",
+      "id": "user--develop--basic--tool",
+      "external": true,
+      "title": "Build a tool",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/basic/tool.zh.md",
+      "i18n": "docs/user/develop/basic/tool.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "basic",
+        "develop",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/develop/framework/events.md",
+      "id": "user--develop--framework--events",
+      "external": true,
+      "title": "Event system",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/framework/events.zh.md",
+      "i18n": "docs/user/develop/framework/events.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "develop",
+        "framework",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/develop/framework/index.md",
+      "id": "user--develop--framework--index",
+      "external": true,
+      "title": "Plugins and lifecycle",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/framework/index.zh.md",
+      "i18n": "docs/user/develop/framework/index.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "develop",
+        "framework",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/develop/framework/service.md",
+      "id": "user--develop--framework--service",
+      "external": true,
+      "title": "Services and dependencies",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/framework/service.zh.md",
+      "i18n": "docs/user/develop/framework/service.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "develop",
+        "framework",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/develop/practice/dynamic-cordis.md",
+      "id": "user--develop--practice--dynamic-cordis",
+      "external": true,
+      "title": "Extend a running agent with Cordis tools",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/practice/dynamic-cordis.zh.md",
+      "i18n": "docs/user/develop/practice/dynamic-cordis.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "develop",
+        "practice",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/develop/practice/index.md",
+      "id": "user--develop--practice--index",
+      "external": true,
+      "title": "Three-role capability design",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/practice/index.zh.md",
+      "i18n": "docs/user/develop/practice/index.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "develop",
+        "practice",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/develop/practice/llm-adapter.md",
+      "id": "user--develop--practice--llm-adapter",
+      "external": true,
+      "title": "LLM adapters",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/develop/practice/llm-adapter.zh.md",
+      "i18n": "docs/user/develop/practice/llm-adapter.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "develop",
+        "practice",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/guide/github-review.md",
+      "id": "user--guide--github-review",
+      "external": true,
+      "title": "Create review Sessions from GitHub webhooks",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/guide/github-review.zh.md",
+      "i18n": "docs/user/guide/github-review.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "guide",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/guide/index.md",
+      "id": "user--guide--index",
+      "external": true,
+      "title": "Use the Web UI",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/guide/index.zh.md",
+      "i18n": "docs/user/guide/index.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "guide",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/guide/mcp-memory.md",
+      "id": "user--guide--mcp-memory",
+      "external": true,
+      "title": "Connect a third-party memory MCP server",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/guide/mcp-memory.zh.md",
+      "i18n": "docs/user/guide/mcp-memory.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "guide",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/guide/network-proxy.md",
+      "id": "user--guide--network-proxy",
+      "external": true,
+      "title": "Run DSH behind a network proxy",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/guide/network-proxy.zh.md",
+      "i18n": "docs/user/guide/network-proxy.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "guide",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/guide/providers.md",
+      "id": "user--guide--providers",
+      "external": true,
+      "title": "Configure models",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/guide/providers.zh.md",
+      "i18n": "docs/user/guide/providers.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "guide",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/guide/python-sdk.md",
+      "id": "user--guide--python-sdk",
+      "external": true,
+      "title": "Get started with the Python SDK",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/guide/python-sdk.zh.md",
+      "i18n": "docs/user/guide/python-sdk.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "guide",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/guide/schedule.md",
+      "id": "user--guide--schedule",
+      "external": true,
+      "title": "Schedule session-local reminders",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/guide/schedule.zh.md",
+      "i18n": "docs/user/guide/schedule.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "guide",
+        "user"
+      ]
+    },
+    {
+      "path": "docs/user/index.md",
+      "id": "user--index",
+      "external": true,
+      "title": "DeepSeek Harness",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/user/index.zh.md",
+      "i18n": "docs/user/index.i18n.yaml",
+      "schema": null,
+      "tags": [
+        "user"
+      ]
+    },
+    {
+      "path": "docs/web-styling.md",
+      "id": "web-styling",
+      "external": true,
+      "title": "Web UI style reference",
+      "original_path": null,
+      "explicit_tags": [],
+      "zh": "docs/web-styling.zh.md",
+      "i18n": "docs/web-styling.i18n.yaml",
+      "schema": null,
+      "tags": []
+    }
+  ],
+  "tags": {
+    "cookbook": [
+      "docs/cookbook/adding-a-package.md",
+      "docs/cookbook/adding-a-remote-api.md",
+      "docs/cookbook/adding-a-session-format-version.md",
+      "docs/cookbook/adding-a-settings-card.md",
+      "docs/cookbook/adding-a-tool.md",
+      "docs/cookbook/adding-a-vendored-package.md",
+      "docs/cookbook/adding-an-llm-adapter.md",
+      "docs/cookbook/extension-cookbook.md",
+      "docs/cookbook/maintaining-dsh-code-review.md",
+      "docs/cookbook/responding-to-pr-review-on-a-stack.md",
+      "docs/cookbook/reviewing-persistence-type-changes.md"
+    ],
+    "cordis-api": [
+      "docs/cordis-api/context.md",
+      "docs/cordis-api/events.md",
+      "docs/cordis-api/fiber.md",
+      "docs/cordis-api/inherited.md",
+      "docs/cordis-api/registry.md",
+      "docs/cordis-api/service.md"
+    ],
+    "cordis-tutorial": [
+      "docs/cordis-tutorial/01-first-plugin.md",
+      "docs/cordis-tutorial/02-lifecycle-and-effects.md",
+      "docs/cordis-tutorial/03-services.md",
+      "docs/cordis-tutorial/04-events.md",
+      "docs/cordis-tutorial/05-config.md",
+      "docs/cordis-tutorial/06-composition-and-hmr.md",
+      "docs/cordis-tutorial/07-into-the-harness.md",
+      "docs/cordis-tutorial/index.md"
+    ],
+    "i18n": [
+      "docs/i18n/README.md",
+      "docs/i18n/style-samples.md",
+      "docs/i18n/terminology.md",
+      "docs/i18n/translation-prompt.md",
+      "docs/i18n/translation-rules.md"
+    ],
+    "persistence-changes": [
+      "docs/persistence-changes/2026-09-11-initial.md",
+      "docs/persistence-changes/2026-09-12-auto-review-error-metadata.md",
+      "docs/persistence-changes/2026-09-14-image-offload.md",
+      "docs/persistence-changes/README.md",
+      "docs/persistence-changes/historical-formats/README.md",
+      "docs/persistence-changes/historical-formats/v0.md",
+      "docs/persistence-changes/historical-formats/v1.md",
+      "docs/persistence-changes/historical-formats/v2.md",
+      "docs/persistence-changes/releases/README.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.2.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.3.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.4.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.5.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.3.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.5.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.6.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.7.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.8.md",
+      "docs/persistence-changes/releases/dsh-v0.1.1-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.1-rc.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.3.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.4.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.5.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.3-alpha.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.3-alpha.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.5-alpha.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.5-alpha.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.5-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.5-rc.2.md"
+    ],
+    "historical-formats": [
+      "docs/persistence-changes/historical-formats/README.md",
+      "docs/persistence-changes/historical-formats/v0.md",
+      "docs/persistence-changes/historical-formats/v1.md",
+      "docs/persistence-changes/historical-formats/v2.md"
+    ],
+    "releases": [
+      "docs/persistence-changes/releases/README.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.2.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.3.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.4.md",
+      "docs/persistence-changes/releases/dsh-v0.0.1-rc.5.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.3.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.5.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.6.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.7.md",
+      "docs/persistence-changes/releases/dsh-v0.1.0-rc.8.md",
+      "docs/persistence-changes/releases/dsh-v0.1.1-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.1-rc.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.3.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.4.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-alpha.5.md",
+      "docs/persistence-changes/releases/dsh-v0.1.2-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.3-alpha.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.3-alpha.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.5-alpha.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.5-alpha.2.md",
+      "docs/persistence-changes/releases/dsh-v0.1.5-rc.1.md",
+      "docs/persistence-changes/releases/dsh-v0.1.5-rc.2.md"
+    ],
+    "postmortem": [
+      "docs/postmortem/0001-acp-default-export-drops-inject.md",
+      "docs/postmortem/0002-js-expression-disabled-filesystem-tools.md",
+      "docs/postmortem/0003-web-agent-gui-feedback-loop.md",
+      "docs/postmortem/0004-landlock-partial-notice-misclassified-child-failures.md",
+      "docs/postmortem/README.md"
+    ],
+    "subsystems": [
+      "docs/subsystems/README.md",
+      "docs/subsystems/agent-team.md",
+      "docs/subsystems/approval.md",
+      "docs/subsystems/attachment.md",
+      "docs/subsystems/browser-use.md",
+      "docs/subsystems/client-modules.md",
+      "docs/subsystems/client-resources.md",
+      "docs/subsystems/commands.md",
+      "docs/subsystems/compaction.md",
+      "docs/subsystems/computer-use.md",
+      "docs/subsystems/conversation.md",
+      "docs/subsystems/core.md",
+      "docs/subsystems/credentials.md",
+      "docs/subsystems/extensions.md",
+      "docs/subsystems/feedback.md",
+      "docs/subsystems/filesystem.md",
+      "docs/subsystems/goal.md",
+      "docs/subsystems/invariants.md",
+      "docs/subsystems/jobs.md",
+      "docs/subsystems/llm-streaming.md",
+      "docs/subsystems/lsp.md",
+      "docs/subsystems/mcp.md",
+      "docs/subsystems/permission-presets.md",
+      "docs/subsystems/persistence.md",
+      "docs/subsystems/plan.md",
+      "docs/subsystems/ptc-runtime.md",
+      "docs/subsystems/sandbox.md",
+      "docs/subsystems/schedule.md",
+      "docs/subsystems/scope.md",
+      "docs/subsystems/session-projection.md",
+      "docs/subsystems/session-query.md",
+      "docs/subsystems/session-reference.md",
+      "docs/subsystems/session-telemetry.md",
+      "docs/subsystems/session-title.md",
+      "docs/subsystems/session.md",
+      "docs/subsystems/settings.md",
+      "docs/subsystems/shell.md",
+      "docs/subsystems/sidebar-right.md",
+      "docs/subsystems/skills.md",
+      "docs/subsystems/slots.md",
+      "docs/subsystems/spill.md",
+      "docs/subsystems/ssh.md",
+      "docs/subsystems/storage.md",
+      "docs/subsystems/subagent.md",
+      "docs/subsystems/subprocess.md",
+      "docs/subsystems/system-prompt.md",
+      "docs/subsystems/terminal.md",
+      "docs/subsystems/todo.md",
+      "docs/subsystems/token-meter.md",
+      "docs/subsystems/tools.md",
+      "docs/subsystems/typert.md",
+      "docs/subsystems/user-questions.md",
+      "docs/subsystems/web-client.md",
+      "docs/subsystems/web-server.md",
+      "docs/subsystems/web.md",
+      "docs/subsystems/webhook.md",
+      "docs/subsystems/workflow.md",
+      "docs/subsystems/workspace.md"
+    ],
+    "basic": [
+      "docs/user/develop/basic/config.md",
+      "docs/user/develop/basic/index.md",
+      "docs/user/develop/basic/publish.md",
+      "docs/user/develop/basic/tool.md"
+    ],
+    "develop": [
+      "docs/user/develop/basic/config.md",
+      "docs/user/develop/basic/index.md",
+      "docs/user/develop/basic/publish.md",
+      "docs/user/develop/basic/tool.md",
+      "docs/user/develop/framework/events.md",
+      "docs/user/develop/framework/index.md",
+      "docs/user/develop/framework/service.md",
+      "docs/user/develop/practice/dynamic-cordis.md",
+      "docs/user/develop/practice/index.md",
+      "docs/user/develop/practice/llm-adapter.md"
+    ],
+    "user": [
+      "docs/user/develop/basic/config.md",
+      "docs/user/develop/basic/index.md",
+      "docs/user/develop/basic/publish.md",
+      "docs/user/develop/basic/tool.md",
+      "docs/user/develop/framework/events.md",
+      "docs/user/develop/framework/index.md",
+      "docs/user/develop/framework/service.md",
+      "docs/user/develop/practice/dynamic-cordis.md",
+      "docs/user/develop/practice/index.md",
+      "docs/user/develop/practice/llm-adapter.md",
+      "docs/user/guide/github-review.md",
+      "docs/user/guide/index.md",
+      "docs/user/guide/mcp-memory.md",
+      "docs/user/guide/network-proxy.md",
+      "docs/user/guide/providers.md",
+      "docs/user/guide/python-sdk.md",
+      "docs/user/guide/schedule.md",
+      "docs/user/index.md"
+    ],
+    "framework": [
+      "docs/user/develop/framework/events.md",
+      "docs/user/develop/framework/index.md",
+      "docs/user/develop/framework/service.md"
+    ],
+    "practice": [
+      "docs/user/develop/practice/dynamic-cordis.md",
+      "docs/user/develop/practice/index.md",
+      "docs/user/develop/practice/llm-adapter.md"
+    ],
+    "guide": [
+      "docs/user/guide/github-review.md",
+      "docs/user/guide/index.md",
+      "docs/user/guide/mcp-memory.md",
+      "docs/user/guide/network-proxy.md",
+      "docs/user/guide/providers.md",
+      "docs/user/guide/python-sdk.md",
+      "docs/user/guide/schedule.md"
+    ]
+  }
+}

@@ -1,15 +1,15 @@
 ---
-description: "循环卫生 guard 家族的包映射：建议性重复工具提醒与单次工具调用超时策略，供选择或组合 guard 的用户与维护者阅读。"
+description: "agent loop guard 家族的包映射：建议性重复工具提醒、单次工具调用超时策略与 shell 命令守门，供选择、组合或调试 guard 的用户与维护者阅读。"
 kind: "package-group"
 ---
 
-# guard/：循环卫生 guard 家族
+# guard/：agent loop guard 家族
 
 [English](README.md) | 中文
 
 ## 概述
 
-`guard/` 组通过监视两种常见失败模式来保持 agent loop（智能体循环）高效。`repeat-tool-reminder` 会在模型重复完全相同的工具调用时提醒它改变方法或结束任务，让卡住的循环不再浪费时间和 token。`timeout-policy` 为声明了限时的工具调用设置时间上限，让挂起的调用向模型返回清晰的超时错误，而不是拖住整个会话。两者都在 `dsh` 基础组合包中默认启用；组合可以调优或移除它们。
+`guard/` 组让 agent loop（智能体循环）既高效又安全。`repeat-tool-reminder` 会在模型重复相同的工具调用时提醒它改变方法或结束任务，让卡住的循环不再浪费时间和 token。`timeout-policy` 为声明了限时的工具调用设置时间上限，让挂起的调用返回清晰的超时错误，而不是拖住整个会话。`shell-command-guard` 拒绝灾难性 shell 与数据库命令，并在递归强制删除、强推历史、破坏性 SQL 或关闭主机前请求人工确认。三者都在 `dsh` 基础组合包中默认启用。
 
 ## 目录
 
@@ -22,12 +22,13 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-两个小插件分别覆盖两种模式；下文每个 README 都说明何时保留、调优或移除它。
+三个小插件分别覆盖本组的模式；下文每个 README 都说明何时保留、调优或移除它。
 
 | 包 | 提供什么 |
 |---|---|
 | [`repeat-tool-reminder/`](repeat-tool-reminder/README.zh.md) | 在模型重复完全相同的工具调用时提醒它，使其改变方法或结束任务 |
 | [`timeout-policy/`](timeout-policy/README.zh.md) | 为声明了限时的工具调用设置超时，让模型得到清晰错误而不是无限等待 |
+| [`shell-command-guard/`](shell-command-guard/README.zh.md) | 拒绝灾难性 shell 与数据库命令，并在风险命令前请求人工确认 |
 
 -----
 

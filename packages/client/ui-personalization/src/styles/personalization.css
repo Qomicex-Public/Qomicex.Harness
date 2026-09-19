@@ -1,0 +1,172 @@
+/*
+ * Personalization global sheet. Every rule is inert until the effects set the
+ * `data-dsh-p13n-*` attributes on `body` and the `--dsh-p13n-*` custom
+ * properties on the document root, so the sheet stays mounted for the plugin
+ * lifetime and the plugin owns exactly one reversible write per fact.
+ */
+
+/* Background paint on the document canvas. */
+body[data-dsh-p13n-bg='solid'] {
+  background-color: var(--dsh-p13n-bg-solid);
+  background-image: none;
+}
+
+body[data-dsh-p13n-bg='gradient'] {
+  background-color: transparent;
+  background-image: var(--dsh-p13n-bg-gradient);
+}
+
+body[data-dsh-p13n-bg='image'] {
+  background-color: transparent;
+  background-image: var(--dsh-p13n-bg-image);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* The app frame paints an opaque base; let the canvas show through instead. */
+body[data-dsh-p13n-bg='solid'] [data-dsh-app],
+body[data-dsh-p13n-bg='gradient'] [data-dsh-app],
+body[data-dsh-p13n-bg='image'] [data-dsh-app] {
+  background-color: transparent;
+}
+
+/* Readability scrim, painted between the canvas and the app content. The layer
+   attribute must not repeat the body's `data-dsh-p13n-scrim` flag, or the base
+   rule below would select the body and hide the whole page. */
+[data-dsh-p13n-scrim-layer] {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgba(255, 255, 255, var(--dsh-p13n-overlay));
+}
+
+body[data-dsh-p13n-scrim='on'] [data-dsh-p13n-scrim-layer] {
+  display: block;
+}
+
+body[data-ds-dark-theme][data-dsh-p13n-scrim='on'] [data-dsh-p13n-scrim-layer] {
+  background: rgba(0, 0, 0, var(--dsh-p13n-overlay));
+}
+
+/*
+ * Glass surfaces. The blur rides a ::before layer, never the surface itself:
+ * `backdrop-filter` on an ancestor makes it the containing block for
+ * `position: fixed` descendants (the settings dialog and popovers), which would
+ * pin them inside the surface.
+ */
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-sidebar='on'] [data-dsh-sidebar] {
+  position: relative;
+  background-color: color-mix(in srgb, var(--dsw-specific-sidebar-fill) 55%, transparent);
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-sidebar='on'] [data-dsh-sidebar]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(var(--dsh-p13n-glass-blur));
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-composer='on'] [data-composer-card] {
+  position: relative;
+  background-color: color-mix(in srgb, var(--dsw-specific-input-major) 60%, transparent);
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-composer='on'] [data-composer-card]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(var(--dsh-p13n-glass-blur));
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-conversation='on'] [data-dsh-conversation] {
+  position: relative;
+  background-color: color-mix(in srgb, var(--dsw-alias-bg-base) 60%, transparent);
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-conversation='on'] [data-dsh-conversation]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(var(--dsh-p13n-glass-blur));
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-settings='on'] [data-dsh-settings] {
+  position: relative;
+  background-color: color-mix(in srgb, var(--dsw-alias-bg-overlay) 72%, transparent);
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-settings='on'] [data-dsh-settings]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(var(--dsh-p13n-glass-blur));
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-code='on'] .md-code-block {
+  position: relative;
+  background-color: color-mix(in srgb, var(--dsw-alias-bg-layer-2) 65%, transparent);
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-code='on'] .md-code-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(var(--dsh-p13n-glass-blur));
+}
+
+/* Corner decoration, a fixed overlay that never intercepts pointer input. The
+   `-layer` suffix keeps its base rule off the body's `data-dsh-p13n-corner`
+   flag, which would otherwise carry this fixed 220px box and hide the page. */
+[data-dsh-p13n-corner-layer] {
+  display: none;
+  position: fixed;
+  width: 220px;
+  height: 220px;
+  z-index: 1;
+  pointer-events: none;
+  background-image: var(--dsh-p13n-corner-image);
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+body[data-dsh-p13n-corner='on'] [data-dsh-p13n-corner-layer] {
+  display: block;
+}
+
+body[data-dsh-p13n-corner-pos='top-left'] [data-dsh-p13n-corner-layer] {
+  top: 16px;
+  left: 16px;
+  background-position: top left;
+}
+
+body[data-dsh-p13n-corner-pos='top-right'] [data-dsh-p13n-corner-layer] {
+  top: 16px;
+  right: 16px;
+  background-position: top right;
+}
+
+body[data-dsh-p13n-corner-pos='bottom-left'] [data-dsh-p13n-corner-layer] {
+  bottom: 16px;
+  left: 16px;
+  background-position: bottom left;
+}
+
+body[data-dsh-p13n-corner-pos='bottom-right'] [data-dsh-p13n-corner-layer] {
+  bottom: 16px;
+  right: 16px;
+  background-position: bottom right;
+}

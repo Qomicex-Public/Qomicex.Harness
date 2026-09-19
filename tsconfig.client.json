@@ -115,6 +115,8 @@
     { "path": "./packages/client/ui-settings-plugin-inventory" },
     { "path": "./packages/client/ui-settings-unarchive-sessions" },
     { "path": "./packages/client/ui-settings-memory" },
+    { "path": "./packages/client/ui-settings-security-review" },
+    { "path": "./packages/client/ui-personalization" },
     { "path": "./packages/client/locale" },
     { "path": "./packages/client/ui-renderer" },
     { "path": "./packages/client/ui-session" },

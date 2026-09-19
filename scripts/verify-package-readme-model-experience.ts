@@ -131,6 +131,8 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/client/ui-settings-models': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
   'packages/client/ui-settings-plugin-inventory': { kind: 'none', reason: 'Browser-side inventory projection; registers nothing model-facing.' },
   'packages/client/ui-settings-unarchive-sessions': { kind: 'none', reason: 'Browser-side settings page; registers nothing model-facing.' },
+  'packages/client/ui-settings-security-review': { kind: 'none', reason: 'Browser-side settings page over the shell-command-guard settings namespace; the guard plugin owns every model-visible deny and ask reason.' },
+  'packages/client/ui-personalization': { kind: 'none', reason: 'Browser-side settings page and effect layer; the anchor colour changes CSS custom properties only and no personalization state reaches a model request or a Session event.' },
   'packages/client/ui-settings-memory': { kind: 'none', reason: 'Browser-side settings page over the memory Remote namespace; the bio-memory plugin owns every model-visible tool, prompt section, and hook.' },
   'packages/client/locale': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },
   'packages/client/web': { kind: 'none', reason: 'Browser-side UI plugin layer; registers nothing model-facing.' },

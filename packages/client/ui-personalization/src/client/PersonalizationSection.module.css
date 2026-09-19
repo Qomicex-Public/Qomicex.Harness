@@ -1,0 +1,140 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 0.5px solid var(--dsw-alias-border-l1);
+  padding-top: 12px;
+}
+
+.blockTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.muted {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.switchLabel {
+  font-size: 13px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cellLabel {
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.input {
+  min-width: 140px;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border: 0.5px solid var(--dsw-alias-border-l1);
+  border-radius: 6px;
+  background: var(--dsw-specific-input-major);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 12px;
+}
+
+.color {
+  width: 40px;
+  height: 26px;
+  padding: 0;
+  border: 0.5px solid var(--dsw-alias-border-l1);
+  border-radius: 6px;
+  background: none;
+}
+
+.range {
+  min-width: 160px;
+}
+
+.readout {
+  min-width: 32px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0.5px solid var(--dsw-alias-border-l1);
+  border-radius: 50%;
+  corner-shape: round;
+  cursor: pointer;
+}
+
+.preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thumb {
+  max-width: 140px;
+  max-height: 80px;
+  border-radius: 6px;
+  border: 0.5px solid var(--dsw-alias-border-l1);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ok {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-primary);
+}

@@ -1995,9 +1995,12 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     declaredBy: 'an entry in \'sidebar.settings\' (client-ui-settings-general), so it exists while that entry is mounted',
     occupants: [
       'client-ui-agent-preset AgentPresetSection id \'agent-presets\'',
+      'client-ui-personalization PersonalizationSection id \'personalization\'',
       'client-ui-settings-general GeneralSection id \'general\'',
+      'client-ui-settings-memory MemorySection id \'memory\'',
       'client-ui-settings-models ModelsSection id \'models\'',
       'client-ui-settings-plugins PluginsSettingsSection id \'plugins\'',
+      'client-ui-settings-security-review SecurityReviewSection id \'security-review\'',
       'client-ui-settings-unarchive-sessions ArchivedSessionsSection id \'archived-sessions\'',
     ],
     replaceRisk: 'none',

@@ -129,7 +129,7 @@ export function ConversationMainPanel(props: ConversationSlotProps) {
   const phase = settling ? 'settling' : hero ? 'hero' : 'active'
 
   return (
-    <div ref={rootResizeRef} className={css.root} data-phase={phase}>
+    <div ref={rootResizeRef} className={css.root} data-phase={phase} data-dsh-conversation="">
       {sessionId === undefined ? null : renderSlot('conversation.session.header', {})}
       <ConversationContent
         {...props}

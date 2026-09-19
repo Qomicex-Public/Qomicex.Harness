@@ -74,6 +74,10 @@
       "@deepseek-ai/dsh-api-session-controller/remote-events": ["./packages/api/session-controller/src/remote-events.ts"],
       "@deepseek-ai/dsh-api-settings-controller": ["./packages/api/settings-controller/src/index.ts"],
       "@deepseek-ai/dsh-api-settings-controller/types": ["./packages/api/settings-controller/src/types.ts"],
+      // memory-controller is role-named without the api- prefix its npm name
+      // carries, so this alias stays hand-written like the controller ones above.
+      "@deepseek-ai/dsh-api-memory-controller": ["./packages/api/memory-controller/src/index.ts"],
+      "@deepseek-ai/dsh-api-memory-controller/types": ["./packages/api/memory-controller/src/types.ts"],
       "@deepseek-ai/dsh-api-workspace-controller": ["./packages/api/workspace-controller/src/index.ts"],
       "@deepseek-ai/dsh-api-workspace-controller/client": ["./packages/api/workspace-controller/src/client/index.ts"],
       "@deepseek-ai/dsh-api-workspace-controller/types": ["./packages/api/workspace-controller/src/types.ts"],
@@ -245,6 +249,14 @@
       "@deepseek-ai/dsh-client-ui-settings-models": ["./packages/client/ui-settings-models/src"],
       "@deepseek-ai/dsh-client-ui-settings-plugin-inventory": ["./packages/client/ui-settings-plugin-inventory/src"],
       "@deepseek-ai/dsh-client-ui-settings-unarchive-sessions": ["./packages/client/ui-settings-unarchive-sessions/src"],
+      "@deepseek-ai/dsh-client-ui-settings-memory": ["./packages/client/ui-settings-memory/src"],
+      "@deepseek-ai/dsh-client-ui-settings-memory/client": ["./packages/client/ui-settings-memory/src/client"],
+      // Directory/name mismatch for the settings pages added after the memory
+      // page: they carry the client- prefix, so these stay hand-written.
+      "@deepseek-ai/dsh-client-ui-settings-security-review": ["./packages/client/ui-settings-security-review/src"],
+      "@deepseek-ai/dsh-client-ui-settings-security-review/client": ["./packages/client/ui-settings-security-review/src/client"],
+      "@deepseek-ai/dsh-client-ui-personalization": ["./packages/client/ui-personalization/src"],
+      "@deepseek-ai/dsh-client-ui-personalization/client": ["./packages/client/ui-personalization/src/client"],
       "@deepseek-ai/dsh-client-locale": ["./packages/client/locale/src"],
       "@deepseek-ai/dsh-client-web": ["./packages/client/web/src"],
       "@deepseek-ai/dsh-schedule/client": ["./packages/schedule/schedule/src/client.ts"],
@@ -412,6 +424,7 @@
       "@deepseek-ai/dsh-settings/invariant": ["./packages/settings/settings/src/invariant.ts"],
       "@deepseek-ai/dsh-settings-file": ["./packages/settings/settings-file/src"],
       "@deepseek-ai/dsh-shell": ["./packages/shell/shell/src"],
+      "@deepseek-ai/dsh-shell-command-guard": ["./packages/guard/shell-command-guard/src"],
       "@deepseek-ai/dsh-skill": ["./packages/skill/skill/src"],
       "@deepseek-ai/dsh-skill-badge": ["./packages/skill/skill-badge/src"],
       "@deepseek-ai/dsh-skill-filesystem": ["./packages/skill/skill-filesystem/src"],
