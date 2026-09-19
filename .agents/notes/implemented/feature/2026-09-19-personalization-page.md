@@ -22,7 +22,7 @@ Four packages gained one stable anchor each: `ui-layout` (`data-dsh-app`), `ui-s
 
 ## Verification
 
-[`tests/color-scale.spec.ts`](../../../../packages/client/ui-personalization/tests/color-scale.spec.ts) pins the HSL conversion, token coverage, anchor placement, and ramp monotonicity. [`tests/personalization-settings.spec.ts`](../../../../packages/client/ui-personalization/tests/personalization-settings.spec.ts) pins the schema defaults and write validation. [`tests/personalization-page.client.spec.tsx`](../../../../packages/client/ui-personalization/tests/personalization-page.client.spec.tsx) drives the page's states, the draft-then-save behavior, colour rejection, the eyedropper path, the section registration, and the namespace binding. The `ui-sidebar` snapshot suite records the added anchor attribute.
+[`tests/color-scale.client.spec.ts`](../../../../packages/client/ui-personalization/tests/color-scale.client.spec.ts) pins the HSL conversion, token coverage, anchor placement, and ramp monotonicity. [`tests/personalization-settings.client.spec.ts`](../../../../packages/client/ui-personalization/tests/personalization-settings.client.spec.ts) pins the schema defaults and write validation. [`tests/personalization-page.client.spec.tsx`](../../../../packages/client/ui-personalization/tests/personalization-page.client.spec.tsx) drives the page's states, the draft-then-save behavior, colour rejection, the eyedropper path, the section registration, and the namespace binding. The `ui-sidebar` snapshot suite records the added anchor attribute.
 
 ## Alternatives considered
 

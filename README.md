@@ -1,16 +1,40 @@
-# DeepSeek Harness
+# Qomicex Harness
 
 English | [中文](README.zh.md)
 
-DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
+Qomicex Harness is a downstream distribution of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`), the open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
 
-It is built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
+It keeps the upstream **everything-is-a-plugin** architecture and the [Cordis](https://github.com/cordiverse/cordis) runtime, whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512), and adds the plugins and tooling listed below. Upstream documentation about profiles, plugins, and the Session log applies to this distribution unchanged.
 
-Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
+## Upstream project
+
+- Repository: [github.com/deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)
+- Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
+
+## What this distribution adds
+
+Every runtime addition is an ordinary dsh plugin mounted from a profile bundle like any other; `@deepseek-ai/dsh-memory` ships disabled.
+
+| Plugin | Package | What it does |
+|---|---|---|
+| Qomicex branding | `@deepseek-ai/dsh-ui-brand-qomicex` | Occupies the Web client's sidebar and hero brand slots with the Qomicex Harness mark and name, replacing the upstream brand occupant so neither slot falls back to the DeepSeek mark |
+| Global memory | `@deepseek-ai/dsh-memory` | Gives the harness a memory that survives sessions: the harness writes by observing the loop's own events and running deterministic rules over them; the agent reads through the `memory_recall`, `memory_review`, and `memory_forget` tools |
+| Memory remote | `@deepseek-ai/dsh-api-memory-controller` | Host Remote owner of the memory inspection surface: the memory graph, per-scope counts, and the forget action |
+| Memory Settings page | `@deepseek-ai/dsh-client-ui-settings-memory` | The **Memory** page: the memory plugin's configuration above a force-directed graph of every stored memory |
+| Personalization | `@deepseek-ai/dsh-client-ui-personalization` | A Host-persisted `personalization` settings namespace plus the browser page and effects for background, theme color scale, glass surfaces, and a corner image |
+| Shell-command guard | `@deepseek-ai/dsh-shell-command-guard` | Denies catastrophic shell commands and asks a human before recursively forcing deletion, force-pushing history, running destructive SQL, or powering off the host |
+| Security Review page | `@deepseek-ai/dsh-client-ui-settings-security-review` | The **Security Review** page: the guard's master switch, keyword and regular-expression rules, inline check script, and recursive-delete allow paths |
+
+Two further additions sit outside the plugin roster: `@deepseek-ai/dsh-memory-benchmark`, the scenario suite that holds the bio-memory design to its own claims, and the Qomicex artwork sources in [brand/](brand/README.md).
+
+## Build automation
+
+- [build-cli.yml](.github/workflows/build-cli.yml) packs the `dsh` npm tarballs together with the vendored framework family.
+- [build-desktop.yml](.github/workflows/build-desktop.yml) builds the unsigned Windows x64 Desktop installer.
 
 ## Developer preview
 
-DeepSeek Harness is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
+Qomicex Harness follows the upstream _developer preview_ and iterates rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
 
 Review the [safety notice](SAFETY.md) before running the project.
 
@@ -28,23 +52,17 @@ The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it
 
 ### Run from source
 
-To run from a repository checkout:
+To run from a checkout of this distribution:
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
-cd deepseek-harness
+git clone https://github.com/Qomicex-Public/Qomicex.Harness.git
+cd Qomicex.Harness
 pnpm install
 pnpm run build
 pnpm dsh web
 ```
 
 `pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
-
-## Community and support
-
-- Submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
-- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
-- Join <a href="https://discord.gg/Ycq5dCaS4">DeepSeek Harness Discord community</a>.
 
 ## Contributing
 
@@ -55,18 +73,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md).
 
 For agents, follow [AGENTS.md](AGENTS.md).
-
-## Citation
-
-```bibtex
-@misc{deepseek-harness2026,
-  title={DeepSeek Harness: Everything is a Plugin},
-  author={DeepSeek-AI},
-  year={2026},
-  publisher={GitHub},
-  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
-}
-```
 
 ## License
 

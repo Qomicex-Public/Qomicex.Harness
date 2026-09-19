@@ -22,7 +22,7 @@ Status: implemented
 
 ## 验证
 
-[`tests/color-scale.spec.ts`](../../../../packages/client/ui-personalization/tests/color-scale.spec.ts) 钉住 HSL 转换、token 覆盖、锚点落位与色阶单调性。[`tests/personalization-settings.spec.ts`](../../../../packages/client/ui-personalization/tests/personalization-settings.spec.ts) 钉住 schema 默认值与写入校验。[`tests/personalization-page.client.spec.tsx`](../../../../packages/client/ui-personalization/tests/personalization-page.client.spec.tsx) 驱动页面的各状态、先改后存行为、颜色拒绝、吸管路径、区域注册与命名空间绑定。`ui-sidebar` 快照套件记录了新增的锚点属性。
+[`tests/color-scale.client.spec.ts`](../../../../packages/client/ui-personalization/tests/color-scale.client.spec.ts) 钉住 HSL 转换、token 覆盖、锚点落位与色阶单调性。[`tests/personalization-settings.client.spec.ts`](../../../../packages/client/ui-personalization/tests/personalization-settings.client.spec.ts) 钉住 schema 默认值与写入校验。[`tests/personalization-page.client.spec.tsx`](../../../../packages/client/ui-personalization/tests/personalization-page.client.spec.tsx) 驱动页面的各状态、先改后存行为、颜色拒绝、吸管路径、区域注册与命名空间绑定。`ui-sidebar` 快照套件记录了新增的锚点属性。
 
 ## 备选方案
 
