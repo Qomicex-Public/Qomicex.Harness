@@ -34,7 +34,7 @@ describe('dsh-tool-git', () => {
     return registered!
   }
 
-  const fakeChild = (output = { stdout: '', stderr: '' }, opts: { code?: number; skipClose?: boolean } = {}) => {
+  const fakeChild = (output: { stdout?: string; stderr?: string } = {}, opts: { code?: number; skipClose?: boolean } = {}) => {
     const t = eventTarget()
     const stdout = eventTarget()
     const stderr = eventTarget()

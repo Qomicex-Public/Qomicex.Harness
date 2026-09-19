@@ -7,7 +7,7 @@ describe('junsi-routing', () => {
     const ctx = new Context()
     const section = vi.fn()
     const systemPrompt = { section }
-    ctx.effect = vi.fn((run: () => void) => { run() })
+    ctx.effect = vi.fn((run: () => void) => { run() }) as never
 
     // @ts-expect-error injected service stub
     ctx.systemPrompt = systemPrompt
