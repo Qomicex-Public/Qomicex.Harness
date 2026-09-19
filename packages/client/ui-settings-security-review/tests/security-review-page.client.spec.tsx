@@ -148,7 +148,7 @@ describe('section states', () => {
   it('renders the current switch, built-in rules, and every list', () => {
     const { face } = makeFace(section())
     const { container } = render(<SecurityReviewForm settings={face} t={t} />)
-    expect((container.querySelector('#security-review-enabled') as HTMLInputElement).checked).toBe(true)
+    expect(screen.getByRole('switch', { name: 'enabled' }).getAttribute('aria-checked')).toBe('true')
     expect(container.querySelectorAll('ul li').length).toBeGreaterThanOrEqual(10)
     expect((container.querySelector('#security-review-keyword-0-value') as HTMLInputElement).value).toBe('DROP DATABASE')
     expect((container.querySelector('#security-review-rule-0-value') as HTMLInputElement).value).toBe('\\|\\s*bash')
@@ -159,8 +159,8 @@ describe('section states', () => {
 describe('form behavior', () => {
   it('writes the master switch', async () => {
     const { face, calls } = makeFace(section())
-    const { container } = render(<SecurityReviewForm settings={face} t={t} />)
-    fireEvent.click(container.querySelector('#security-review-enabled') as HTMLInputElement)
+    render(<SecurityReviewForm settings={face} t={t} />)
+    fireEvent.click(screen.getByRole('switch', { name: 'enabled' }))
     await flush()
     expect(written(calls[0]!).enabled).toBe(false)
   })
@@ -194,7 +194,8 @@ describe('form behavior', () => {
     const { face, calls } = makeFace(section({ keywords: [{ text: 'a', action: 'ask', reason: 'r' }] }))
     const { container } = render(<SecurityReviewForm settings={face} t={t} />)
 
-    fireEvent.change(container.querySelector('#security-review-keyword-0-action')!, { target: { value: 'deny' } })
+    fireEvent.click(container.querySelector('#security-review-keyword-0-action') as HTMLElement)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'actionDeny' }))
     await flush()
     expect(written(calls.at(-1)!).keywords).toEqual([{ text: 'a', action: 'deny', reason: 'r' }])
 
@@ -209,7 +210,8 @@ describe('form behavior', () => {
     const { face, calls } = makeFace(section())
     const { container } = render(<SecurityReviewForm settings={face} t={t} />)
 
-    fireEvent.change(container.querySelector('#security-review-rule-0-action')!, { target: { value: 'deny' } })
+    fireEvent.click(container.querySelector('#security-review-rule-0-action') as HTMLElement)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'actionDeny' }))
     await flush()
     expect(written(calls.at(-1)!).rules).toEqual([{ pattern: '\\|\\s*bash', action: 'deny', reason: 'no pipe' }])
 
@@ -292,7 +294,8 @@ describe('form behavior', () => {
     expect(written(calls.at(-1)!).keywords)
       .toEqual([{ text: 'a', action: 'ask', reason: '' }, { text: 'c', action: 'ask', reason: '' }])
 
-    fireEvent.change(container.querySelector('#security-review-keyword-0-action')!, { target: { value: 'ask' } })
+    fireEvent.click(container.querySelector('#security-review-keyword-0-action') as HTMLElement)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'actionAsk' }))
     await flush()
     expect(written(calls.at(-1)!).keywords)
       .toEqual([{ text: 'a', action: 'ask', reason: '' }, { text: 'c', action: 'ask', reason: '' }])
@@ -324,8 +327,8 @@ describe('form behavior', () => {
 
   it('disables every control when the document is not writable', () => {
     const { face } = makeFace(section(), { writable: false })
-    const { container } = render(<SecurityReviewForm settings={face} t={t} />)
-    expect((container.querySelector('#security-review-enabled') as HTMLInputElement).disabled).toBe(true)
+    render(<SecurityReviewForm settings={face} t={t} />)
+    expect((screen.getByRole('switch', { name: 'enabled' }) as HTMLButtonElement).disabled).toBe(true)
     for (const button of screen.getAllByText(/save|reset|add|remove/)) {
       expect((button as HTMLButtonElement).disabled).toBe(true)
     }

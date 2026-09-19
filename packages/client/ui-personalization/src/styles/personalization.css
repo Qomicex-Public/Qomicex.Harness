@@ -58,6 +58,15 @@ body[data-ds-dark-theme][data-dsh-p13n-scrim='on'] [data-dsh-p13n-scrim-layer] {
  * `position: fixed` descendants (the settings dialog and popovers), which would
  * pin them inside the surface.
  */
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-sidebar='on'] [data-dsh-app] {
+  background-color: transparent;
+}
+
+body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-sidebar='on'] [data-dsh-sidebar-col] {
+  background-color: transparent;
+  border-right-color: color-mix(in srgb, var(--dsw-alias-border-l3) 55%, transparent);
+}
+
 body[data-dsh-p13n-glass='on'][data-dsh-p13n-glass-sidebar='on'] [data-dsh-sidebar] {
   position: relative;
   background-color: color-mix(in srgb, var(--dsw-specific-sidebar-fill) 55%, transparent);

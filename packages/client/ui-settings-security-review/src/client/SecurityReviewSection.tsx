@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState, type ReactNode } from 'react'
-import { Button } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, IconChevronDownOutline14, Input, Menu, Switch } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SecurityReviewLocaleKey } from './locales.ts'
 import {
@@ -141,16 +141,15 @@ export function SecurityReviewForm(props: {
 
   return (
     <div className={css.page}>
-      <label className={css.switch}>
-        <input
-          id="security-review-enabled"
-          type="checkbox"
+      <div className={css.switch}>
+        <Switch
           checked={value.enabled}
           disabled={disabled}
-          onChange={(event) => { commit({ ...value, enabled: event.target.checked }) }}
+          label={t('enabled')}
+          onChange={(enabled) => { commit({ ...value, enabled }) }}
         />
         <span className={css.switchLabel}>{t('enabled')}</span>
-      </label>
+      </div>
       <p className={css.hint}>{t('enabledHint')}</p>
 
       <section className={css.block}>
@@ -279,17 +278,14 @@ function StringRuleRows(props: {
               onCommit={(next) => { onChange(index, { ...row, value: next }) }}
             />
             <div className={css.cell}>
-              <label className={css.cellLabel} htmlFor={`${idPrefix}-${String(index)}-action`}>{t('columnAction')}</label>
-              <select
+              <span className={css.cellLabel}>{t('columnAction')}</span>
+              <ActionMenu
                 id={`${idPrefix}-${String(index)}-action`}
-                className={css.input}
                 value={row.action}
                 disabled={disabled}
-                onChange={(event) => { onChange(index, { ...row, action: toAction(event.target.value) }) }}
-              >
-                <option value="ask">{t('actionAsk')}</option>
-                <option value="deny">{t('actionDeny')}</option>
-              </select>
+                t={t}
+                onChange={(action) => { onChange(index, { ...row, action }) }}
+              />
             </div>
             <TextCell
               id={`${idPrefix}-${String(index)}-reason`}
@@ -308,12 +304,51 @@ function StringRuleRows(props: {
 }
 
 /**
- * Narrow a select value to a review action; the options are the only sources.
- * @param value - the select's string value.
- * @returns `deny` for the deny option, `ask` otherwise.
+ * A labelled dropdown for one rule action.
+ * @param props - id, current action, disabled, translate, and the change callback.
+ * @returns the action selector.
  */
-function toAction(value: string): ReviewAction {
-  return value === 'deny' ? 'deny' : 'ask'
+function ActionMenu(props: {
+  readonly id: string
+  readonly value: ReviewAction
+  readonly disabled: boolean
+  readonly t: (key: SecurityReviewLocaleKey) => string
+  readonly onChange: (action: ReviewAction) => void
+}): ReactNode {
+  const { id, value, disabled, t, onChange } = props
+  const [open, setOpen] = useState(false)
+  const options: readonly { id: ReviewAction; label: SecurityReviewLocaleKey }[] = [
+    { id: 'ask', label: 'actionAsk' },
+    { id: 'deny', label: 'actionDeny' },
+  ]
+  const selected = value === 'deny' ? 'actionDeny' : 'actionAsk'
+  return (
+    <Menu
+      open={open}
+      onClose={() => { setOpen(false) }}
+      items={options.map(option => ({ id: option.id, label: t(option.label) }))}
+      selectedId={value}
+      onSelect={(id) => {
+        setOpen(false)
+        onChange(id === 'deny' ? 'deny' : 'ask')
+      }}
+      align="end"
+      anchor={(
+        <button
+          id={id}
+          type="button"
+          className={css.selectButton}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          disabled={disabled}
+          onClick={() => { setOpen(value => !value) }}
+        >
+          {t(selected)}
+          <IconChevronDownOutline14 className={css.chevron} />
+        </button>
+      )}
+    />
+  )
 }
 
 /**
@@ -357,9 +392,9 @@ function TextCell(props: {
           />
         )
         : (
-          <input
+          <Input
             id={id}
-            className={css.input}
+            className={css.inputCell}
             type="text"
             value={draft}
             placeholder={placeholder}

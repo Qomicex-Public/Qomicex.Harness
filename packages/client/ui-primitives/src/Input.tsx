@@ -12,7 +12,9 @@ import css from './Input.module.css'
  */
 export function Input({ icon, className, ...rest }: {
   icon?: ReactNode
-  className?: string
+  // `| undefined` so a caller can forward an optional class straight through
+  // under exactOptionalPropertyTypes (a CSS-module lookup is string|undefined).
+  className?: string | undefined
 } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <span className={clsx(css.wrap, className)}>
