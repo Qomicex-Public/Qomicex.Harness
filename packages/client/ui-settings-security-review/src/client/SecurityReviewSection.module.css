@@ -42,6 +42,41 @@
   color: var(--dsw-alias-label-primary);
 }
 
+.chevron {
+  flex: none;
+  margin-left: auto;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.inputCell {
+  width: 100%;
+}
+
+.selectButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 96px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0.5px solid var(--dsw-alias-border-l1);
+  border-radius: 6px;
+  background: var(--dsw-specific-input-major);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.selectButton:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.selectButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .builtins {
   display: flex;
   flex-direction: column;

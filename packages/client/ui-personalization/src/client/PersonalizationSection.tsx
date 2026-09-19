@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
-import { Button } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, IconChevronDownOutline14, Input, Menu, Switch } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { PersonalizationLocaleKey } from './locales.ts'
 import { readValue, saveOps, resetOps, firstInvalidColor, THEME_COLOR_PRESETS, type PersonalizationPathOp } from './model.ts'
@@ -260,14 +260,15 @@ export function PersonalizationForm(props: {
         <h3 className={css.blockTitle}>{t('cornerTitle')}</h3>
         <Toggle id="p13n-corner" label={t('cornerEnabled')} checked={draft.corner.enabled} disabled={disabled}
           onChange={(enabled) => { update({ corner: { ...draft.corner, enabled } }) }} />
-        <label className={css.cell}>
+        <div className={css.cell}>
           <span className={css.cellLabel}>{t('cornerPosition')}</span>
-          <select id="p13n-corner-pos" className={css.input} value={draft.corner.position}
+          <PositionMenu
+            value={draft.corner.position}
             disabled={disabled || !draft.corner.enabled}
-            onChange={(event) => { update({ corner: { ...draft.corner, position: event.target.value as CornerPosition } }) }}>
-            {CORNER_POSITIONS.map(position => <option key={position} value={position}>{t(positionKey(position))}</option>)}
-          </select>
-        </label>
+            t={t}
+            onChange={(position) => { update({ corner: { ...draft.corner, position } }) }}
+          />
+        </div>
         <ImagePicker id="p13n-corner-file" label={t('cornerUpload')} removeLabel={t('cornerRemove')}
           disabled={disabled || !draft.corner.enabled} previewLabel={t('cornerCurrent')} previewUrl={cornerImageUrl}
           noneLabel={t('cornerNone')}
@@ -289,6 +290,47 @@ export function PersonalizationForm(props: {
 /** Locale key for one background mode. */
 function modeKey(mode: BackgroundMode): PersonalizationLocaleKey {
   return mode === 'none' ? 'modeNone' : mode === 'solid' ? 'modeSolid' : mode === 'gradient' ? 'modeGradient' : 'modeImage'
+}
+
+/**
+ * A labelled dropdown for the corner decoration position.
+ * @param props - current position, disabled, translate, and the change callback.
+ * @returns the position selector.
+ */
+function PositionMenu(props: {
+  readonly value: CornerPosition
+  readonly disabled: boolean
+  readonly t: (key: PersonalizationLocaleKey) => string
+  readonly onChange: (position: CornerPosition) => void
+}): ReactNode {
+  const { value, disabled, t, onChange } = props
+  const [open, setOpen] = useState(false)
+  return (
+    <Menu
+      open={open}
+      onClose={() => { setOpen(false) }}
+      items={CORNER_POSITIONS.map(position => ({ id: position, label: t(positionKey(position)) }))}
+      selectedId={value}
+      onSelect={(id) => {
+        setOpen(false)
+        onChange(id as CornerPosition)
+      }}
+      align="end"
+      anchor={(
+        <button
+          type="button"
+          className={css.selectButton}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          disabled={disabled}
+          onClick={() => { setOpen(value => !value) }}
+        >
+          {t(positionKey(value))}
+          <IconChevronDownOutline14 className={css.chevron} />
+        </button>
+      )}
+    />
+  )
 }
 
 /** Locale key for one corner position. */
@@ -340,7 +382,7 @@ function useStoredImageUrl(key: string, revision: number): string | undefined {
   return url
 }
 
-/** A labelled checkbox. */
+/** A labelled toggle switch. */
 function Toggle(props: {
   readonly id: string
   readonly label: string
@@ -348,12 +390,17 @@ function Toggle(props: {
   readonly disabled: boolean
   readonly onChange: (checked: boolean) => void
 }): ReactNode {
+  const { id, label, checked, disabled, onChange } = props
   return (
-    <label className={css.switch} htmlFor={props.id}>
-      <input id={props.id} type="checkbox" checked={props.checked} disabled={props.disabled}
-        onChange={(event) => { props.onChange(event.target.checked) }} />
-      <span className={css.switchLabel}>{props.label}</span>
-    </label>
+    <div className={css.switch}>
+      <Switch
+        checked={checked}
+        disabled={disabled}
+        label={label}
+        onChange={onChange}
+      />
+      <span id={id} className={css.switchLabel}>{label}</span>
+    </div>
   )
 }
 
@@ -392,7 +439,7 @@ function TextField(props: {
   return (
     <label className={css.cell} htmlFor={props.id}>
       <span className={css.cellLabel}>{props.label}</span>
-      <input id={props.id} className={css.input} type="text" value={props.value} placeholder={props.placeholder}
+      <Input id={props.id} className={css.inputCell} type="text" value={props.value} placeholder={props.placeholder}
         disabled={props.disabled}
         onChange={(event) => { props.onChange(event.target.value.trim()) }} />
     </label>

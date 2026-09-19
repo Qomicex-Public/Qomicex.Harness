@@ -140,11 +140,11 @@ describe('section states', () => {
   it('renders the schema defaults', () => {
     const { face } = makeFace(section())
     const { container } = render(<PersonalizationForm settings={face} t={t} />)
-    expect((container.querySelector('#p13n-enabled') as HTMLInputElement).checked).toBe(true)
-    expect((container.querySelector('#p13n-glass') as HTMLInputElement).checked).toBe(true)
-    expect((container.querySelector('#p13n-glass-sidebar') as HTMLInputElement).checked).toBe(true)
+    expect(screen.getByRole('switch', { name: 'enabled' }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByRole('switch', { name: 'glassEnabled' }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByRole('switch', { name: 'glassSidebar' }).getAttribute('aria-checked')).toBe('true')
     expect((container.querySelector('#p13n-glass-blur') as HTMLInputElement).value).toBe('20')
-    expect((container.querySelector('#p13n-corner') as HTMLInputElement).checked).toBe(false)
+    expect(screen.getByRole('switch', { name: 'cornerEnabled' }).getAttribute('aria-checked')).toBe('false')
     // Background mode defaults to none, so no colour control renders.
     expect(container.querySelector('#p13n-bg-solid')).toBeNull()
   })
@@ -172,8 +172,8 @@ describe('form behavior', () => {
 
   it('keeps edits local until save, then writes the draft', async () => {
     const { face, calls } = makeFace(section())
-    const { container } = render(<PersonalizationForm settings={face} t={t} />)
-    fireEvent.click(container.querySelector('#p13n-enabled') as HTMLInputElement)
+    render(<PersonalizationForm settings={face} t={t} />)
+    fireEvent.click(screen.getByRole('switch', { name: 'enabled' }))
     await flush()
     expect(calls).toHaveLength(0)
     fireEvent.click(screen.getByText('save'))
@@ -208,7 +208,7 @@ describe('form behavior', () => {
   it('edits glass switches and blur, and writes them on save', async () => {
     const { face, calls } = makeFace(section())
     const { container } = render(<PersonalizationForm settings={face} t={t} />)
-    fireEvent.click(container.querySelector('#p13n-glass-code') as HTMLInputElement)
+    fireEvent.click(screen.getByRole('switch', { name: 'glassCode' }))
     fireEvent.change(container.querySelector('#p13n-glass-blur')!, { target: { value: '30' } })
     fireEvent.click(screen.getByText('save'))
     await flush()
@@ -343,9 +343,9 @@ describe('theme colour and corner controls', () => {
 
   it('toggles the glass master switch', async () => {
     const { face, calls } = makeFace(section())
-    const { container } = render(<PersonalizationForm settings={face} t={t} />)
-    fireEvent.click(container.querySelector('#p13n-glass') as HTMLInputElement)
-    fireEvent.click(container.querySelector('#p13n-glass') as HTMLInputElement)
+    render(<PersonalizationForm settings={face} t={t} />)
+    fireEvent.click(screen.getByRole('switch', { name: 'glassEnabled' }))
+    fireEvent.click(screen.getByRole('switch', { name: 'glassEnabled' }))
     fireEvent.click(screen.getByText('save'))
     await flush()
     expect((written(calls[0]!).glass as { enabled: boolean }).enabled).toBe(true)
@@ -354,8 +354,9 @@ describe('theme colour and corner controls', () => {
   it('writes corner settings and manages the decoration image', async () => {
     const { face, calls } = makeFace(section())
     const { container } = render(<PersonalizationForm settings={face} t={t} />)
-    fireEvent.click(container.querySelector('#p13n-corner') as HTMLInputElement)
-    fireEvent.change(container.querySelector('#p13n-corner-pos')!, { target: { value: 'top-right' } })
+    fireEvent.click(screen.getByRole('switch', { name: 'cornerEnabled' }))
+    fireEvent.click(screen.getByRole('button', { name: 'positionBottomLeft' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'positionTopRight' }))
     const file = new File(['edge'], 'edge.png', { type: 'image/png' })
     fireEvent.change(container.querySelector('#p13n-corner-file')!, { target: { files: [file] } })
     await flush()

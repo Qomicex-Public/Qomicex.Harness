@@ -219,7 +219,7 @@ export function AppFrame({
         useSessions={useSessions}
         usePanelInfo={usePanelInfo}
       />
-      <div className={css.sidebarCol}>
+      <div className={css.sidebarCol} data-dsh-sidebar-col>
         {sidebar}
       </div>
       <>
