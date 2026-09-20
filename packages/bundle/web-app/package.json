@@ -124,7 +124,8 @@
     "commander": "^15.0.0",
     "open": "^11.0.0",
     "@deepseek-ai/dsh-api-terminal-controller": "workspace:^",
-    "@deepseek-ai/dsh-client-ui-sidebar-terminal": "workspace:^"
+    "@deepseek-ai/dsh-client-ui-sidebar-terminal": "workspace:^",
+    "dshmarket": "1.48.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",

@@ -285,6 +285,12 @@
     - id: ui-settings-plugin-inventory
       name: '@deepseek-ai/dsh-client-ui-settings-plugin-inventory'
 
+    # Plugin Market: browse, search, and one-click install community plugins.
+    # An external dependency mounted through the installation module fallback,
+    # so no `dsh plugin add` is needed; its catalog is fetched live at runtime.
+    - id: dsh-market
+      name: 'dshmarket'
+
     - id: ui-settings-unarchive-sessions
       name: '@deepseek-ai/dsh-client-ui-settings-unarchive-sessions'
 

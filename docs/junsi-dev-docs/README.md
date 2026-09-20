@@ -1,5 +1,5 @@
 # 项目文档索引
-最后更新：2026-09-19 21:44
+最后更新：2026-09-20 16:02
 
 ## 1-决策记录
 
@@ -7,6 +7,8 @@
 
 - [ADR-001：内置渗透测试与 JunSi 开发模式 Agent 预设](1-决策记录/ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设.md)
 - [ADR-002：内置 junsi 预设追加上游 project-docs MCP 与 routing/shared](1-决策记录/ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared.md)
+- [ADR-003：project-docs 从 Python MCP 服务移植为 TS 原生工具包](1-决策记录/ADR-003-project-docs-从-python-mcp-移植为-ts-原生工具包.md)
+- [ADR-004：dsh-market 内置为 web profile 默认插件商店](1-决策记录/ADR-004-dsh-market-内置为-web-profile-默认插件商店.md)
 
 ## 2-架构设计
 
@@ -107,6 +109,8 @@
 - `i18n--translation-rules` [Translation rules](../i18n/translation-rules.md)  `i18n`
 - `junsi-dev-docs--1-决策记录--ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设` [ADR-001：内置渗透测试与 JunSi 开发模式 Agent 预设](1-决策记录/ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设.md)  `1-决策记录`
 - `junsi-dev-docs--1-决策记录--ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared` [ADR-002：内置 junsi 预设追加上游 project-docs MCP 与 routing/shared](1-决策记录/ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared.md)  `1-决策记录`
+- `junsi-dev-docs--1-决策记录--ADR-003-project-docs-从-python-mcp-移植为-ts-原生工具包` [ADR-003：project-docs 从 Python MCP 服务移植为 TS 原生工具包](1-决策记录/ADR-003-project-docs-从-python-mcp-移植为-ts-原生工具包.md)  `1-决策记录`
+- `junsi-dev-docs--1-决策记录--ADR-004-dsh-market-内置为-web-profile-默认插件商店` [ADR-004：dsh-market 内置为 web profile 默认插件商店](1-决策记录/ADR-004-dsh-market-内置为-web-profile-默认插件商店.md)  `1-决策记录`
 - `module-graph` [Shared-instance dependency graph](../module-graph.md)
 - `persistence-catalog` [Session Persistence Event Catalog](../persistence-catalog.md)
 - `persistence-changes--2026-09-11-initial` [Initial persistence type baseline](../persistence-changes/2026-09-11-initial.md)  `persistence-changes`
@@ -245,8 +249,8 @@
 - **cordis-api** (6): [context](../cordis-api/context.md), [events](../cordis-api/events.md), [fiber](../cordis-api/fiber.md), [inherited](../cordis-api/inherited.md), [registry](../cordis-api/registry.md), [service](../cordis-api/service.md)
 - **i18n** (5): [README](../i18n/README.md), [style-samples](../i18n/style-samples.md), [terminology](../i18n/terminology.md), [translation-prompt](../i18n/translation-prompt.md), [translation-rules](../i18n/translation-rules.md)
 - **postmortem** (5): [0001-acp-default-export-drops-inject](../postmortem/0001-acp-default-export-drops-inject.md), [0002-js-expression-disabled-filesystem-tools](../postmortem/0002-js-expression-disabled-filesystem-tools.md), [0003-web-agent-gui-feedback-loop](../postmortem/0003-web-agent-gui-feedback-loop.md), [0004-landlock-partial-notice-misclassified-child-failures](../postmortem/0004-landlock-partial-notice-misclassified-child-failures.md), [README](../postmortem/README.md)
+- **1-决策记录** (4): [ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设](1-决策记录/ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设.md), [ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared](1-决策记录/ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared.md), [ADR-003-project-docs-从-python-mcp-移植为-ts-原生工具包](1-决策记录/ADR-003-project-docs-从-python-mcp-移植为-ts-原生工具包.md), [ADR-004-dsh-market-内置为-web-profile-默认插件商店](1-决策记录/ADR-004-dsh-market-内置为-web-profile-默认插件商店.md)
 - **basic** (4): [config](../user/develop/basic/config.md), [index](../user/develop/basic/index.md), [publish](../user/develop/basic/publish.md), [tool](../user/develop/basic/tool.md)
 - **historical-formats** (4): [README](../persistence-changes/historical-formats/README.md), [v0](../persistence-changes/historical-formats/v0.md), [v1](../persistence-changes/historical-formats/v1.md), [v2](../persistence-changes/historical-formats/v2.md)
 - **framework** (3): [events](../user/develop/framework/events.md), [index](../user/develop/framework/index.md), [service](../user/develop/framework/service.md)
 - **practice** (3): [dynamic-cordis](../user/develop/practice/dynamic-cordis.md), [index](../user/develop/practice/index.md), [llm-adapter](../user/develop/practice/llm-adapter.md)
-- **1-决策记录** (2): [ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设](1-决策记录/ADR-001-内置渗透测试与-JunSi-开发模式-Agent-预设.md), [ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared](1-决策记录/ADR-002-内置-junsi-预设追加上游-project-docs-MCP-与-routing-shared.md)
