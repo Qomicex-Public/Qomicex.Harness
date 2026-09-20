@@ -110,15 +110,32 @@ describe('PermissionPresetService', () => {
 
   it('advertises the preset table in declaration order and resolves bundles', async () => {
     const ctx = await mounted()
-    expect(ctx.permissionPresets.names).toEqual(['workspace-write', 'danger-full-access'])
+    expect(ctx.permissionPresets.names).toEqual(['workspace-write', 'danger-full-access', 'yolo'])
     expect(ctx.permissionPresets.resolve('danger-full-access')).toMatchObject({ sandbox: 'danger-full-access', approval: 'never' })
     expect(() => ctx.permissionPresets.resolve('plan')).toThrow(/unknown preset "plan"/)
+  })
+
+  it('resolves the yolo preset to full access with auto-approve and switches to it', async () => {
+    const ctx = await mounted()
+    expect(ctx.permissionPresets.resolve('yolo')).toEqual({
+      sandbox: 'danger-full-access', approval: 'always',
+      name: 'YOLO', description: 'Full file access and every approval auto-approved with no prompts — unattended long-running tasks.',
+    })
+    expect(ctx.permissionPresets.optionOf('yolo')).toMatchObject({ value: 'yolo', name: 'YOLO' })
+    const session = freshSession('sess-yolo')
+    ctx.permissionPresets.set(session, 'yolo')
+    expect(session.snapshotEvents().map(event => [event.type, event.data])).toEqual([
+      ['permission/preset', { preset: 'yolo' }],
+      ['sandbox/mode', { mode: 'danger-full-access' }],
+      ['approval/policy', { policy: 'always' }],
+    ])
+    expect(ctx.permissionPresets.current(session)).toBe('yolo')
   })
 
   it('publishes an effect-scoped current-session preset and removes it on unload', async () => {
     const ctx = await mounted()
     const fiber = await mountAuto(ctx)
-    expect(ctx.permissionPresets.names).toEqual(['workspace-write', 'danger-full-access', AUTO_PRESET])
+    expect(ctx.permissionPresets.names).toEqual(['workspace-write', 'danger-full-access', 'yolo', AUTO_PRESET])
     expect(ctx.permissionPresets.resolve(AUTO_PRESET)).toEqual({
       sandbox: 'danger-full-access', approval: 'never',
     })
@@ -128,7 +145,7 @@ describe('PermissionPresetService', () => {
     })
 
     await fiber.dispose()
-    expect(ctx.permissionPresets.names).toEqual(['workspace-write', 'danger-full-access'])
+    expect(ctx.permissionPresets.names).toEqual(['workspace-write', 'danger-full-access', 'yolo'])
     expect(() => ctx.permissionPresets.resolve(AUTO_PRESET)).toThrow(/unknown preset "auto"/)
   })
 

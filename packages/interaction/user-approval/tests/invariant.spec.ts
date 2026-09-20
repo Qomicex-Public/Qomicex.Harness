@@ -100,7 +100,7 @@ describe('approval invariants', () => {
     })).toThrow(/no matching approval\/asked/)
     expect(() => session.append('approval/decided', { id, outcome: 'maybe' as never }))
       .toThrow(/unknown outcome/)
-    expect(() => session.append('approval/policy', { policy: 'always' as never }))
+    expect(() => session.append('approval/policy', { policy: 'sometimes' as never }))
       .toThrow(/unknown policy/)
   })
 })

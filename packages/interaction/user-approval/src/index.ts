@@ -56,14 +56,19 @@ const OUTCOMES: readonly ApprovalOutcome[] = ['allowed-once', 'rejected', 'cance
  * - `'never'` — never prompt anyone: every ask resolves `'rejected'`
  *   deterministically. The strict headless stance (CI, unattended runs) and
  *   the policy whose outcome is knowable without asking.
+ * - `'always'` — never prompt anyone: every ask resolves `'allowed-once'`
+ *   deterministically. The unattended YOLO stance: auto-approve every action
+ *   with no human in the loop.
  */
-export type ApprovalPolicy = 'ask' | 'never'
+export type ApprovalPolicy = 'ask' | 'never' | 'always'
 
 /** Every {@link ApprovalPolicy}, for option advertisement and runtime validation of untrusted policy strings. */
-export const APPROVAL_POLICIES: readonly ApprovalPolicy[] = ['ask', 'never']
+export const APPROVAL_POLICIES: readonly ApprovalPolicy[] = ['ask', 'never', 'always']
 
 /** Model-facing statement for the deterministic `'never'` policy. */
 const NEVER_SENTENCE = 'Approval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`).'
+/** Model-facing statement for the deterministic `'always'` (auto-approve) policy. */
+const ALWAYS_SENTENCE = 'Approval prompts are disabled in this session: actions that require approval are approved automatically with no human in the loop — unattended YOLO mode.'
 /** Model-facing statement for an interactive policy that may still fail closed. */
 const ASK_SENTENCE = 'Approval policy: ask. Operations that require approval may ask through the configured answerers; without an available answerer, the request fails closed.'
 
@@ -92,7 +97,7 @@ function hasOpenTurn(session: Session): boolean {
  */
 export function setApprovalPolicy(session: Session, policy: ApprovalPolicy): void {
   if (!APPROVAL_POLICIES.includes(policy)) {
-    throw new TypeError('approval policy must be one of "ask" or "never"')
+    throw new TypeError('approval policy must be one of "ask", "never", or "always"')
   }
   session.append('approval/policy', { policy })
 }
@@ -130,7 +135,8 @@ export interface Config {
    * The deployment's default {@link ApprovalPolicy} for sessions without an
    * `approval/policy` override — `'ask'` delegates to the composed answerers
    * (fail-closed with none); `'never'` auto-rejects every ask without
-   * prompting (the deterministic CI/unattended stance).
+   * prompting (the deterministic CI/unattended stance); `'always'` auto-approves
+   * every ask without prompting (the unattended YOLO stance).
    */
   readonly policy?: ApprovalPolicy
 }
@@ -142,7 +148,7 @@ export interface Config {
  */
 export class ApprovalService extends Service {
   static Config: z<Config> = z.object({
-    policy: z.union(['ask', 'never'] as const).default('ask'),
+    policy: z.union(['ask', 'never', 'always'] as const).default('ask'),
   })
 
   constructor(ctx: Context, public config: Config) {
@@ -161,7 +167,9 @@ export class ApprovalService extends Service {
           // A bare assemble() (tests, diagnostics) has no session to state.
           if (agent === undefined) return ''
           const policy = effective(agent)
-          return policy === 'never' ? NEVER_SENTENCE : ASK_SENTENCE
+          if (policy === 'never') return NEVER_SENTENCE
+          if (policy === 'always') return ALWAYS_SENTENCE
+          return ASK_SENTENCE
         },
       })
     })
@@ -260,12 +268,15 @@ export class ApprovalService extends Service {
   private async decide(req: ApprovalRequest, session: Session): Promise<ApprovalOutcome> {
     const signal = req.signal
     if (signal?.aborted) return 'cancelled'
-    // The 'never' policy is decided HERE, before any dispatch: a listener
-    // registered with `prepend: true` after this service mounts would sit
-    // ahead of any gate LISTENER, so a listener-shaped gate cannot keep the
-    // documented promise that 'never' rejects deterministically regardless
-    // of registration order — only the service's own request path can.
-    if (this.effectivePolicy(session) === 'never') return 'rejected'
+    // The 'never' and 'always' policies are decided HERE, before any dispatch:
+    // a listener registered with `prepend: true` after this service mounts
+    // would sit ahead of any gate LISTENER, so a listener-shaped gate cannot
+    // keep the documented promise that these policies resolve deterministically
+    // regardless of registration order — only the service's own request path
+    // can. 'never' rejects; 'always' approves.
+    const policy = this.effectivePolicy(session)
+    if (policy === 'never') return 'rejected'
+    if (policy === 'always') return 'allowed-once'
     // Enter the promise chain BEFORE dispatching: a listener that throws
     // SYNCHRONOUSLY (before its first await) must land in the same rejection
     // path as an async one — `Promise.resolve(call())` would let it escape

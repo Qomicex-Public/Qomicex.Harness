@@ -114,7 +114,7 @@ const permissionStateSchema: zod.ZodType<PermissionProjectionState> = zod.object
     zod.literal('workspace-write'),
     zod.literal('danger-full-access'),
   ]).nullable(),
-  approval: zod.union([zod.literal('ask'), zod.literal('never')]).nullable(),
+  approval: zod.union([zod.literal('ask'), zod.literal('never'), zod.literal('always')]).nullable(),
   seeded: zod.boolean(),
 }).strict()
 
@@ -156,9 +156,9 @@ export interface PermissionSettings {
 export interface Config {
   /**
    * The preset table: name → knob bundle. Defaults to `workspace-write`
-   * (workspace-write + ask) and `danger-full-access` (danger-full-access +
-   * never). The names `custom` and `auto` are reserved for derived state and
-   * the Auto review integration respectively.
+   * (workspace-write + ask), `danger-full-access` (danger-full-access + never),
+   * and `yolo` (danger-full-access + always). The names `custom` and `auto` are
+   * reserved for derived state and the Auto review integration respectively.
    */
   presets?: Record<string, PresetSpec>
   /**
@@ -190,6 +190,10 @@ export class PermissionPresetService extends TypertRemoteService {
       'danger-full-access': {
         sandbox: 'danger-full-access', approval: 'never',
         name: 'danger-full-access', description: 'Full file access without approval prompts.',
+      },
+      'yolo': {
+        sandbox: 'danger-full-access', approval: 'always',
+        name: 'YOLO', description: 'Full file access and every approval auto-approved with no prompts — unattended long-running tasks.',
       },
     }),
     defaultPreset: z.string(),

@@ -356,6 +356,7 @@ describe('ApprovalService.request', () => {
 
 describe('approval policy (the approval/policy fold)', () => {
   const NEVER_SENTENCE = 'Approval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`).'
+  const ALWAYS_SENTENCE = 'Approval prompts are disabled in this session: actions that require approval are approved automatically with no human in the loop — unattended YOLO mode.'
   const ASK_SENTENCE = 'Approval policy: ask. Operations that require approval may ask through the configured answerers; without an available answerer, the request fails closed.'
 
   /**
@@ -384,7 +385,7 @@ describe('approval policy (the approval/policy fold)', () => {
     const session = { append } as unknown as Session
 
     expect(() => { setApprovalPolicy(session, 'sometimes' as Parameters<typeof setApprovalPolicy>[1]) })
-      .toThrow('approval policy must be one of "ask" or "never"')
+      .toThrow('approval policy must be one of "ask", "never", or "always"')
     expect(append).not.toHaveBeenCalled()
   })
 
@@ -419,6 +420,18 @@ describe('approval policy (the approval/policy fold)', () => {
     expect(session.snapshotEvents().filter(e => e.type === 'approval/decided')).toHaveLength(1)
   })
 
+  it('an always config approves deterministically without consulting any answerer', async () => {
+    const ctx = new Context()
+    await ctx.plugin(ApprovalService, { policy: 'always' })
+    const consulted = vi.fn()
+    ctx.on('approval/request', (_req, next) => { consulted(); return next() })
+    const { agent, session } = sessionAgent('sess-always-1')
+    await expect(ctx.approval.request({ agent, toolName: 'bash' })).resolves.toBe('allowed-once')
+    expect(consulted).not.toHaveBeenCalled()
+    expect(session.snapshotEvents().filter(e => e.type === 'approval/asked')).toHaveLength(1)
+    expect(session.snapshotEvents().filter(e => e.type === 'approval/decided')).toHaveLength(1)
+  })
+
   it('the gate decides FIRST even against an answerer registered before the service (prepend)', async () => {
     const ctx = new Context()
     ctx.on('approval/request', () => Promise.resolve<ApprovalOutcome>('allowed-once'))
@@ -437,6 +450,17 @@ describe('approval policy (the approval/policy fold)', () => {
     ctx.on('approval/request', () => { consulted(); return Promise.resolve<ApprovalOutcome>('allowed-once') }, { prepend: true })
     const { agent, appended } = fakeAgent()
     await expect(ctx.approval.request(requestOf(agent))).resolves.toBe('rejected')
+    expect(consulted).not.toHaveBeenCalled()
+    expect(appended.map(e => e.type)).toEqual(['approval/asked', 'approval/decided'])
+  })
+
+  it('always is unbypassable even by an answerer PREPENDED after the service mounts', async () => {
+    const ctx = new Context()
+    await ctx.plugin(ApprovalService, { policy: 'always' })
+    const consulted = vi.fn()
+    ctx.on('approval/request', () => { consulted(); return Promise.resolve<ApprovalOutcome>('rejected') }, { prepend: true })
+    const { agent, appended } = fakeAgent()
+    await expect(ctx.approval.request(requestOf(agent))).resolves.toBe('allowed-once')
     expect(consulted).not.toHaveBeenCalled()
     expect(appended.map(e => e.type)).toEqual(['approval/asked', 'approval/decided'])
   })
@@ -475,17 +499,20 @@ describe('approval policy (the approval/policy fold)', () => {
     })
   })
 
-  it('contributes the complete current ask or never policy as cache-safe context', async () => {
+  it('contributes the complete current ask, never, or always policy as cache-safe context', async () => {
     const ctx = new Context()
     await ctx.plugin(SystemPrompt)
     await ctx.plugin(ApprovalService)
     const askAgent = sessionAgent('sess-sect-ask').agent
-    const { agent: neverAgent, session } = sessionAgent('sess-sect-never')
-    setApprovalPolicy(session, 'never')
+    const { agent: neverAgent, session: neverSession } = sessionAgent('sess-sect-never')
+    setApprovalPolicy(neverSession, 'never')
+    const { agent: alwaysAgent, session: alwaysSession } = sessionAgent('sess-sect-always')
+    setApprovalPolicy(alwaysSession, 'always')
     const contextFor = async (context: object) =>
       (await ctx.systemPrompt.assemble(context)).contexts.find(entry => entry.name === 'approval:policy')?.text
     expect(await contextFor({ agent: askAgent })).toBe(ASK_SENTENCE)
     expect(await contextFor({ agent: neverAgent })).toBe(NEVER_SENTENCE)
+    expect(await contextFor({ agent: alwaysAgent })).toBe(ALWAYS_SENTENCE)
     // A bare assemble (no agent) has no session to state.
     expect(await contextFor({})).toBe('')
   })
