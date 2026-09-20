@@ -129,4 +129,36 @@ describe('memory settings section', () => {
     expect(resolved.thresholds.excitability).toBe(0.45)
     expect(resolved.bounds.workingCapacity).toBeGreaterThan(0)
   })
+
+  it('ships pattern application off, so nothing is injected until asked', () => {
+    // Both the hot-pack patterns section and the scene matcher are off by
+    // default. Enabling pattern extraction alone must not put unreviewed
+    // regularities in front of the model.
+    const resolved = resolveConfig(Config({
+      patternExtraction: {
+        enabled: true,
+        intervalDays: 7,
+        requireHumanApproval: true,
+        preferenceMinProjects: 3,
+        failureMinOccurrences: 2,
+        environmentMinProjects: 3,
+        pruningEnabled: true,
+        pruneMinScore: 0,
+        pruneStaleDays: 30,
+      },
+    }))
+    expect(resolved.patternApplication.injectHotPack).toBe(false)
+    expect(resolved.patternApplication.sceneMatching).toBe(false)
+    expect(resolved.patternApplication.feedbackCollection).toBe(false)
+    expect(resolved.patternApplication.matchThreshold).toBeGreaterThan(0)
+  })
+
+  it('resolves the pattern-extraction defaults the extractor reads', () => {
+    const resolved = resolveConfig(Config({}))
+    expect(resolved.patternExtraction.enabled).toBe(false)
+    expect(resolved.patternExtraction.requireHumanApproval).toBe(true)
+    expect(resolved.patternExtraction.preferenceMinProjects).toBe(3)
+    expect(resolved.patternExtraction.failureMinOccurrences).toBe(2)
+    expect(resolved.patternExtraction.environmentMinProjects).toBe(3)
+  })
 })

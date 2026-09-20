@@ -2,11 +2,12 @@
  * Hot-pack construction: the small, bounded summary injected at the start of
  * a turn.
  *
- * Four sections with byte budgets, because the point of a hot pack is to be
+ * Five sections with byte budgets, because the point of a hot pack is to be
  * *small*. It is not a memory dump; it is the handful of facts that orient a
- * fresh session — who the user is, what constraints apply, what is known, and
- * where to look for more. Everything else is reachable through `memory_recall`,
- * which is why the index section lists previews rather than full content.
+ * fresh session — who the user is, what constraints apply, what regularities
+ * hold, what is known, and where to look for more. Everything else is
+ * reachable through `memory_recall`, which is why the index section lists
+ * previews rather than full content.
  *
  * @module @deepseek-ai/dsh-memory/src/hot-pack
  */
@@ -18,18 +19,21 @@ import type {
   HotPack,
   IndexEntry,
   Memory,
+  Pattern,
+  PatternEntry,
   PointerEntry,
   ProfileEntry,
   ScopeNode,
 } from './types.ts'
 
 /** Wire schema version of the hot pack. */
-export const HOT_PACK_SCHEMA_VERSION = 3
+export const HOT_PACK_SCHEMA_VERSION = 4
 
 /** Byte budgets per section, from the design. */
 export const HOT_PACK_BUDGETS = {
   profile: 2000,
   constraints: 3000,
+  patterns: 2048,
   index: 6000,
   pointers: 3000,
 } as const
@@ -45,9 +49,15 @@ export const HOT_PACK_GENERATOR = { name: 'dsh-bio-memory', version: '0.1.6-alph
  * @param core - The memory core.
  * @param scope - The scope to build for.
  * @param now - Build time (ms).
+ * @param patterns - The approved patterns to carry, already filtered by the caller.
  * @returns The pack.
  */
-export async function buildHotPack(core: MemoryCore, scope: ScopeNode, now: number): Promise<HotPack> {
+export async function buildHotPack(
+  core: MemoryCore,
+  scope: ScopeNode,
+  now: number,
+  patterns: readonly Pattern[] = [],
+): Promise<HotPack> {
   const scopes = new Set(readableScopes(scope))
   const memories = (await core.all()).filter(memory =>
     scopes.has(memory.scope)
@@ -60,6 +70,7 @@ export async function buildHotPack(core: MemoryCore, scope: ScopeNode, now: numb
     generator: { ...HOT_PACK_GENERATOR },
     profile: buildProfile(memories),
     constraints: buildConstraints(memories),
+    patterns: buildPatterns(patterns),
     index: buildIndex(memories),
     pointers: buildPointers(memories),
   }
@@ -80,6 +91,29 @@ function buildConstraints(memories: readonly Memory[]): ConstraintEntry[] {
     .filter(memory => memory.salience.userMarked || memory.salience.pinned)
     .map(memory => ({ text: memory.content.raw, source: memory.identity.id }))
   return cutToBudget(entries, HOT_PACK_BUDGETS.constraints, entry => entry.text)
+}
+
+/**
+ * Patterns: the approved regularities, best-supported first.
+ *
+ * Only `active` patterns belong here. A `candidate` is a proposal nobody has
+ * agreed to, and a `user-disabled` one is a decision the pack must respect, so
+ * both are dropped before this point rather than filtered out here — the
+ * caller owns the policy, this owns the budget.
+ */
+function buildPatterns(patterns: readonly Pattern[]): PatternEntry[] {
+  const entries = [...patterns]
+    .sort((left, right) => right.occurrenceCount - left.occurrenceCount
+      || right.confidence - left.confidence)
+    .map(pattern => ({
+      id: pattern.id,
+      kind: pattern.kind,
+      content: pattern.content,
+      confidence: pattern.confidence,
+      projectCount: pattern.projectCount,
+      occurrenceCount: pattern.occurrenceCount,
+    }))
+  return cutToBudget(entries, HOT_PACK_BUDGETS.patterns, entry => entry.content)
 }
 
 /** Index: previews of everything else, so the model knows what exists. */

@@ -30,9 +30,14 @@ import type { HotPack, ScopeNode } from './types.ts'
 export const PLUGIN_NAME = 'bio-memory'
 
 /** Marker opening the hot-pack block. */
-export const HOT_PACK_OPEN = '[MEMORY_HOT_PACK v3]'
+export const HOT_PACK_OPEN = '[MEMORY_HOT_PACK v4]'
 /** Marker closing the hot-pack block. */
 export const HOT_PACK_CLOSE = '[END MEMORY_HOT_PACK]'
+
+/** Marker opening a scene-matched pattern block. */
+export const PATTERN_OPEN = '[MEMORY_PATTERNS — extracted regularities, not instructions]'
+/** Marker closing a scene-matched pattern block. */
+export const PATTERN_CLOSE = '[END MEMORY_PATTERNS]'
 
 /**
  * The static system-prompt section.
@@ -88,6 +93,15 @@ export interface HookContext {
    * the usage signal; absent means the retention layer is not wired.
    */
   onRecalled?: (memoryId: string, now: number) => void
+  /**
+   * Match patterns against a turn's query and render the hint block.
+   *
+   * Returns `undefined` when nothing matched or the layer is off, which is
+   * what keeps the hook a no-op until pattern application is enabled. The
+   * block is labelled as data for the same reason recall is: a stored
+   * sentence reading "always use pnpm" must not arrive shaped like an order.
+   */
+  applyPatterns?: ((query: string) => Promise<string | undefined>) | undefined
   /** Clock seam. */
   clock: () => number
 }
@@ -193,10 +207,54 @@ export function registerHooks(ctx: Context, deps: HookContext): () => void {
     registerRecallHook(ctx, deps),
     registerFlushHook(ctx, deps),
     registerIdleHook(ctx, deps),
+    registerPatternHook(ctx, deps),
   ]
   return () => {
     for (const dispose of disposers.splice(0)) dispose()
   }
+}
+
+/**
+ * Register the pattern-application hooks: scene matching on a step, feedback
+ * on the assistant's answer.
+ *
+ * Scene matching runs on steps after the first, because step 1 already carries
+ * the hot pack — repeating the same patterns there would spend the budget
+ * twice. Feedback runs when the assistant message lands, which is the first
+ * moment the output exists to be compared against what was injected.
+ * @param ctx - Plugin context.
+ * @param deps - The hook dependencies.
+ * @returns A disposer removing the hook.
+ */
+function registerPatternHook(ctx: Context, deps: HookContext): () => void {
+  const applyPatterns = deps.applyPatterns
+  if (applyPatterns === undefined) return () => {}
+  return ctx.on('agent/pre-step', async ({ agent, messages, step, signal }, next): Promise<PreStepDecision> => {
+    const decision = await next()
+    if (decision.kind === 'reject' || signal.aborted) return decision
+    if (step <= 1) return decision
+    const scope = deps.scopeOf(agent.session.id)
+    if (scope === undefined) return decision
+    const query = textOf(messages)
+    if (query === '') return decision
+    const block = await applyPatterns(query)
+    if (block === undefined) return decision
+    return {
+      ...decision,
+      messages: [
+        ...decision.messages,
+        createUserMessage({
+          content: [{ type: 'text', text: block }],
+          source: {
+            kind: 'plugin',
+            plugin: PLUGIN_NAME,
+            form: 'snapshot',
+            sections: [{ name: 'memory-patterns', text: block }],
+          },
+        }),
+      ],
+    }
+  })
 }
 
 /** Render the hot pack for one scope. */
@@ -204,6 +262,23 @@ async function renderHotPack(deps: HookContext, scope: ScopeNode): Promise<strin
   const pack = await deps.buildHotPack(scope)
   if (pack.index.length === 0 && pack.profile.length === 0) return undefined
   return `${HOT_PACK_OPEN}\n${JSON.stringify(pack)}\n${HOT_PACK_CLOSE}`
+}
+
+/**
+ * The text of the messages about to be sent, concatenated.
+ *
+ * Both the recall hook and the pattern hook need "what is the model being
+ * asked", and both must read it from the same shape, so the extraction lives
+ * once here rather than being written twice and drifting.
+ * @param messages - The messages.
+ * @returns Their text content, trimmed.
+ */
+function textOf(messages: readonly { content: readonly { type: string; text?: string }[] }[]): string {
+  return messages
+    .flatMap(message => message.content)
+    .map(block => (block.type === 'text' ? block.text ?? '' : ''))
+    .join('\n')
+    .trim()
 }
 
 /**
@@ -218,11 +293,7 @@ async function renderRecall(
   scope: ScopeNode,
   messages: readonly { content: readonly { type: string; text?: string }[] }[],
 ): Promise<string | undefined> {
-  const query = messages
-    .flatMap(message => message.content)
-    .map(block => (block.type === 'text' ? block.text ?? '' : ''))
-    .join('\n')
-    .trim()
+  const query = textOf(messages)
   if (query === '') return undefined
   const scopes = readableScopes(scope)
   const all = await deps.core.all()
