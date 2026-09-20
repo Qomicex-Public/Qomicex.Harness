@@ -805,6 +805,66 @@ export interface PatternEntry {
   occurrenceCount: number
 }
 
+/** What one curation pass decided about a memory. */
+export type CurationVerdict = 'valid' | 'superseded' | 'needs-review' | 'irrelevant'
+
+/**
+ * One memory's curation state.
+ *
+ * Its own table rather than a field on `Memory`: the episodic and semantic
+ * tiers hold authoritative records whose schema must not move, and adding a
+ * face there would break every stored record on reopen. Keyed by memory id so
+ * the incremental pass can ask "what has not been curated yet" with one scan.
+ */
+export interface CurationRecord {
+  /** The memory this record describes. */
+  memoryId: string
+  /** When a pass last covered this memory (ms). */
+  lastCuratedAt: number
+  /** The run that produced the verdict. */
+  curationRunId: string
+  /** What the pass concluded. */
+  verdict: CurationVerdict
+}
+
+/**
+ * One layer of the summary tree.
+ *
+ * A summary is a claim *about* memories, not a memory: it carries the ids it
+ * covers and the ids of the layer below it, so a conflict found high in the
+ * tree can be traced back to the observations that produced it.
+ */
+export interface SummaryRecord {
+  /** Stable summary id. */
+  id: string
+  /** Depth in the tree; `1` covers memories, higher covers lower summaries. */
+  level: number
+  /** The summarized text. */
+  content: string
+  /** Memory ids this summary covers. */
+  sourceMemoryIds: string[]
+  /** Ids of the summaries one level down that this one covers. */
+  childSummaryIds: string[]
+  /** Conflicts detected while building this layer. */
+  conflicts: string[]
+  /** Token count of the content, for the next layer's batch budget. */
+  tokenCount: number
+  /** Build time (ms). */
+  createdAt: number
+  /** Serialized scope the summary belongs to. */
+  scope: string
+}
+
+/** One batch plan entry: what goes in and how much room it has. */
+export interface BatchPlan {
+  /** Index of the first item in this batch. */
+  start: number
+  /** Number of items in this batch. */
+  count: number
+  /** Estimated input tokens for this batch. */
+  estimatedTokens: number
+}
+
 /** The session-start injection payload. */
 export interface HotPack {
   /** Wire schema version. */
@@ -839,4 +899,6 @@ export interface MemorySystemMeta {
   sequence: number
   /** Last pattern-extraction time (ms), `null` before the first pass. */
   lastPatternExtractionAt: number | null
+  /** Last curation time (ms), `null` before the first pass. */
+  lastCurationAt: number | null
 }

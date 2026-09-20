@@ -25,7 +25,8 @@ import { evaluateTTL, inStartupGrace, sessionCount } from './retention.ts'
 import type { RetentionConfig } from './retention.ts'
 import { emptyTtlReport } from './retention.ts'
 import { extractionDue, prunePatterns, runExtraction } from './patterns.ts'
-import type { MemoryPatternConfig } from '../config.ts'
+import { runCuration } from './curation.ts'
+import type { MemoryPatternConfig, MemoryCurationConfig } from '../config.ts'
 import type { MemoryRepository } from '../repository.ts'
 import type { MemoryTiers } from '../memory/tiers.ts'
 import type { ConsolidationReport, Memory, StagingCandidate } from '../types.ts'
@@ -45,6 +46,8 @@ export interface ConsolidationOptions {
   retention?: () => RetentionConfig
   /** Pattern-extraction knobs, read fresh per cycle. */
   patterns?: () => MemoryPatternConfig
+  /** Curation knobs, read fresh per cycle. */
+  curation?: () => MemoryCurationConfig
   /** Clock seam; tests replace it for deterministic timestamps. */
   clock?: () => number
   /** Optional LLM rephrasing provider. */
@@ -67,6 +70,7 @@ export class ConsolidationDaemon {
   private readonly provider: DistillProvider | undefined
   private readonly retention: () => RetentionConfig
   private readonly patterns: () => MemoryPatternConfig
+  private readonly curation: () => MemoryCurationConfig
   private running: Promise<ConsolidationReport> | undefined
 
   /**
@@ -94,6 +98,17 @@ export class ConsolidationDaemon {
       pruningEnabled: true,
       pruneMinScore: 0,
       pruneStaleDays: 30,
+    }))
+    this.curation = options.curation ?? (() => ({
+      enabled: false,
+      provider: '',
+      model: '',
+      intervalDays: 7,
+      modelContextSize: 262_144,
+      systemReserve: 8_192,
+      safetyMargin: 8_192,
+      inputRatio: 0.6,
+      maxLevel: 5,
     }))
   }
 
@@ -140,9 +155,13 @@ export class ConsolidationDaemon {
     await this.decay(now, report, grace)
     await this.evaluateRetention(report)
     await this.extractPatterns()
+    await this.curate()
 
-    const meta = await this.repository.meta()
-    await this.repository.setMeta({ ...meta, lastConsolidationAt: now })
+    // Read fresh: the passes above write their own last-run stamps into the
+    // same global slot, and a value captured before them would clobber those
+    // stamps back to their previous state.
+    const settled = await this.repository.meta()
+    await this.repository.setMeta({ ...settled, lastConsolidationAt: now })
     return report
   }
 
@@ -184,6 +203,37 @@ export class ConsolidationDaemon {
   private async evaluateRetention(report: ConsolidationReport): Promise<void> {
     report.ttl = await evaluateTTL(this.repository, this.tiers, this.retention(), this.clock())
     await this.backfillJudgments()
+  }
+
+  /**
+   * Run the curation pass when it is enabled and due.
+   *
+   * Gated by its own interval rather than the cycle, for the same reason as
+   * extraction: consolidation runs on every idle while curation is offline
+   * batch work. The last run time lives in the domain's global slot, so a
+   * restart does not re-run it.
+   * @returns resolution after the pass, or immediately when not due.
+   */
+  private async curate(): Promise<void> {
+    const config = this.curation()
+    if (!config.enabled) return
+    const meta = await this.repository.meta()
+    const now = this.clock()
+    if (!extractionDue(meta.lastCurationAt, config.intervalDays, now)) return
+
+    await runCuration(
+      this.repository,
+      undefined,
+      {
+        modelContextSize: config.modelContextSize,
+        systemReserve: config.systemReserve,
+        safetyMargin: config.safetyMargin,
+        inputRatio: config.inputRatio,
+      },
+      now,
+      `cur_${now.toString(36)}`,
+    )
+    await this.repository.setMeta({ ...meta, lastCurationAt: now })
   }
 
   /**

@@ -63,7 +63,7 @@ function memory(id: string, table: 'episodic' | 'semantic' = 'episodic'): Memory
 }
 
 describe('memory domain declaration', () => {
-  it('declares the twelve tables and opens over the routed backend', async () => {
+  it('declares the fourteen tables and opens over the routed backend', async () => {
     const { domain } = await harness()
     expect(Object.keys(memoryDomain.tables)).toEqual([
       'observations',
@@ -78,6 +78,8 @@ describe('memory domain declaration', () => {
       'judgments',
       'retention',
       'patterns',
+      'curation',
+      'summaries',
     ])
     for (const table of MEMORY_TABLES) {
       expect(domain.table(table).size).toBe(0)
@@ -92,6 +94,7 @@ describe('memory domain declaration', () => {
       lastConsolidationAt: null,
       sequence: 0,
       lastPatternExtractionAt: null,
+      lastCurationAt: null,
     })
   })
 
@@ -104,6 +107,7 @@ describe('memory domain declaration', () => {
       lastConsolidationAt: null,
       sequence: 7,
       lastPatternExtractionAt: null,
+      lastCurationAt: null,
     })
     await first.domain.close()
     const second = await harness(pool)
@@ -113,6 +117,7 @@ describe('memory domain declaration', () => {
       lastConsolidationAt: null,
       sequence: 7,
       lastPatternExtractionAt: null,
+      lastCurationAt: null,
     })
   })
 })

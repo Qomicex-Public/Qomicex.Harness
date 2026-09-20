@@ -305,10 +305,11 @@ export const memorySystemMetaSchema = z.object({
   lastConsolidationAt: z.number().nullable(),
   sequence: z.number(),
   lastPatternExtractionAt: z.number().nullable().default(null),
+  lastCurationAt: z.number().nullable().default(null),
 })
 
 /**
- * One extracted pattern. Its own table, like retention: the memory tiers hold
+ * One pattern. Its own table, like retention: the memory tiers hold
  * authoritative records whose schema must not move, and a pattern is a claim
  * *about* memories rather than a memory itself.
  */
@@ -331,6 +332,27 @@ export const patternSchema = z.object({
   corrected: z.number(),
   userNote: z.string().nullable(),
   userEditedAt: z.number().nullable(),
+})
+
+/** One memory's curation state, so an incremental pass knows what is left. */
+export const curationSchema = z.object({
+  memoryId: z.string(),
+  lastCuratedAt: z.number(),
+  curationRunId: z.string(),
+  verdict: z.enum(['valid', 'superseded', 'needs-review', 'irrelevant']),
+})
+
+/** One layer of the summary tree. */
+export const summarySchema = z.object({
+  id: z.string(),
+  level: z.number(),
+  content: z.string(),
+  sourceMemoryIds: z.array(z.string()),
+  childSummaryIds: z.array(z.string()),
+  conflicts: z.array(z.string()),
+  tokenCount: z.number(),
+  createdAt: z.number(),
+  scope: z.string(),
 })
 
 /** One judgment log row, kept as training data for the local judge. */
@@ -381,6 +403,7 @@ export const memoryDomain = defineDomain({
       lastConsolidationAt: null,
       sequence: 0,
       lastPatternExtractionAt: null,
+      lastCurationAt: null,
     },
   },
   tables: {
@@ -396,6 +419,8 @@ export const memoryDomain = defineDomain({
     judgments: domainTable<string, z.infer<typeof judgmentLogSchema>>(judgmentLogSchema),
     retention: domainTable<string, z.infer<typeof retentionSchema>>(retentionSchema),
     patterns: domainTable<string, z.infer<typeof patternSchema>>(patternSchema),
+    curation: domainTable<string, z.infer<typeof curationSchema>>(curationSchema),
+    summaries: domainTable<string, z.infer<typeof summarySchema>>(summarySchema),
   },
 })
 
@@ -416,6 +441,8 @@ export const MEMORY_TABLES = [
   'judgments',
   'retention',
   'patterns',
+  'curation',
+  'summaries',
 ] as const
 
 /** One declared table name. */

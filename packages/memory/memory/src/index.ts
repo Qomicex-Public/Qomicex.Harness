@@ -31,6 +31,7 @@ import { ConsolidationDaemon } from './algorithms/consolidation.ts'
 import { reinforce } from './algorithms/retention.ts'
 import { runExtraction, matchPatterns, recordApplication, feedbackFor, recordFeedback } from './algorithms/patterns.ts'
 import { LlamaCppJudge, loadLlamaCppModel } from './algorithms/local-judge.ts'
+import { runCuration } from './algorithms/curation.ts'
 import type { DistillProvider } from './algorithms/distill.ts'
 import { EventObserver } from './event/observer.ts'
 import { registerMemorySettings } from './settings.ts'
@@ -121,6 +122,20 @@ export {
   parseJudgeVerdict,
 } from './algorithms/local-judge.ts'
 export type { JudgeModelLoader, LoadedJudgeModel, LocalJudgeOptions } from './algorithms/local-judge.ts'
+export {
+  DEFAULT_BATCH_POLICY,
+  DEFAULT_NEXT_LAYER_POLICY,
+  emptyCurationReport,
+  estimateTokens,
+  nextLayerDue,
+  planBatches,
+  ruleCurationProvider,
+  ruleSummary,
+  runCuration,
+  selectPending,
+  verdictFor,
+} from './algorithms/curation.ts'
+export type { BatchPolicy, CurationProvider, CurationReport, NextLayerPolicy } from './algorithms/curation.ts'
 export {
   DEFAULT_PATTERN_THRESHOLDS,
   computePatternScore,
@@ -415,6 +430,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     },
     retention: () => currentConfig().retention,
     patterns: () => currentConfig().patternExtraction,
+    curation: () => currentConfig().curation,
     ...resolved.llmDistill.enabled && resolved.llmDistill.provider !== '' && resolved.llmDistill.model !== ''
       ? { provider: createLlmDistillProvider(ctx, resolved.llmDistill.provider, resolved.llmDistill.model) }
       : {},
@@ -576,6 +592,20 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
         failureMinOccurrences: currentConfig().patternExtraction.failureMinOccurrences,
         environmentMinProjects: currentConfig().patternExtraction.environmentMinProjects,
       }, Date.now())
+      : undefined,
+    runCuration: currentConfig().curation.enabled
+      ? () => runCuration(
+        repository,
+        undefined,
+        {
+          modelContextSize: currentConfig().curation.modelContextSize,
+          systemReserve: currentConfig().curation.systemReserve,
+          safetyMargin: currentConfig().curation.safetyMargin,
+          inputRatio: currentConfig().curation.inputRatio,
+        },
+        Date.now(),
+        `cur_${Date.now().toString(36)}`,
+      )
       : undefined,
     clock: () => Date.now(),
   })

@@ -21,6 +21,7 @@ import type {
   AuthorizingEvidence,
   ConsolidationReport,
   Contradiction,
+  CurationRecord,
   JudgmentLog,
   Memory,
   MemorySystemMeta,
@@ -28,6 +29,7 @@ import type {
   Pattern,
   RetentionRecord,
   StagingCandidate,
+  SummaryRecord,
   Tombstone,
 } from './types.ts'
 
@@ -497,6 +499,34 @@ export class MemoryRepository {
    */
   async updatePattern(id: string, transform: (current: Pattern) => Pattern): Promise<Pattern> {
     return (await this.opened()).table('patterns').update(id, transform)
+  }
+
+  /**
+   * Store one curation record.
+   * @param record - The curation state.
+   * @returns resolution after durability.
+   */
+  async putCuration(record: CurationRecord): Promise<void> {
+    await (await this.opened()).table('curation').put(record.memoryId, record)
+  }
+
+  /** Every curation record, in insertion order. */
+  async allCurations(): Promise<CurationRecord[]> {
+    return [...(await this.opened()).table('curation').entries()].map(([, row]) => row)
+  }
+
+  /**
+   * Store one summary layer.
+   * @param summary - The summary.
+   * @returns resolution after durability.
+   */
+  async putSummary(summary: SummaryRecord): Promise<void> {
+    await (await this.opened()).table('summaries').put(summary.id, summary)
+  }
+
+  /** Every summary, in insertion order. */
+  async allSummaries(): Promise<SummaryRecord[]> {
+    return [...(await this.opened()).table('summaries').entries()].map(([, row]) => row)
   }
 
   /**

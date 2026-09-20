@@ -22,6 +22,7 @@ import type { ScopePromotionGate } from './authorization/scope-promotion.ts'
 import type { MemoryCore } from './memory/core.ts'
 import type { MemoryRepository } from './repository.ts'
 import type { ExtractionReport } from './algorithms/patterns.ts'
+import type { CurationReport } from './algorithms/curation.ts'
 import type { Memory, Pattern, RecallOptions, ScopeNode } from './types.ts'
 
 /** Marker wrapped around recalled content so the model reads it as data. */
@@ -55,6 +56,11 @@ export interface ToolContext {
    * layer is disabled, and the `extract` action says so rather than pretending.
    */
   extractPatterns?: (() => Promise<ExtractionReport>) | undefined
+  /**
+   * Run a curation pass on demand. Absent means the curation layer is
+   * disabled, and the `curate` action says so rather than pretending.
+   */
+  runCuration?: (() => Promise<CurationReport>) | undefined
 }
 
 /**
@@ -272,8 +278,7 @@ export function registerTools(ctx: Context, deps: ToolContext): () => void {
       },
       patternId: { type: 'string', description: 'The pattern id from the list.' },
       note: { type: 'string', description: 'Reviewer note for the `note` action.' },
-    },
-    output: {
+    },    output: {
       schema: {
         type: 'object',
         additionalProperties: false,
@@ -300,6 +305,38 @@ export function registerTools(ctx: Context, deps: ToolContext): () => void {
           return notePattern(deps, args.patternId, args.note)
         case 'extract':
           return extractNow(deps)
+      }
+    },
+  })))
+
+  disposers.push(ctx.tools.register(defineTool({
+    name: 'memory_curate',
+    description:
+      'Run the offline curation pass now instead of waiting for its weekly slot. The pass summarizes '
+      + 'what capture left behind, detects conflicts inside each batch, and marks what it covered so a '
+      + 'later run resumes rather than repeating. Reports what it selected, covered, and found.',
+    parameters: {},
+    output: {
+      schema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          ok: { type: 'boolean', required: true },
+          text: { type: 'string', required: true },
+        },
+      },
+      render: (_args, value) => [{ type: 'text', text: value.text }],
+    },
+    async execute() {
+      if (deps.runCuration === undefined) {
+        return { ok: false, text: 'Curation is not enabled for this session.' }
+      }
+      const report = await deps.runCuration()
+      return {
+        ok: true,
+        text: `Curation complete: ${report.selected} selected, ${report.curated} covered, `
+          + `${report.summarized} summary layer(s), ${report.conflicts} conflict(s).`
+          + (report.nextLayerDue ? ' Another summary layer is now due.' : ''),
       }
     },
   })))

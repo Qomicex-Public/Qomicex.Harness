@@ -86,6 +86,28 @@ export interface MemoryLocalLlmConfig {
   contextSize: number
 }
 
+/** Curation-layer knobs. */
+export interface MemoryCurationConfig {
+  /** Whether the offline curation pass runs at all. */
+  enabled: boolean
+  /** Provider route for the summarizing model; empty uses the rule path. */
+  provider: string
+  /** Model id for the summarizing model; empty uses the rule path. */
+  model: string
+  /** Days between automatic curation passes. */
+  intervalDays: number
+  /** Model context window in tokens, for batch sizing. */
+  modelContextSize: number
+  /** Tokens reserved for the system prompt. */
+  systemReserve: number
+  /** Tokens held back as safety margin. */
+  safetyMargin: number
+  /** Share of the remaining budget given to input. */
+  inputRatio: number
+  /** Deepest summary layer the tree may grow to. */
+  maxLevel: number
+}
+
 /** Retention-layer knobs. */
 export interface MemoryRetentionConfig {
   /** Days a fresh memory is granted before its first TTL evaluation. */
@@ -160,6 +182,8 @@ export interface Config {
   patternExtraction?: MemoryPatternConfig
   /** Pattern-application layer. */
   patternApplication?: MemoryPatternApplicationConfig
+  /** Curation layer. */
+  curation?: MemoryCurationConfig
 }
 
 /** Validated plugin configuration. */
@@ -258,6 +282,27 @@ export const Config: z<Config> = z.object({
     feedbackThreshold: 0.5,
     feedbackWindowMs: 300_000,
   }),
+  curation: z.object({
+    enabled: z.boolean().default(false),
+    provider: z.string().default(''),
+    model: z.string().default(''),
+    intervalDays: z.number().step(1).min(1).default(7),
+    modelContextSize: z.number().step(1).min(1024).default(262_144),
+    systemReserve: z.number().step(1).min(0).default(8_192),
+    safetyMargin: z.number().step(1).min(0).default(8_192),
+    inputRatio: z.number().min(0.1).max(0.9).default(0.6),
+    maxLevel: z.number().step(1).min(1).default(5),
+  }).default({
+    enabled: false,
+    provider: '',
+    model: '',
+    intervalDays: 7,
+    modelContextSize: 262_144,
+    systemReserve: 8_192,
+    safetyMargin: 8_192,
+    inputRatio: 0.6,
+    maxLevel: 5,
+  }),
 })
 
 /**
@@ -270,13 +315,13 @@ export const Config: z<Config> = z.object({
 export function resolveConfig(config: Config): ResolvedConfig {
   const {
     thresholds, bounds, retrieval, injection, authorization, llmDistill,
-    judgment, retention, patternExtraction, patternApplication,
+    judgment, retention, patternExtraction, patternApplication, curation,
   } = config
   if (
     thresholds === undefined || bounds === undefined || retrieval === undefined
     || injection === undefined || authorization === undefined || llmDistill === undefined
     || judgment === undefined || retention === undefined || patternExtraction === undefined
-    || patternApplication === undefined
+    || patternApplication === undefined || curation === undefined
   ) {
     throw new Error('bio-memory: plugin config was not resolved against the Config schema')
   }
@@ -291,6 +336,7 @@ export function resolveConfig(config: Config): ResolvedConfig {
     retention: { ...retention },
     patternExtraction: { ...patternExtraction },
     patternApplication: { ...patternApplication },
+    curation: { ...curation },
   }
 }
 
@@ -316,4 +362,6 @@ export interface ResolvedConfig {
   patternExtraction: MemoryPatternConfig
   /** Pattern-application layer. */
   patternApplication: MemoryPatternApplicationConfig
+  /** Curation layer. */
+  curation: MemoryCurationConfig
 }

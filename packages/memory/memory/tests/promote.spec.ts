@@ -92,6 +92,7 @@ describe('memory_promote tool', () => {
     const { ctx } = await harness(PROJECT, true)
     const names = ctx.tools.schemas().map(schema => schema.name).sort()
     expect(names).toEqual([
+      'memory_curate',
       'memory_forget',
       'memory_patterns',
       'memory_promote',
