@@ -142,6 +142,21 @@ describe('signal detection', () => {
     expect(detectUserStatement('   ')).toBeNull()
   })
 
+  it('stages a declarative statement as a low-strength candidate', () => {
+    const signal = detectUserStatement('这个项目的构建命令是 pnpm run build')
+    expect(signal?.type).toBe('user_statement')
+    expect(signal?.strength).toBe(0.6)
+    expect(signal?.epistemic).toBe('user_stated')
+    expect(signal?.sourceType).toBe('explicit_user')
+  })
+
+  it('filters acknowledgements, retries, and greetings as noise', () => {
+    expect(detectUserStatement('好的，明白了')).toBeNull()
+    expect(detectUserStatement('重新来一次')).toBeNull()
+    expect(detectUserStatement('你好')).toBeNull()
+    expect(detectUserStatement('ok')).toBeNull()
+  })
+
   it('attaches the extracted package-manager triple to a user signal', () => {
     // The signal type alone is not enough: a fact with no triple can never
     // consolidate, so the extraction is what makes a stated preference

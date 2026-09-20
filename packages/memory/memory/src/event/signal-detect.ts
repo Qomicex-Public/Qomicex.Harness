@@ -32,9 +32,12 @@ export interface ToolCallView {
  *
  * Ordered most specific first: a preference outranks a generic statement, and
  * a correction outranks both because a correction is the user overriding what
- * the system believed.
+ * the system believed. A message that matches no specific rule but survives
+ * the noise blacklist is staged as a generic low-strength statement, so intake
+ * no longer requires a keyword — what it requires is that the message is not
+ * procedural noise.
  * @param message - The user message text.
- * @returns The signal, or `null` when no rule fires.
+ * @returns The signal, or `null` when the message is empty or noise.
  */
 export function detectUserStatement(message: string): CaptureSignal | null {
   const text = message.trim()
@@ -78,7 +81,40 @@ export function detectUserStatement(message: string): CaptureSignal | null {
       ...(extracted === undefined ? {} : { extracted }),
     }
   }
-  return null
+  if (isNoiseByRule(text)) return null
+  return {
+    type: 'user_statement',
+    strength: 0.6,
+    epistemic: 'user_stated',
+    sourceType: 'explicit_user',
+    ...(extracted === undefined ? {} : { extracted }),
+  }
+}
+
+/** Minimum length a statement must reach to be worth staging. */
+const MIN_STATEMENT_LENGTH = 15
+
+/** Patterns that mark a message as procedural noise regardless of length. */
+const NOISE_PATTERNS: readonly RegExp[] = [
+  /^\s*(?:null|undefined|true|false|\[\]|\{\})\s*$/i,
+  /^(?:ok(?:ay)?|yes|no|yep|nope|thanks|thank\s+you|got\s+it|sure|好的|是的|对的|嗯|行|明白|了解|收到|谢谢)[。.!?，,]*$/i,
+  /^(?:重新|再来|重试|再试|撤销|取消|undo|retry|redo|cancel|abort)[。.!?，,]*$/i,
+  /^(?:你好|您好|大家好|hi|hello|hey|早上好|晚上好)[。.!?，,]*$/i,
+]
+
+/**
+ * Whether a message is procedural noise that must never stage a candidate.
+ *
+ * Relaxed intake means the rules stop *requiring* a keyword to admit content;
+ * what they still reject is noise a future self never needs again: bare
+ * acknowledgements, retry/undo commands, greetings, placeholder values, and
+ * anything too short to carry a fact.
+ * @param text - The trimmed message text.
+ * @returns `true` when the message should not stage a candidate.
+ */
+function isNoiseByRule(text: string): boolean {
+  if (text.length < MIN_STATEMENT_LENGTH) return true
+  return NOISE_PATTERNS.some(pattern => pattern.test(text))
 }
 
 /** Package-manager names the extractor recognizes. */
