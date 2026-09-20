@@ -44,7 +44,7 @@ import {
   accessEn, accessZh, en, PERMISSION_ACCESS_NS, zh,
 } from './locales.ts'
 import {
-  AUTO_REVIEW_PRESET, displayPermissionPreset, FULL_ACCESS_PRESET,
+  AUTO_REVIEW_PRESET, displayPermissionPreset, FULL_ACCESS_PRESET, YOLO_PRESET,
 } from './presentation.ts'
 import { PermissionPresetSettingsController } from './settings-store.ts'
 
@@ -91,14 +91,14 @@ function optionsOf(
         ? { detail: t('auto.description') }
         : option.description !== undefined ? { detail: option.description } : {}),
       ...(option.value === currentValue ? { active: true } : {}),
-      ...(option.value === FULL_ACCESS_PRESET || option.value === AUTO_REVIEW_PRESET
+      ...(option.value === FULL_ACCESS_PRESET || option.value === AUTO_REVIEW_PRESET || option.value === YOLO_PRESET
         ? {
           confirmation: {
-            title: t(option.value === AUTO_REVIEW_PRESET ? 'auto.confirm.title' : 'confirm.title'),
-            description: t(option.value === AUTO_REVIEW_PRESET ? 'auto.confirm.description' : 'confirm.description'),
-            acknowledgeLabel: t(option.value === AUTO_REVIEW_PRESET ? 'auto.confirm.acknowledge' : 'confirm.acknowledge'),
+            title: t(option.value === AUTO_REVIEW_PRESET ? 'auto.confirm.title' : option.value === YOLO_PRESET ? 'yolo.confirm.title' : 'confirm.title'),
+            description: t(option.value === AUTO_REVIEW_PRESET ? 'auto.confirm.description' : option.value === YOLO_PRESET ? 'yolo.confirm.description' : 'confirm.description'),
+            acknowledgeLabel: t(option.value === AUTO_REVIEW_PRESET ? 'auto.confirm.acknowledge' : option.value === YOLO_PRESET ? 'yolo.confirm.acknowledge' : 'confirm.acknowledge'),
             cancelLabel: t('confirm.cancel'),
-            confirmLabel: t(option.value === AUTO_REVIEW_PRESET ? 'auto.confirm.enable' : 'confirm.enable'),
+            confirmLabel: t(option.value === AUTO_REVIEW_PRESET ? 'auto.confirm.enable' : option.value === YOLO_PRESET ? 'yolo.confirm.enable' : 'confirm.enable'),
           },
         }
         : {}),

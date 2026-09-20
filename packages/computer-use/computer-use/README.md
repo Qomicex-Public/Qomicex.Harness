@@ -55,8 +55,8 @@ No runtime invariant companion is published: the registry has one authoritative 
 ## Further Exploration
 
 - [Computer use](../../../docs/subsystems/computer-use.md) — provider selection and shared-desktop limits.
-- [Cua Driver MCP provider](../../experimental/computer-use-cua-driver-mcp/README.md) — use an installed driver.
-- [Cua Driver native provider](../../experimental/computer-use-cua-driver-native/README.md) — use the npm runtime.
+- [Cua Driver MCP provider](../cua-driver-mcp/README.md) — use an installed driver.
+- [Cua Driver native provider](../cua-driver-native/README.md) — use the npm runtime.
 
 -----
 

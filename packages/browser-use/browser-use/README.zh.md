@@ -55,9 +55,9 @@ kind: "package-reference"
 ## 延伸阅读
 
 - [浏览器操作](../../../docs/subsystems/browser-use.zh.md) — 提供方 选择与 Session 所有权。
-- [Playwright MCP 提供方](../../experimental/browser-use-playwright-mcp/README.zh.md) — Playwright 浏览器工具。
-- [Chrome DevTools MCP 提供方](../../experimental/browser-use-chrome-devtools-mcp/README.zh.md) — Chromium 检查与控制。
-- [Stagehand 提供方](../../experimental/browser-use-stagehand-native/README.zh.md) — 支持 AI（人工智能）辅助的原生浏览器操作。
+- [Playwright MCP 提供方](../playwright-mcp/README.zh.md) — Playwright 浏览器工具。
+- [Chrome DevTools MCP 提供方](../chrome-devtools-mcp/README.zh.md) — Chromium 检查与控制。
+- [Stagehand 提供方](../stagehand-native/README.zh.md) — 支持 AI（人工智能）辅助的原生浏览器操作。
 
 -----
 

@@ -157,6 +157,35 @@ describe('PermissionSelect', () => {
     expect(trigger().getAttribute('title')).toBe('无沙箱运行；每次原生工具调用和 PTC 内层调用前由同一模型进行实验性审查。')
   })
 
+  it('gates YOLO behind an acknowledgement and reuses the full-access glyph', async () => {
+    const catalog: PermissionCatalog = {
+      options: [
+        ...CATALOG.options,
+        { value: 'yolo', name: 'YOLO', description: 'auto-approve every action' },
+      ],
+    }
+    const { select, selection } = setup({ catalog })
+    fireEvent.click(trigger())
+    const yoloItem = screen.getByRole('menuitem', { name: 'YOLO' })
+    // YOLO reuses the full-access shield(exclamation) glyph verbatim.
+    const fullItem = screen.getByRole('menuitem', { name: '完全权限' })
+    expect(yoloItem.querySelector('svg')?.innerHTML).toBe(fullItem.querySelector('svg')?.innerHTML)
+    fireEvent.click(yoloItem)
+
+    // Gated: a YOLO confirmation dialog, not an immediate switch.
+    const dialog = screen.getByRole('dialog', { name: '确认启用 YOLO 模式？' })
+    expect(dialog.textContent).toContain('自动批准所有操作')
+    expect(select).not.toHaveBeenCalled()
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: '启用 YOLO' }).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('checkbox', { name: '我已知悉：所有操作将自动批准、无人工确认' }))
+    fireEvent.click(screen.getByRole('button', { name: '启用 YOLO' }))
+    expect(select).toHaveBeenCalledExactlyOnceWith('yolo')
+    act(() => { selection.set({ value: { currentValue: 'yolo' } }) })
+    await act(async () => {})
+
+    expect(trigger().textContent).toBe('YOLO')
+  })
+
   it('revokes open UI when locked or either source disappears', () => {
     const locked = setup()
     fireEvent.click(trigger())

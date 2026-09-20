@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-12-computer-use-provider-registration.md
-2026-09-12-computer-use-provider-registration.md: 52e51ac9c4f89b6ad730e647280ba3f0c04ea3c9
-2026-09-12-computer-use-provider-registration.zh.md: 2d8802e1d8cb3c5262cbc2ba6185262f949bca01
+2026-09-12-computer-use-provider-registration.md: b878ab79276ae32573067cb4361c218e39737789
+2026-09-12-computer-use-provider-registration.zh.md: 07440f3432ee42d0a6c7cba54128be54da84e96e

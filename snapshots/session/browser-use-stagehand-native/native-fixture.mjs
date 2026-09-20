@@ -7,7 +7,7 @@ import ts from 'typescript'
 export const name = 'browser-use-stagehand-native-fixture'
 export const inject = ['browserUse', 'agents', 'tools', 'systemPrompt']
 
-const packageRoot = new URL('../../../packages/experimental/browser-use-stagehand-native/', import.meta.url)
+const packageRoot = new URL('../../../packages/browser-use/stagehand-native/', import.meta.url)
 const sdkFixture = new URL('tests/fixtures/stagehand.ts', packageRoot).href
 const chromiumFixture = new URL('tests/fixtures/chromium.ts', packageRoot).href
 
@@ -71,7 +71,7 @@ export function installBrowserFixtureHooks() {
 
 export async function apply(ctx) {
   ctx.effect(installBrowserFixtureHooks, 'browser-use-stagehand-native-fixture.module')
-  const provider = await import('@deepseek-ai/dsh-experimental-browser-use-stagehand-native')
+  const provider = await import('@deepseek-ai/dsh-browser-use-stagehand-native')
   await ctx.plugin(provider, {
     mode: 'launch', model: { modelName: 'openai/gpt-5.4-mini', apiKey: 'snapshot-placeholder' },
   })

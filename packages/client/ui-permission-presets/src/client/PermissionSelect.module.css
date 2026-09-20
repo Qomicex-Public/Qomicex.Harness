@@ -100,3 +100,10 @@
 .chevronOpen {
   transform: rotate(180deg);
 }
+
+/* YOLO row and its active trigger render in the error red — the theme's
+   danger semantic token (light/dark adaptive), never a literal color. The
+   shield glyph uses currentColor, so it follows this rule automatically. */
+.warn {
+  color: var(--dsw-alias-state-error-primary);
+}

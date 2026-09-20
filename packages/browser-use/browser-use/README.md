@@ -55,9 +55,9 @@ No runtime invariant companion is published: the registry has one authoritative 
 ## Further Exploration
 
 - [Browser use](../../../docs/subsystems/browser-use.md) — provider selection and Session ownership.
-- [Playwright MCP provider](../../experimental/browser-use-playwright-mcp/README.md) — Playwright browser tools.
-- [Chrome DevTools MCP provider](../../experimental/browser-use-chrome-devtools-mcp/README.md) — Chromium inspection and control.
-- [Stagehand provider](../../experimental/browser-use-stagehand-native/README.md) — native browser operations with AI assistance.
+- [Playwright MCP provider](../playwright-mcp/README.md) — Playwright browser tools.
+- [Chrome DevTools MCP provider](../chrome-devtools-mcp/README.md) — Chromium inspection and control.
+- [Stagehand provider](../stagehand-native/README.md) — native browser operations with AI assistance.
 
 -----
 
