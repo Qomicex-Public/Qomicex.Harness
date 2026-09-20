@@ -304,6 +304,33 @@ export const memorySystemMetaSchema = z.object({
   createdAt: z.number(),
   lastConsolidationAt: z.number().nullable(),
   sequence: z.number(),
+  lastPatternExtractionAt: z.number().nullable().default(null),
+})
+
+/**
+ * One extracted pattern. Its own table, like retention: the memory tiers hold
+ * authoritative records whose schema must not move, and a pattern is a claim
+ * *about* memories rather than a memory itself.
+ */
+export const patternSchema = z.object({
+  id: z.string(),
+  kind: z.enum(['preference', 'failure', 'environment']),
+  content: z.string(),
+  canonicalForm: z.string(),
+  confidence: z.number(),
+  evidenceMemoryIds: z.array(z.string()),
+  projectCount: z.number(),
+  occurrenceCount: z.number(),
+  state: z.enum(['candidate', 'active', 'archived', 'user-disabled']),
+  firstSeenAt: z.number(),
+  lastSeenAt: z.number(),
+  lastAppliedAt: z.number().nullable(),
+  appliedCount: z.number(),
+  adopted: z.number(),
+  ignored: z.number(),
+  corrected: z.number(),
+  userNote: z.string().nullable(),
+  userEditedAt: z.number().nullable(),
 })
 
 /** One judgment log row, kept as training data for the local judge. */
@@ -348,7 +375,13 @@ export const memoryDomain = defineDomain({
   version: 1,
   global: {
     schema: memorySystemMetaSchema,
-    initial: { schemaVersion: 1, createdAt: 0, lastConsolidationAt: null, sequence: 0 },
+    initial: {
+      schemaVersion: 1,
+      createdAt: 0,
+      lastConsolidationAt: null,
+      sequence: 0,
+      lastPatternExtractionAt: null,
+    },
   },
   tables: {
     observations: domainTable<string, z.infer<typeof observedEventSchema>>(observedEventSchema),
@@ -362,6 +395,7 @@ export const memoryDomain = defineDomain({
     audits: domainTable<string, z.infer<typeof auditSchema>>(auditSchema),
     judgments: domainTable<string, z.infer<typeof judgmentLogSchema>>(judgmentLogSchema),
     retention: domainTable<string, z.infer<typeof retentionSchema>>(retentionSchema),
+    patterns: domainTable<string, z.infer<typeof patternSchema>>(patternSchema),
   },
 })
 
@@ -381,6 +415,7 @@ export const MEMORY_TABLES = [
   'audits',
   'judgments',
   'retention',
+  'patterns',
 ] as const
 
 /** One declared table name. */

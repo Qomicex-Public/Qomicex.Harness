@@ -29,6 +29,7 @@ import { PolicyPlane } from './authorization/policy-plane.ts'
 import { ScopePromotionGate } from './authorization/scope-promotion.ts'
 import { ConsolidationDaemon } from './algorithms/consolidation.ts'
 import { reinforce } from './algorithms/retention.ts'
+import { runExtraction } from './algorithms/patterns.ts'
 import type { DistillProvider } from './algorithms/distill.ts'
 import { EventObserver } from './event/observer.ts'
 import { registerMemorySettings } from './settings.ts'
@@ -55,6 +56,7 @@ export {
   auditSchema,
   judgmentLogSchema,
   retentionSchema,
+  patternSchema,
   memorySystemMetaSchema,
 } from './domain.ts'
 export type { MemoryTable, MemoryTableName, ScopeNodeRecord } from './domain.ts'
@@ -109,6 +111,18 @@ export {
   wasUsed,
 } from './algorithms/retention.ts'
 export type { RetentionConfig } from './algorithms/retention.ts'
+export {
+  DEFAULT_PATTERN_THRESHOLDS,
+  computePatternScore,
+  emptyExtractionReport,
+  emptyPruneReport,
+  extractionDue,
+  extractPatterns,
+  prunePatterns,
+  promoteCandidates,
+  runExtraction,
+} from './algorithms/patterns.ts'
+export type { ExtractionReport, PatternCandidate, PatternThresholds, PruneReport } from './algorithms/patterns.ts'
 export {
   areIndependent,
   computeConfidence,
@@ -386,6 +400,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       }
     },
     retention: () => currentConfig().retention,
+    patterns: () => currentConfig().patternExtraction,
     ...resolved.llmDistill.enabled && resolved.llmDistill.provider !== '' && resolved.llmDistill.model !== ''
       ? { provider: createLlmDistillProvider(ctx, resolved.llmDistill.provider, resolved.llmDistill.model) }
       : {},
@@ -485,7 +500,21 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     onRecalled,
     clock: () => Date.now(),
   })
-  const tools = registerTools(ctx, { core, repository, scopeOf, promotion: promotionGate, onRecalled, clock: () => Date.now() })
+  const tools = registerTools(ctx, {
+    core,
+    repository,
+    scopeOf,
+    promotion: promotionGate,
+    onRecalled,
+    extractPatterns: currentConfig().patternExtraction.enabled
+      ? () => runExtraction(repository, {
+        preferenceMinProjects: currentConfig().patternExtraction.preferenceMinProjects,
+        failureMinOccurrences: currentConfig().patternExtraction.failureMinOccurrences,
+        environmentMinProjects: currentConfig().patternExtraction.environmentMinProjects,
+      }, Date.now())
+      : undefined,
+    clock: () => Date.now(),
+  })
   const detachObserver = observer.attach()
 
   // The authorization plane only participates when it is enabled. Registering

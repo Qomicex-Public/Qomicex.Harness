@@ -91,7 +91,13 @@ describe('memory_promote tool', () => {
   it('registers alongside the other three tools', async () => {
     const { ctx } = await harness(PROJECT, true)
     const names = ctx.tools.schemas().map(schema => schema.name).sort()
-    expect(names).toEqual(['memory_forget', 'memory_promote', 'memory_recall', 'memory_review'])
+    expect(names).toEqual([
+      'memory_forget',
+      'memory_patterns',
+      'memory_promote',
+      'memory_recall',
+      'memory_review',
+    ])
   })
 
   it('promotes to global when approved', async () => {

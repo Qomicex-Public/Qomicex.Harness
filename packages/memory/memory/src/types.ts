@@ -511,6 +511,64 @@ const STRUCTURAL_PREDICATES: ReadonlySet<string> = new Set([
   'uses',
 ])
 
+/**
+ * The kinds of pattern the extraction layer recognizes.
+ *
+ * `workflow` is deliberately absent: detecting a repeated tool-call sequence
+ * needs the observation stream segmented by task, which is a different kind of
+ * analysis from the three cross-project statistics below.
+ */
+export type PatternKind = 'preference' | 'failure' | 'environment'
+
+/** Lifecycle of one pattern; only a human moves it out of `candidate`. */
+export type PatternState = 'candidate' | 'active' | 'archived' | 'user-disabled'
+
+/**
+ * One extracted pattern: a regularity the system noticed across memories.
+ *
+ * A pattern is not a memory. It is a *claim about* memories — "this preference
+ * shows up in five projects" — and it stays `candidate` until a person agrees,
+ * which is what keeps self-evolution from being a black box.
+ */
+export interface Pattern {
+  /** Stable pattern id. */
+  id: string
+  /** Which kind of regularity this is. */
+  kind: PatternKind
+  /** Human-readable description. */
+  content: string
+  /** Normalized key the extractor groups by; makes re-extraction idempotent. */
+  canonicalForm: string
+  /** Extraction confidence in `[0, 1]`. */
+  confidence: number
+  /** Memory ids the pattern was read from. */
+  evidenceMemoryIds: string[]
+  /** Distinct project scopes the evidence spans. */
+  projectCount: number
+  /** How many memories support it. */
+  occurrenceCount: number
+  /** Lifecycle state. */
+  state: PatternState
+  /** First extraction time (ms). */
+  firstSeenAt: number
+  /** Most recent time evidence was seen (ms). */
+  lastSeenAt: number
+  /** Last time the pattern was applied to a turn; `null` until then. */
+  lastAppliedAt: number | null
+  /** How many times it was applied. */
+  appliedCount: number
+  /** Times the output followed the pattern. */
+  adopted: number
+  /** Times the output neither followed nor contradicted it. */
+  ignored: number
+  /** Times the output contradicted it. */
+  corrected: number
+  /** Reviewer's note, `null` until one is left. */
+  userNote: string | null
+  /** When the note was last written (ms). */
+  userEditedAt: number | null
+}
+
 /** Detected conflict between two memories. */
 export interface Contradiction {
   /** Stable contradiction id. */
@@ -755,4 +813,6 @@ export interface MemorySystemMeta {
   lastConsolidationAt: number | null
   /** Next sequence number for generated ids. */
   sequence: number
+  /** Last pattern-extraction time (ms), `null` before the first pass. */
+  lastPatternExtractionAt: number | null
 }

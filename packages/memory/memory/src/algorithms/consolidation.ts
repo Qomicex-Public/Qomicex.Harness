@@ -24,6 +24,8 @@ import { detectAll, markDisputed } from './contradiction.ts'
 import { evaluateTTL, inStartupGrace, sessionCount } from './retention.ts'
 import type { RetentionConfig } from './retention.ts'
 import { emptyTtlReport } from './retention.ts'
+import { extractionDue, prunePatterns, runExtraction } from './patterns.ts'
+import type { MemoryPatternConfig } from '../config.ts'
 import type { MemoryRepository } from '../repository.ts'
 import type { MemoryTiers } from '../memory/tiers.ts'
 import type { ConsolidationReport, Memory, StagingCandidate } from '../types.ts'
@@ -41,6 +43,8 @@ export interface ConsolidationOptions {
   thresholds: () => { demote: number; archive: number; hardForget: number }
   /** Retention knobs, read fresh per cycle. */
   retention?: () => RetentionConfig
+  /** Pattern-extraction knobs, read fresh per cycle. */
+  patterns?: () => MemoryPatternConfig
   /** Clock seam; tests replace it for deterministic timestamps. */
   clock?: () => number
   /** Optional LLM rephrasing provider. */
@@ -62,6 +66,7 @@ export class ConsolidationDaemon {
   private readonly clock: () => number
   private readonly provider: DistillProvider | undefined
   private readonly retention: () => RetentionConfig
+  private readonly patterns: () => MemoryPatternConfig
   private running: Promise<ConsolidationReport> | undefined
 
   /**
@@ -78,6 +83,17 @@ export class ConsolidationDaemon {
       promotionThreshold: 3,
       startupGraceSessions: 20,
       structuralException: true,
+    }))
+    this.patterns = options.patterns ?? (() => ({
+      enabled: false,
+      intervalDays: 7,
+      requireHumanApproval: true,
+      preferenceMinProjects: 3,
+      failureMinOccurrences: 2,
+      environmentMinProjects: 3,
+      pruningEnabled: true,
+      pruneMinScore: 0,
+      pruneStaleDays: 30,
     }))
   }
 
@@ -123,10 +139,39 @@ export class ConsolidationDaemon {
     const grace = inStartupGrace(await sessionCount(this.repository), this.retention())
     await this.decay(now, report, grace)
     await this.evaluateRetention(report)
+    await this.extractPatterns()
 
     const meta = await this.repository.meta()
     await this.repository.setMeta({ ...meta, lastConsolidationAt: now })
     return report
+  }
+
+  /**
+   * Run the pattern-extraction pass when it is enabled and due.
+   *
+   * Extraction is gated by the configured interval rather than by the cycle,
+   * because consolidation runs on every idle while a pattern pass is offline
+   * batch work that only needs to happen weekly. The last run time lives in
+   * the domain's global slot, so a restart does not re-run it.
+   * @returns resolution after the pass, or immediately when not due.
+   */
+  private async extractPatterns(): Promise<void> {
+    const config = this.patterns()
+    if (!config.enabled) return
+    const meta = await this.repository.meta()
+    const now = this.clock()
+    if (!extractionDue(meta.lastPatternExtractionAt, config.intervalDays, now)) return
+
+    const report = await runExtraction(this.repository, {
+      preferenceMinProjects: config.preferenceMinProjects,
+      failureMinOccurrences: config.failureMinOccurrences,
+      environmentMinProjects: config.environmentMinProjects,
+    }, now)
+    if (config.pruningEnabled) {
+      await prunePatterns(this.repository, config.pruneMinScore, config.pruneStaleDays, now)
+    }
+    await this.repository.setMeta({ ...meta, lastPatternExtractionAt: now })
+    void report
   }
 
   /**

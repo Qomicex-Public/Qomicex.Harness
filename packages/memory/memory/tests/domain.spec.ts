@@ -63,7 +63,7 @@ function memory(id: string, table: 'episodic' | 'semantic' = 'episodic'): Memory
 }
 
 describe('memory domain declaration', () => {
-  it('declares the eleven tables and opens over the routed backend', async () => {
+  it('declares the twelve tables and opens over the routed backend', async () => {
     const { domain } = await harness()
     expect(Object.keys(memoryDomain.tables)).toEqual([
       'observations',
@@ -77,6 +77,7 @@ describe('memory domain declaration', () => {
       'audits',
       'judgments',
       'retention',
+      'patterns',
     ])
     for (const table of MEMORY_TABLES) {
       expect(domain.table(table).size).toBe(0)
@@ -90,13 +91,20 @@ describe('memory domain declaration', () => {
       createdAt: 0,
       lastConsolidationAt: null,
       sequence: 0,
+      lastPatternExtractionAt: null,
     })
   })
 
   it('persists the global across a reopen', async () => {
     const pool = new MemoryMediaPool()
     const first = await harness(pool)
-    await first.repository.setMeta({ schemaVersion: 1, createdAt: 42, lastConsolidationAt: null, sequence: 7 })
+    await first.repository.setMeta({
+      schemaVersion: 1,
+      createdAt: 42,
+      lastConsolidationAt: null,
+      sequence: 7,
+      lastPatternExtractionAt: null,
+    })
     await first.domain.close()
     const second = await harness(pool)
     expect(await second.repository.meta()).toEqual({
@@ -104,6 +112,7 @@ describe('memory domain declaration', () => {
       createdAt: 42,
       lastConsolidationAt: null,
       sequence: 7,
+      lastPatternExtractionAt: null,
     })
   })
 })

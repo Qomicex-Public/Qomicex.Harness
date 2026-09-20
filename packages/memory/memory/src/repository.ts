@@ -25,6 +25,7 @@ import type {
   Memory,
   MemorySystemMeta,
   ObservedEvent,
+  Pattern,
   RetentionRecord,
   StagingCandidate,
   Tombstone,
@@ -463,6 +464,39 @@ export class MemoryRepository {
    */
   async updateRetention(memoryId: string, transform: (current: RetentionRecord) => RetentionRecord): Promise<RetentionRecord> {
     return (await this.opened()).table('retention').update(memoryId, transform)
+  }
+
+  /**
+   * Store one pattern.
+   * @param pattern - The pattern.
+   * @returns resolution after durability.
+   */
+  async putPattern(pattern: Pattern): Promise<void> {
+    await (await this.opened()).table('patterns').put(pattern.id, pattern)
+  }
+
+  /**
+   * Read one pattern.
+   * @param id - The pattern id.
+   * @returns The pattern, or `undefined` when absent.
+   */
+  async getPattern(id: string): Promise<Pattern | undefined> {
+    return (await this.opened()).table('patterns').get(id)
+  }
+
+  /** Every pattern, in insertion order. */
+  async allPatterns(): Promise<Pattern[]> {
+    return [...(await this.opened()).table('patterns').entries()].map(([, row]) => row)
+  }
+
+  /**
+   * Apply a transform to one pattern durably.
+   * @param id - The pattern id.
+   * @param transform - Synchronous pure transform.
+   * @returns The stored next record.
+   */
+  async updatePattern(id: string, transform: (current: Pattern) => Pattern): Promise<Pattern> {
+    return (await this.opened()).table('patterns').update(id, transform)
   }
 
   /**

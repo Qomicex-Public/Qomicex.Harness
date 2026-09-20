@@ -84,6 +84,28 @@ export interface MemoryRetentionConfig {
   structuralException: boolean
 }
 
+/** Pattern-extraction knobs. */
+export interface MemoryPatternConfig {
+  /** Whether the offline extraction pass runs at all. */
+  enabled: boolean
+  /** Days between automatic extraction passes. */
+  intervalDays: number
+  /** Whether a human must approve before a pattern becomes active. */
+  requireHumanApproval: boolean
+  /** Distinct projects a fact key must span to count as a preference. */
+  preferenceMinProjects: number
+  /** Occurrences an error feature needs to count as a failure pattern. */
+  failureMinOccurrences: number
+  /** Distinct projects an environment constraint must span. */
+  environmentMinProjects: number
+  /** Whether negative-feedback patterns are pruned. */
+  pruningEnabled: boolean
+  /** Score below which an active pattern may be pruned. */
+  pruneMinScore: number
+  /** Days without application after which a pattern may be pruned. */
+  pruneStaleDays: number
+}
+
 /** Plugin configuration. */
 export interface Config {
   /** Write-gate and forgetting thresholds. */
@@ -102,6 +124,8 @@ export interface Config {
   judgment?: MemoryJudgmentConfig
   /** Retention layer. */
   retention?: MemoryRetentionConfig
+  /** Pattern-extraction layer. */
+  patternExtraction?: MemoryPatternConfig
 }
 
 /** Validated plugin configuration. */
@@ -153,6 +177,27 @@ export const Config: z<Config> = z.object({
     startupGraceSessions: 20,
     structuralException: true,
   }),
+  patternExtraction: z.object({
+    enabled: z.boolean().default(false),
+    intervalDays: z.number().step(1).min(1).default(7),
+    requireHumanApproval: z.boolean().default(true),
+    preferenceMinProjects: z.number().step(1).min(1).default(3),
+    failureMinOccurrences: z.number().step(1).min(1).default(2),
+    environmentMinProjects: z.number().step(1).min(1).default(3),
+    pruningEnabled: z.boolean().default(true),
+    pruneMinScore: z.number().default(0),
+    pruneStaleDays: z.number().step(1).min(1).default(30),
+  }).default({
+    enabled: false,
+    intervalDays: 7,
+    requireHumanApproval: true,
+    preferenceMinProjects: 3,
+    failureMinOccurrences: 2,
+    environmentMinProjects: 3,
+    pruningEnabled: true,
+    pruneMinScore: 0,
+    pruneStaleDays: 30,
+  }),
 })
 
 /**
@@ -163,11 +208,11 @@ export const Config: z<Config> = z.object({
  * @returns Fully resolved configuration.
  */
 export function resolveConfig(config: Config): ResolvedConfig {
-  const { thresholds, bounds, retrieval, injection, authorization, llmDistill, judgment, retention } = config
+  const { thresholds, bounds, retrieval, injection, authorization, llmDistill, judgment, retention, patternExtraction } = config
   if (
     thresholds === undefined || bounds === undefined || retrieval === undefined
     || injection === undefined || authorization === undefined || llmDistill === undefined
-    || judgment === undefined || retention === undefined
+    || judgment === undefined || retention === undefined || patternExtraction === undefined
   ) {
     throw new Error('bio-memory: plugin config was not resolved against the Config schema')
   }
@@ -180,6 +225,7 @@ export function resolveConfig(config: Config): ResolvedConfig {
     llmDistill: { ...llmDistill },
     judgment: { ...judgment },
     retention: { ...retention },
+    patternExtraction: { ...patternExtraction },
   }
 }
 
@@ -201,4 +247,6 @@ export interface ResolvedConfig {
   judgment: MemoryJudgmentConfig
   /** Retention layer. */
   retention: MemoryRetentionConfig
+  /** Pattern-extraction layer. */
+  patternExtraction: MemoryPatternConfig
 }
