@@ -18,6 +18,7 @@ import {
   AUTO_REVIEW_PRESET as AUTO_REVIEW,
   displayPermissionPreset,
   FULL_ACCESS_PRESET as FULL_ACCESS,
+  YOLO_PRESET as YOLO,
 } from './presentation.ts'
 import css from './PermissionSelect.module.css'
 
@@ -25,6 +26,15 @@ import css from './PermissionSelect.module.css'
    check = read-only, pencil = workspace write, exclamation = full access.
    currentColor so the trigger and menu rows tint them with their own text
    color. */
+
+/** The full-access shield(exclamation) glyph, reused verbatim by YOLO so both rows render one icon. */
+const fullAccessGlyph = (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+    <path d={SHIELD_OUTLINE_PATH} stroke="currentColor" strokeWidth={SHIELD_OUTLINE_STROKE} strokeLinejoin="round" />
+    <path d="M9.10094 4.5V8.75939H7.59888V4.5H9.10094Z" fill="currentColor" />
+    <path d="M9.10094 9.8114V11.5H7.59888V9.8114H9.10094Z" fill="currentColor" />
+  </svg>
+)
 
 const permissionGlyphs = new Map<string, ReactNode>([
   ['read-only', (
@@ -42,13 +52,8 @@ const permissionGlyphs = new Map<string, ReactNode>([
       <path d="M8.14852 14.1308L7.33925 15.4976C7.22458 15.6912 7.42245 15.9194 7.63037 15.8333L9.09785 15.2254L15.0399 10.0719L14.0905 8.97733L8.14852 14.1308Z" fill="currentColor" />
     </svg>
   )],
-  [FULL_ACCESS, (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d={SHIELD_OUTLINE_PATH} stroke="currentColor" strokeWidth={SHIELD_OUTLINE_STROKE} strokeLinejoin="round" />
-      <path d="M9.10094 4.5V8.75939H7.59888V4.5H9.10094Z" fill="currentColor" />
-      <path d="M9.10094 9.8114V11.5H7.59888V9.8114H9.10094Z" fill="currentColor" />
-    </svg>
-  )],
+  [FULL_ACCESS, fullAccessGlyph],
+  [YOLO, fullAccessGlyph],
 ])
 
 /** Glyph for a permission option value; host-configured names outside the design set get none. */
@@ -122,20 +127,22 @@ export function PermissionSelect({
   const busy = pick !== null || confirmation !== null
 
   const items: MenuEntry[] = catalog.options.map((option) => {
-    const icon = permissionGlyph(option.value)
+    const glyph = permissionGlyph(option.value)
+    const warn = option.value === YOLO
     const label = permissionLabel(option.value, option.name, t)
     const badge = optionBadge(option.value, t)
+    const labelNode = badge === undefined
+      ? label
+      : (
+        <span className={css.optionLabel} aria-label={`${label} ${badge}`}>
+          <span className={css.optionLabelText}>{label}</span>
+          <sup className={css.badge}>{badge}</sup>
+        </span>
+      )
     return {
       id: option.value,
-      label: badge === undefined
-        ? label
-        : (
-          <span className={css.optionLabel} aria-label={`${label} ${badge}`}>
-            <span className={css.optionLabelText}>{label}</span>
-            <sup className={css.badge}>{badge}</sup>
-          </span>
-        ),
-      ...icon === undefined ? {} : { icon },
+      label: warn ? <span className={css.warn}>{labelNode}</span> : labelNode,
+      ...glyph === undefined ? {} : { icon: warn ? <span className={css.warn}>{glyph}</span> : glyph },
     }
   })
 
@@ -149,7 +156,7 @@ export function PermissionSelect({
   const choose = (id: string): void => {
     setOpen(false)
     if (id === selection.currentValue) return
-    if (id === FULL_ACCESS || id === AUTO_REVIEW) {
+    if (id === FULL_ACCESS || id === AUTO_REVIEW || id === YOLO) {
       setAcknowledged(false)
       setConfirmation(id)
       return
@@ -169,16 +176,16 @@ export function PermissionSelect({
 
   const confirmationTitle = confirmation === AUTO_REVIEW
     ? t('auto.confirm.title')
-    : t('confirm.title')
+    : confirmation === YOLO ? t('yolo.confirm.title') : t('confirm.title')
   const confirmationDescription = confirmation === AUTO_REVIEW
     ? t('auto.confirm.description')
-    : t('confirm.description')
+    : confirmation === YOLO ? t('yolo.confirm.description') : t('confirm.description')
   const confirmationAcknowledge = confirmation === AUTO_REVIEW
     ? t('auto.confirm.acknowledge')
-    : t('confirm.acknowledge')
+    : confirmation === YOLO ? t('yolo.confirm.acknowledge') : t('confirm.acknowledge')
   const confirmationEnable = confirmation === AUTO_REVIEW
     ? t('auto.confirm.enable')
-    : t('confirm.enable')
+    : confirmation === YOLO ? t('yolo.confirm.enable') : t('confirm.enable')
   const currentBadge = optionBadge(currentValue, t)
   const currentAccessibleLabel = currentBadge === undefined ? currentLabel : `${currentLabel} ${currentBadge}`
 
@@ -202,9 +209,9 @@ export function PermissionSelect({
             onClick={() => { setOpen(!open) }}
           >
             {permissionGlyph(currentValue) !== undefined && (
-              <span className={css.triggerIcon} aria-hidden>{permissionGlyph(currentValue)}</span>
+              <span className={clsx(css.triggerIcon, currentValue === YOLO && css.warn)} aria-hidden>{permissionGlyph(currentValue)}</span>
             )}
-            <span className={css.triggerLabel}>{currentLabel}</span>
+            <span className={clsx(css.triggerLabel, currentValue === YOLO && css.warn)}>{currentLabel}</span>
             {currentBadge !== undefined && (
               <sup className={css.badge}>{currentBadge}</sup>
             )}

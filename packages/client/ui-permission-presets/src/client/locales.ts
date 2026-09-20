@@ -57,6 +57,10 @@ export const accessZh = {
   'auto.confirm.description': 'Auto review 不使用沙箱。每次原生工具调用和 PTC 内层调用前，都会由与当前 agent 相同的模型进行审查。此功能仍属实验性，可能误放行或误拒绝，并会消耗额外 token。',
   'auto.confirm.acknowledge': '我已了解这些风险，并愿意继续',
   'auto.confirm.enable': '启用 Auto review',
+  'yolo.confirm.title': '确认启用 YOLO 模式？',
+  'yolo.confirm.description': 'YOLO 将自动批准所有操作，不再弹窗确认，全程无需人工介入。仅用于完全可信的无人值守长期任务；运行期间请勿离开，任务结束后请及时切回其他模式。',
+  'yolo.confirm.acknowledge': '我已知悉：所有操作将自动批准、无人工确认',
+  'yolo.confirm.enable': '启用 YOLO',
 } satisfies Record<string, string>
 
 /** Current-session popup-gate key union. */
@@ -81,4 +85,8 @@ export const accessEn = {
   'auto.confirm.description': 'Auto review runs without a sandbox. Before every native tool call and PTC inner call, the same model as the current agent reviews whether to allow it. This feature is experimental, can falsely allow or deny actions, and uses additional tokens.',
   'auto.confirm.acknowledge': 'I understand these risks and want to continue',
   'auto.confirm.enable': 'Enable Auto review',
+  'yolo.confirm.title': 'Enable YOLO mode?',
+  'yolo.confirm.description': 'YOLO auto-approves every action with no confirmation prompt and no human in the loop. Use it only for fully trusted unattended long-running tasks; do not walk away while it runs, and switch back when the task ends.',
+  'yolo.confirm.acknowledge': 'I understand: every action will be auto-approved with no human confirmation',
+  'yolo.confirm.enable': 'Enable YOLO',
 } satisfies Record<PermissionAccessKey, string>
