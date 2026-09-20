@@ -84,12 +84,15 @@ export function detectUserStatement(message: string): CaptureSignal | null {
   if (isNoiseByRule(text)) return null
   return {
     type: 'user_statement',
-    strength: 0.6,
+    strength: GENERIC_STATEMENT_STRENGTH,
     epistemic: 'user_stated',
     sourceType: 'explicit_user',
     ...(extracted === undefined ? {} : { extracted }),
   }
 }
+
+/** Strength of the generic statement a message receives when no specific rule fires. */
+export const GENERIC_STATEMENT_STRENGTH = 0.6
 
 /** Minimum length a statement must reach to be worth staging. */
 const MIN_STATEMENT_LENGTH = 15

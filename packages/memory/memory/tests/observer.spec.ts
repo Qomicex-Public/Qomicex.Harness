@@ -17,7 +17,8 @@ import { MemoryRepository } from '../src/repository.ts'
 import { EventObserver } from '../src/event/observer.ts'
 import type { ObservationSink, ObservedSignal } from '../src/event/observer.ts'
 import { countIndependentEvidence, makeEvidence } from '../src/evidence/independence.ts'
-import type { ObservedEvent } from '../src/types.ts'
+import type { LocalJudge } from '../src/algorithms/judgment.ts'
+import type { JudgmentLog, ObservedEvent } from '../src/types.ts'
 
 const roots: Context[] = []
 
@@ -29,6 +30,7 @@ afterEach(async () => {
 class RecordingSink implements ObservationSink {
   readonly observations: ObservedEvent[] = []
   readonly signals: ObservedSignal[] = []
+  readonly judgments: JudgmentLog[] = []
   readonly repository: MemoryRepository
   fail = false
 
@@ -45,6 +47,11 @@ class RecordingSink implements ObservationSink {
   async offerSignal(observed: ObservedSignal): Promise<void> {
     this.signals.push(observed)
   }
+
+  async recordJudgment(judgment: JudgmentLog): Promise<void> {
+    this.judgments.push(judgment)
+    await this.repository.putJudgment(judgment)
+  }
 }
 
 /**
@@ -52,7 +59,10 @@ class RecordingSink implements ObservationSink {
  * This is the only shape that can prove the hooks fire in a live turn: the
  * mock adapter drives the loop and the observer reads the loop's own events.
  */
-async function harness(script: ConstructorParameters<typeof MockAdapter>[0]) {
+async function harness(
+  script: ConstructorParameters<typeof MockAdapter>[0],
+  options: { judge?: LocalJudge; judgmentEnabled?: boolean } = {},
+) {
   const ctx = new Context()
   const adapter = new MockAdapter(script)
   await ctx.plugin(LlmRuntime)
@@ -70,7 +80,12 @@ async function harness(script: ConstructorParameters<typeof MockAdapter>[0]) {
   ctx.llm.registerAdapter(['mock'], adapter)
   const repository = new MemoryRepository(facility.open(memoryDomain))
   const sink = new RecordingSink(repository)
-  const observer = new EventObserver(ctx, { sink, clock: () => 1_000 })
+  const observer = new EventObserver(ctx, {
+    sink,
+    clock: () => 1_000,
+    ...(options.judge === undefined ? {} : { judge: options.judge }),
+    judgmentEnabled: () => options.judgmentEnabled ?? false,
+  })
   observer.attach()
   roots.push(ctx)
   return { ctx, adapter, sink, observer, repository }
@@ -204,5 +219,49 @@ describe('EventObserver against a live loop', () => {
     send(agent, 'second')
     await waitForIdle(h.ctx, agent)
     expect(h.sink.observations).toHaveLength(before)
+  })
+
+  it('judges a generic statement and writes its judgment log', async () => {
+    const h = await harness(
+      [textResponse('ok'), textResponse('ok')],
+      { judgmentEnabled: true },
+    )
+    const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
+    send(agent, '这个项目的构建命令是 pnpm run build')
+    await waitForIdle(h.ctx, agent)
+
+    expect(h.sink.judgments).toHaveLength(1)
+    expect(h.sink.judgments[0]?.localJudgment).toBe('remember')
+    expect(h.sink.judgments[0]?.source).toBe('rule-engine')
+    expect(h.sink.signals).toHaveLength(1)
+    expect(h.sink.signals[0]?.signal.type).toBe('user_statement')
+  })
+
+  it('does not stage a generic statement the local judge forgets', async () => {
+    const forget: LocalJudge = { async judge() { return { verdict: 'forget', confidence: 0.9, source: 'local-llm' } } }
+    const h = await harness(
+      [textResponse('ok'), textResponse('ok')],
+      { judge: forget, judgmentEnabled: true },
+    )
+    const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
+    send(agent, '这个项目的构建命令是 pnpm run build')
+    await waitForIdle(h.ctx, agent)
+
+    expect(h.sink.judgments[0]?.localJudgment).toBe('forget')
+    expect(h.sink.signals).toHaveLength(0)
+  })
+
+  it('does not judge a keyword-confirmed signal, even when enabled', async () => {
+    const h = await harness(
+      [textResponse('ok')],
+      { judgmentEnabled: true },
+    )
+    const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
+    send(agent, '我更喜欢 pnpm')
+    await waitForIdle(h.ctx, agent)
+
+    expect(h.sink.signals).toHaveLength(1)
+    expect(h.sink.signals[0]?.signal.type).toBe('user_preference')
+    expect(h.sink.judgments).toHaveLength(0)
   })
 })

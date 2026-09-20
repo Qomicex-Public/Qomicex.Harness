@@ -28,6 +28,7 @@ import type {
   StagingCandidate,
   Tombstone,
   WriteResult,
+  JudgmentLog,
 } from '../types.ts'
 
 /** What a write gate may inspect before deciding. */
@@ -99,6 +100,15 @@ export class MemoryCore implements ObservationSink {
    */
   async recordObservation(event: ObservedEvent): Promise<void> {
     await this.tiers.store.appendObservation(event)
+  }
+
+  /**
+   * Persist one judgment log row.
+   * @param judgment - The judgment, id already allocated by the observer.
+   * @returns resolution after durability.
+   */
+  async recordJudgment(judgment: JudgmentLog): Promise<void> {
+    await this.tiers.store.putJudgment(judgment)
   }
 
   /**

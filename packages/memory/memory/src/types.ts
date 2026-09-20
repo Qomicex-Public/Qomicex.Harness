@@ -397,6 +397,40 @@ export interface CaptureSignal {
   }
 }
 
+/** A judgment verdict: whether a statement is worth remembering. */
+export type JudgmentVerdict = 'remember' | 'forget'
+
+/** Who produced a judgment: the local model or the rule-engine fallback. */
+export type JudgmentSource = 'local-llm' | 'rule-engine'
+
+/** One persisted judgment, kept as training data for the local judge. */
+export interface JudgmentLog {
+  /** Stable judgment id. */
+  id: string
+  /** The statement that was judged. */
+  content: string
+  /** Preceding user statements (bounded window), for context when judging. */
+  context: string[]
+  /** What the local path decided. */
+  localJudgment: JudgmentVerdict
+  /** Which path produced `localJudgment`. */
+  source: JudgmentSource
+  /** Judgment confidence in `[0, 1]`. */
+  confidence: number
+  /**
+   * Usage signal fed back later by the retention layer (0 until then). The
+   * cloud trainer reads this to distinguish remembered facts that paid off
+   * from those that never resurfaced.
+   */
+  usageSignal: number
+  /** Cloud curation verdict, backfilled later; `null` until a run covers it. */
+  cloudVerdict: JudgmentVerdict | null
+  /** Session the statement came from. */
+  sessionId: string
+  /** Judgment time (ms). */
+  observedAt: number
+}
+
 /** Detected conflict between two memories. */
 export interface Contradiction {
   /** Stable contradiction id. */

@@ -306,6 +306,20 @@ export const memorySystemMetaSchema = z.object({
   sequence: z.number(),
 })
 
+/** One judgment log row, kept as training data for the local judge. */
+export const judgmentLogSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  context: z.array(z.string()),
+  localJudgment: z.enum(['remember', 'forget']),
+  source: z.enum(['local-llm', 'rule-engine']),
+  confidence: z.number(),
+  usageSignal: z.number(),
+  cloudVerdict: z.enum(['remember', 'forget']).nullable(),
+  sessionId: z.string(),
+  observedAt: z.number(),
+})
+
 /**
  * The `bio_memory` domain spec. `episodic` and `semantic` hold the same record
  * shape and differ only in which consolidation stage owns the row; the
@@ -328,6 +342,7 @@ export const memoryDomain = defineDomain({
     contradictions: domainTable<string, z.infer<typeof contradictionSchema>>(contradictionSchema),
     authorizations: domainTable<string, z.infer<typeof authorizationSchema>>(authorizationSchema),
     audits: domainTable<string, z.infer<typeof auditSchema>>(auditSchema),
+    judgments: domainTable<string, z.infer<typeof judgmentLogSchema>>(judgmentLogSchema),
   },
 })
 
@@ -345,6 +360,7 @@ export const MEMORY_TABLES = [
   'contradictions',
   'authorizations',
   'audits',
+  'judgments',
 ] as const
 
 /** One declared table name. */

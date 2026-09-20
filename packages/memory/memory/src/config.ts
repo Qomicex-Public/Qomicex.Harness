@@ -66,6 +66,12 @@ export interface MemoryLlmDistillConfig {
   model: string
 }
 
+/** Judgment-layer knobs. */
+export interface MemoryJudgmentConfig {
+  /** Whether the local judgment layer participates at capture time. */
+  enabled: boolean
+}
+
 /** Plugin configuration. */
 export interface Config {
   /** Write-gate and forgetting thresholds. */
@@ -80,6 +86,8 @@ export interface Config {
   authorization?: MemoryAuthorizationConfig
   /** Optional LLM distillation. */
   llmDistill?: MemoryLlmDistillConfig
+  /** Local judgment layer. */
+  judgment?: MemoryJudgmentConfig
 }
 
 /** Validated plugin configuration. */
@@ -117,6 +125,9 @@ export const Config: z<Config> = z.object({
     provider: z.string().default(''),
     model: z.string().default(''),
   }).default({ enabled: false, provider: '', model: '' }),
+  judgment: z.object({
+    enabled: z.boolean().default(false),
+  }).default({ enabled: false }),
 })
 
 /**
@@ -127,10 +138,11 @@ export const Config: z<Config> = z.object({
  * @returns Fully resolved configuration.
  */
 export function resolveConfig(config: Config): ResolvedConfig {
-  const { thresholds, bounds, retrieval, injection, authorization, llmDistill } = config
+  const { thresholds, bounds, retrieval, injection, authorization, llmDistill, judgment } = config
   if (
     thresholds === undefined || bounds === undefined || retrieval === undefined
     || injection === undefined || authorization === undefined || llmDistill === undefined
+    || judgment === undefined
   ) {
     throw new Error('bio-memory: plugin config was not resolved against the Config schema')
   }
@@ -141,6 +153,7 @@ export function resolveConfig(config: Config): ResolvedConfig {
     injection: { ...injection },
     authorization: { ...authorization },
     llmDistill: { ...llmDistill },
+    judgment: { ...judgment },
   }
 }
 
@@ -158,4 +171,6 @@ export interface ResolvedConfig {
   authorization: MemoryAuthorizationConfig
   /** Optional LLM distillation. */
   llmDistill: MemoryLlmDistillConfig
+  /** Local judgment layer. */
+  judgment: MemoryJudgmentConfig
 }

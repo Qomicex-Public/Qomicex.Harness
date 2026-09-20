@@ -62,7 +62,7 @@ function memory(id: string, table: 'episodic' | 'semantic' = 'episodic'): Memory
 }
 
 describe('memory domain declaration', () => {
-  it('declares the nine tables and opens over the routed backend', async () => {
+  it('declares the ten tables and opens over the routed backend', async () => {
     const { domain } = await harness()
     expect(Object.keys(memoryDomain.tables)).toEqual([
       'observations',
@@ -74,6 +74,7 @@ describe('memory domain declaration', () => {
       'contradictions',
       'authorizations',
       'audits',
+      'judgments',
     ])
     for (const table of MEMORY_TABLES) {
       expect(domain.table(table).size).toBe(0)
@@ -226,6 +227,34 @@ describe('MemoryRepository', () => {
       timestamp: 1,
     })
     expect(await repository.allAudits()).toHaveLength(1)
+  })
+
+  it('stores and reads judgment logs', async () => {
+    const { repository } = await harness()
+    await repository.putJudgment({
+      id: 'judge1',
+      content: '这个项目的构建命令是 pnpm run build',
+      context: ['上一个问题里我们用了 webpack'],
+      localJudgment: 'remember',
+      source: 'rule-engine',
+      confidence: 0.5,
+      usageSignal: 0,
+      cloudVerdict: null,
+      sessionId: 's1',
+      observedAt: 1,
+    })
+    expect(await repository.allJudgments()).toEqual([{
+      id: 'judge1',
+      content: '这个项目的构建命令是 pnpm run build',
+      context: ['上一个问题里我们用了 webpack'],
+      localJudgment: 'remember',
+      source: 'rule-engine',
+      confidence: 0.5,
+      usageSignal: 0,
+      cloudVerdict: null,
+      sessionId: 's1',
+      observedAt: 1,
+    }])
   })
 
   it('projects a runtime authorization onto a stored grant row', () => {

@@ -21,6 +21,7 @@ import type {
   AuthorizingEvidence,
   ConsolidationReport,
   Contradiction,
+  JudgmentLog,
   Memory,
   MemorySystemMeta,
   ObservedEvent,
@@ -411,6 +412,23 @@ export class MemoryRepository {
    */
   async allAudits(): Promise<AuditRecord[]> {
     return [...(await this.opened()).table('audits').entries()].map(([, row]) => row)
+  }
+
+  /**
+   * Store one judgment log row.
+   * @param judgment - The judgment.
+   * @returns resolution after durability.
+   */
+  async putJudgment(judgment: JudgmentLog): Promise<void> {
+    await (await this.opened()).table('judgments').put(judgment.id, judgment)
+  }
+
+  /**
+   * Every judgment log row, in insertion order.
+   * @returns The stored judgments.
+   */
+  async allJudgments(): Promise<JudgmentLog[]> {
+    return [...(await this.opened()).table('judgments').entries()].map(([, row]) => row)
   }
 
   /**

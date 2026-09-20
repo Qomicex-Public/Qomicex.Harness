@@ -24,11 +24,13 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import type { ToolExecution, ToolExecutionResult } from '@deepseek-ai/dsh-tools'
 import { CausalLineage, toJsonText, toJsonValue } from './lineage.ts'
-import { detectAgentClaim, detectUserStatement, extractFromToolResult, observationPayload } from './signal-detect.ts'
+import { detectAgentClaim, detectUserStatement, extractFromToolResult, GENERIC_STATEMENT_STRENGTH, observationPayload } from './signal-detect.ts'
 import type { ToolCallView } from './signal-detect.ts'
+import { judge } from '../algorithms/judgment.ts'
+import type { LocalJudge } from '../algorithms/judgment.ts'
 import { projectScope, serializeScope, UNKNOWN_SCOPE_ID, userScope } from '../scope/namespace.ts'
 import { tierForSignal } from '../scope/tier.ts'
-import type { CaptureSignal, EventType, JsonValue, ObservedEvent } from '../types.ts'
+import type { CaptureSignal, EventType, JsonValue, JudgmentLog, ObservedEvent } from '../types.ts'
 
 /** One rule signal together with the causal chain it came from. */
 export interface ObservedSignal {
@@ -61,6 +63,12 @@ export interface ObservationSink {
    * @returns resolution after the signal is handled.
    */
   offerSignal(observed: ObservedSignal): Promise<void>
+  /**
+   * Persist one judgment log row.
+   * @param judgment - The judgment, with its id pre-allocated by the observer.
+   * @returns resolution after durability.
+   */
+  recordJudgment(judgment: JudgmentLog): Promise<void>
 }
 
 /** Options for the observer. */
@@ -76,7 +84,17 @@ export interface ObserverOptions {
   clock?: () => number
   /** Failure reporter; defaults to the context logger. */
   onError?: (error: unknown) => void
+  /**
+   * The local judge, when one is mounted. Absent means the rule path alone
+   * decides, which is the Phase 1 behaviour.
+   */
+  judge?: LocalJudge
+  /** Whether the local judgment layer is enabled at capture time. */
+  judgmentEnabled?: () => boolean
 }
+
+/** How many preceding user statements a judgment sees as context. */
+export const JUDGMENT_CONTEXT_WINDOW = 2
 
 /** Per-session observation state. */
 interface SessionObserverState {
@@ -92,6 +110,8 @@ interface SessionObserverState {
    * which is how S012's `read` then `parse` stays one witness.
    */
   callStack: string[]
+  /** Bounded rolling window of recent user statements, oldest first. */
+  recentUserText: string[]
 }
 
 /**
@@ -207,6 +227,7 @@ export class EventObserver {
       scope: serializeScope(projectScope(cwd, userId ?? UNKNOWN_SCOPE_ID)),
       userScope: userId === undefined ? undefined : serializeScope(userScope(userId)),
       callStack: [],
+      recentUserText: [],
     }
     this.sessions.set(session.id, created)
     return created
@@ -298,6 +319,87 @@ export class EventObserver {
     })
   }
 
+  /**
+   * Start one user-message capture: detect, judge when enabled, then stage or
+   * drop.
+   *
+   * Only the *generic* statement is judged — a keyword-confirmed signal
+   * (preference, correction, standing instruction, project fact) is already
+   * high-confidence and goes straight to staging. The generic statement is
+   * the one the blacklist let through without a keyword, and the local judge
+   * exists exactly to grade it. When the judge is disabled, or forgets, the
+   * observation is still recorded; only the offer to stage is skipped.
+   * @param session - The session.
+   * @param state - Its observation state.
+   * @param event - The built observation.
+   * @param text - The raw user text.
+   * @param root - The causal chain root.
+   */
+  private startUserMessage(
+    session: Session,
+    state: SessionObserverState,
+    event: ObservedEvent,
+    text: string,
+    root: string,
+  ): void {
+    const signal = detectUserStatement(text) ?? undefined
+    const context = [...state.recentUserText]
+    if (text.trim() !== '') {
+      state.recentUserText = [...state.recentUserText, text.trim()].slice(-JUDGMENT_CONTEXT_WINDOW)
+    }
+    if (signal === undefined) {
+      this.start(event)
+      return
+    }
+    const generic = signal.type === 'user_statement' && signal.strength === GENERIC_STATEMENT_STRENGTH
+    if (!generic || !(this.options.judgmentEnabled?.() ?? false)) {
+      this.start(event, signal, root)
+      return
+    }
+    const pending = this.judgeAndRecord(session, state, event, signal, root, { current: text, context })
+    this.inFlight.add(pending)
+    void pending.finally(() => {
+      this.inFlight.delete(pending)
+    })
+  }
+
+  /** Judge one generic statement and stage it only when remembered. */
+  private async judgeAndRecord(
+    session: Session,
+    state: SessionObserverState,
+    event: ObservedEvent,
+    signal: CaptureSignal,
+    root: string,
+    input: { current: string; context: readonly string[] },
+  ): Promise<void> {
+    try {
+      await this.sink.recordObservation(event)
+      const result = await judge(this.options.judge, input)
+      await this.sink.recordJudgment({
+        id: `${event.id}:judgment`,
+        content: input.current,
+        context: [...input.context],
+        localJudgment: result.verdict,
+        source: result.source,
+        confidence: result.confidence,
+        usageSignal: 0,
+        cloudVerdict: null,
+        sessionId: session.id,
+        observedAt: this.clock(),
+      })
+      if (result.verdict === 'forget') return
+      const writeScope = this.writeScopeFor(state, signal)
+      await this.sink.offerSignal({
+        event,
+        signal,
+        causalOrigin: root,
+        writeScope,
+      })
+    } catch (error) {
+      this.onError(error)
+    }
+  }
+
   /** Turn one durable session event into an observation. */
   private observeSessionEvent(session: Session, event: SessionEvent): void {
     const agent = this.agentFor(session)
@@ -308,9 +410,11 @@ export class EventObserver {
         const text = messageText(event.data)
         const root = this.lineage.for(session.id).openTurn(Number(event.seq))
         state.seq = Math.max(state.seq, Number(event.seq))
-        this.start(
+        this.startUserMessage(
+          session,
+          state,
           this.sessionEventObservation(session, state, event, 'user_message', { text }),
-          detectUserStatement(text) ?? undefined,
+          text,
           root,
         )
         return

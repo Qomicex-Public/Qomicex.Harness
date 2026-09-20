@@ -53,6 +53,7 @@ export {
   memoryEdgeSchema,
   authorizationSchema,
   auditSchema,
+  judgmentLogSchema,
   memorySystemMetaSchema,
 } from './domain.ts'
 export type { MemoryTable, MemoryTableName, ScopeNodeRecord } from './domain.ts'
@@ -92,7 +93,12 @@ export { buildMemory, deriveImportance, detectLanguage } from './memory/factory.
 export { EventObserver } from './event/observer.ts'
 export type { ObservationSink, ObservedSignal, ObserverOptions } from './event/observer.ts'
 export { CausalLineage, toJsonText, toJsonValue } from './event/lineage.ts'
-export { detectAgentClaim, detectUserStatement, extractFromToolResult } from './event/signal-detect.ts'
+export { detectAgentClaim, detectUserStatement, extractFromToolResult, GENERIC_STATEMENT_STRENGTH } from './event/signal-detect.ts'
+export {
+  JUDGMENT_CONTEXT_WINDOW,
+} from './event/observer.ts'
+export { judge, RULE_FALLBACK_CONFIDENCE } from './algorithms/judgment.ts'
+export type { JudgmentInput, JudgmentResult, LocalJudge } from './algorithms/judgment.ts'
 export {
   areIndependent,
   computeConfidence,
@@ -444,7 +450,11 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     }
   })()
 
-  const observer = new EventObserver(ctx, { sink: core, userId: () => userId })
+  const observer = new EventObserver(ctx, {
+    sink: core,
+    userId: () => userId,
+    judgmentEnabled: () => currentConfig().judgment.enabled,
+  })
   const hooks = registerHooks(ctx, {
     core,
     daemon,
