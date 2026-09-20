@@ -25,6 +25,7 @@ import type {
   Memory,
   MemorySystemMeta,
   ObservedEvent,
+  RetentionRecord,
   StagingCandidate,
   Tombstone,
 } from './types.ts'
@@ -432,6 +433,39 @@ export class MemoryRepository {
   }
 
   /**
+   * Store one retention record, creating it when the memory has none yet.
+   * @param record - The retention record.
+   * @returns resolution after durability.
+   */
+  async putRetention(record: RetentionRecord): Promise<void> {
+    await (await this.opened()).table('retention').put(record.memoryId, record)
+  }
+
+  /**
+   * Read one memory's retention record.
+   * @param memoryId - The memory id.
+   * @returns The record, or `undefined` when the memory has none.
+   */
+  async getRetention(memoryId: string): Promise<RetentionRecord | undefined> {
+    return (await this.opened()).table('retention').get(memoryId)
+  }
+
+  /** Every retention record, in insertion order. */
+  async allRetentions(): Promise<RetentionRecord[]> {
+    return [...(await this.opened()).table('retention').entries()].map(([, row]) => row)
+  }
+
+  /**
+   * Apply a transform to one retention record durably.
+   * @param memoryId - The memory id.
+   * @param transform - Synchronous pure transform.
+   * @returns The stored next record.
+   */
+  async updateRetention(memoryId: string, transform: (current: RetentionRecord) => RetentionRecord): Promise<RetentionRecord> {
+    return (await this.opened()).table('retention').update(memoryId, transform)
+  }
+
+  /**
    * Project a stored grant row onto the runtime authorization shape.
    * @param record - The stored row.
    * @returns The runtime grant.
@@ -474,7 +508,14 @@ export class MemoryRepository {
 
   /** The report shape a fresh consolidation cycle starts from. */
   static emptyReport(): ConsolidationReport {
-    return { replayed: 0, distilled: 0, decayed: 0, forgotten: 0, blockedByTombstone: 0 }
+    return {
+      replayed: 0,
+      distilled: 0,
+      decayed: 0,
+      forgotten: 0,
+      blockedByTombstone: 0,
+      ttl: { promoted: 0, extended: 0, archived: 0, skipped: 0 },
+    }
   }
 
   /** Current wall-clock time (ms). Overridden in tests through the clock seam below. */

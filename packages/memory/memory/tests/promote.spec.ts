@@ -73,7 +73,7 @@ async function harness(scope: ScopeNode, approve: boolean) {
   })
   const core = new MemoryCore({
     tiers: new MemoryTiers(repository),
-    gate: new GatePipeline({ excitabilityThreshold: () => 0, approvalScopes: [] }),
+    gate: new GatePipeline({ approvalScopes: [] }),
     workingCapacity: 4,
     stagingCapacity: 4,
   })

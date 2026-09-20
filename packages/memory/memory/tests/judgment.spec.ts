@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { judge, RULE_FALLBACK_CONFIDENCE } from '../src/algorithms/judgment.ts'
 import type { LocalJudge } from '../src/algorithms/judgment.ts'
 
-const input = { current: '这个项目的构建命令是 pnpm run build', context: ['上一个问题用了 webpack'] }
+const input = { current: '这个项目的构建命令是 pnpm run build', context: ['上一个问题用了 webpack'], hints: ['project_fact'] }
 
 describe('judge', () => {
   it('uses the rule fallback when no provider is mounted', async () => {

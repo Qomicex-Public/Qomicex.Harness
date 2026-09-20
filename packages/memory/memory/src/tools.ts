@@ -44,6 +44,11 @@ export interface ToolContext {
   promotion: ScopePromotionGate
   /** Clock seam. */
   clock: () => number
+  /**
+   * Record that a memory was recalled and injected. Retention reads this as
+   * the usage signal; absent means the retention layer is not wired.
+   */
+  onRecalled?: (memoryId: string, now: number) => void
 }
 
 /**
@@ -283,6 +288,8 @@ async function recall(
     : retrieveAsOf(all, scopes, options.asOf)
       .map(memory => ({ memory, relevance: memory.epistemic.confidence, finalScore: memory.epistemic.confidence, hitReason: 'asOf' }))
   if (results.length === 0) return { found: 0, text: 'No relevant memories.' }
+  // Every hit is handed to the model, so each one is a memory that was used.
+  for (const result of results) deps.onRecalled?.(result.memory.identity.id, now)
   const body = results.map(result => formatRecall(result.memory, result.relevance)).join('\n')
   return { found: results.length, text: `${RECALL_OPEN}\n${body}\n${RECALL_CLOSE}` }
 }

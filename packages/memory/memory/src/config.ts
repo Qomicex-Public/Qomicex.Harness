@@ -72,6 +72,18 @@ export interface MemoryJudgmentConfig {
   enabled: boolean
 }
 
+/** Retention-layer knobs. */
+export interface MemoryRetentionConfig {
+  /** Days a fresh memory is granted before its first TTL evaluation. */
+  initialTTLDays: number
+  /** Reinforcement total at or above which a memory becomes long-term. */
+  promotionThreshold: number
+  /** Sessions before the system starts archiving on expiry. */
+  startupGraceSessions: number
+  /** Whether structural facts are exempt from TTL. */
+  structuralException: boolean
+}
+
 /** Plugin configuration. */
 export interface Config {
   /** Write-gate and forgetting thresholds. */
@@ -88,6 +100,8 @@ export interface Config {
   llmDistill?: MemoryLlmDistillConfig
   /** Local judgment layer. */
   judgment?: MemoryJudgmentConfig
+  /** Retention layer. */
+  retention?: MemoryRetentionConfig
 }
 
 /** Validated plugin configuration. */
@@ -128,6 +142,17 @@ export const Config: z<Config> = z.object({
   judgment: z.object({
     enabled: z.boolean().default(false),
   }).default({ enabled: false }),
+  retention: z.object({
+    initialTTLDays: z.number().step(1).min(1).default(7),
+    promotionThreshold: z.number().min(0).default(3),
+    startupGraceSessions: z.number().step(1).min(0).default(20),
+    structuralException: z.boolean().default(true),
+  }).default({
+    initialTTLDays: 7,
+    promotionThreshold: 3,
+    startupGraceSessions: 20,
+    structuralException: true,
+  }),
 })
 
 /**
@@ -138,11 +163,11 @@ export const Config: z<Config> = z.object({
  * @returns Fully resolved configuration.
  */
 export function resolveConfig(config: Config): ResolvedConfig {
-  const { thresholds, bounds, retrieval, injection, authorization, llmDistill, judgment } = config
+  const { thresholds, bounds, retrieval, injection, authorization, llmDistill, judgment, retention } = config
   if (
     thresholds === undefined || bounds === undefined || retrieval === undefined
     || injection === undefined || authorization === undefined || llmDistill === undefined
-    || judgment === undefined
+    || judgment === undefined || retention === undefined
   ) {
     throw new Error('bio-memory: plugin config was not resolved against the Config schema')
   }
@@ -154,6 +179,7 @@ export function resolveConfig(config: Config): ResolvedConfig {
     authorization: { ...authorization },
     llmDistill: { ...llmDistill },
     judgment: { ...judgment },
+    retention: { ...retention },
   }
 }
 
@@ -173,4 +199,6 @@ export interface ResolvedConfig {
   llmDistill: MemoryLlmDistillConfig
   /** Local judgment layer. */
   judgment: MemoryJudgmentConfig
+  /** Retention layer. */
+  retention: MemoryRetentionConfig
 }

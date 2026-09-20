@@ -25,7 +25,6 @@ import {
   MemoryTiers,
   applyGovernanceAction,
   applyLifecycleAction,
-  computeExcitability,
   hybridRetrieve,
   memoryDomain,
   parseScope,
@@ -106,8 +105,6 @@ export interface HarnessOptions {
   sessionId?: string
   /** Project path. */
   project: string
-  /** Excitability threshold; `0` disables novelty scoring. */
-  excitabilityThreshold?: number
 }
 
 /** A booted benchmark harness. */
@@ -161,11 +158,7 @@ async function boot(options: HarnessOptions): Promise<Harness> {
   const tiers = new MemoryTiers(repository)
   const rejected: { candidate: StagingCandidate; reason: string }[] = []
   const pending: StagingCandidate[] = []
-  const gate = new GatePipeline({
-    excitabilityThreshold: () => options.excitabilityThreshold ?? 0,
-    approvalScopes: ['global'],
-    score: (candidate, context) => computeExcitability(candidate, context),
-  })
+  const gate = new GatePipeline({ approvalScopes: ['global'] })
   const core = new MemoryCore({
     tiers,
     gate: {

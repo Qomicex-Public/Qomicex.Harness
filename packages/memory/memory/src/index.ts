@@ -28,8 +28,8 @@ import { AuditLog } from './security/audit.ts'
 import { PolicyPlane } from './authorization/policy-plane.ts'
 import { ScopePromotionGate } from './authorization/scope-promotion.ts'
 import { ConsolidationDaemon } from './algorithms/consolidation.ts'
+import { reinforce } from './algorithms/retention.ts'
 import type { DistillProvider } from './algorithms/distill.ts'
-import { computeExcitability } from './algorithms/excitability.ts'
 import { EventObserver } from './event/observer.ts'
 import { registerMemorySettings } from './settings.ts'
 import { registerHooks, PLUGIN_NAME } from './hooks.ts'
@@ -54,6 +54,7 @@ export {
   authorizationSchema,
   auditSchema,
   judgmentLogSchema,
+  retentionSchema,
   memorySystemMetaSchema,
 } from './domain.ts'
 export type { MemoryTable, MemoryTableName, ScopeNodeRecord } from './domain.ts'
@@ -93,12 +94,21 @@ export { buildMemory, deriveImportance, detectLanguage } from './memory/factory.
 export { EventObserver } from './event/observer.ts'
 export type { ObservationSink, ObservedSignal, ObserverOptions } from './event/observer.ts'
 export { CausalLineage, toJsonText, toJsonValue } from './event/lineage.ts'
-export { detectAgentClaim, detectUserStatement, extractFromToolResult, GENERIC_STATEMENT_STRENGTH } from './event/signal-detect.ts'
-export {
-  JUDGMENT_CONTEXT_WINDOW,
-} from './event/observer.ts'
+export { detectAgentClaim, detectUserStatement, detectHints, extractFromToolResult, GENERIC_STATEMENT_STRENGTH } from './event/signal-detect.ts'
+export { JUDGMENT_CONTEXT_WINDOW } from './event/observer.ts'
 export { judge, RULE_FALLBACK_CONFIDENCE } from './algorithms/judgment.ts'
 export type { JudgmentInput, JudgmentResult, LocalJudge } from './algorithms/judgment.ts'
+export {
+  emptyTtlReport,
+  evaluateTTL,
+  inStartupGrace,
+  reinforce,
+  reinforcementTotal,
+  sessionCount,
+  usageVerdictOf,
+  wasUsed,
+} from './algorithms/retention.ts'
+export type { RetentionConfig } from './algorithms/retention.ts'
 export {
   areIndependent,
   computeConfidence,
@@ -348,15 +358,17 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const audit = new AuditLog(repository)
 
   const gate = new GatePipeline({
-    excitabilityThreshold: () => currentConfig().thresholds.excitability,
     approvalScopes: ['global'],
-    score: (candidate, context) => computeExcitability(candidate, context),
   })
   const core = new MemoryCore({
     tiers,
     gate,
     workingCapacity: resolved.bounds.workingCapacity,
     stagingCapacity: resolved.bounds.stagingCapacity,
+    retention: () => {
+      const { initialTTLDays, structuralException } = currentConfig().retention
+      return { initialTTLDays, structuralException }
+    },
     clock: () => Date.now(),
     onError: (error) => {
       ctx.logger.warn(`bio-memory: write failed: ${String(error)}`)
@@ -373,6 +385,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
         hardForget: thresholds.forgetHard,
       }
     },
+    retention: () => currentConfig().retention,
     ...resolved.llmDistill.enabled && resolved.llmDistill.provider !== '' && resolved.llmDistill.model !== ''
       ? { provider: createLlmDistillProvider(ctx, resolved.llmDistill.provider, resolved.llmDistill.model) }
       : {},
@@ -455,6 +468,12 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     userId: () => userId,
     judgmentEnabled: () => currentConfig().judgment.enabled,
   })
+  /** The retention usage signal: a recalled memory is one that was used. */
+  const onRecalled = (memoryId: string, now: number): void => {
+    void reinforce(repository, memoryId, 'usage', now).catch((error: unknown) => {
+      ctx.logger.warn(`bio-memory: reinforcement write failed: ${String(error)}`)
+    })
+  }
   const hooks = registerHooks(ctx, {
     core,
     daemon,
@@ -463,9 +482,10 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     buildHotPack: scope => buildHotPack(core, scope, Date.now()),
     hotPackEnabled: () => currentConfig().injection.hotPack,
     recallMaxChars: () => currentConfig().injection.recallMaxChars,
+    onRecalled,
     clock: () => Date.now(),
   })
-  const tools = registerTools(ctx, { core, repository, scopeOf, promotion: promotionGate, clock: () => Date.now() })
+  const tools = registerTools(ctx, { core, repository, scopeOf, promotion: promotionGate, onRecalled, clock: () => Date.now() })
   const detachObserver = observer.attach()
 
   // The authorization plane only participates when it is enabled. Registering

@@ -251,7 +251,11 @@ describe('EventObserver against a live loop', () => {
     expect(h.sink.signals).toHaveLength(0)
   })
 
-  it('does not judge a keyword-confirmed signal, even when enabled', async () => {
+  it('judges a keyword-confirmed signal too: the keyword is a hint, not a bypass', async () => {
+    // Deviation 1: a keyword used to route straight to staging, so the
+    // judgment layer never saw those statements and its training data only
+    // covered the generic ones. Now the keyword is a hint the judge reads,
+    // and the statement still goes through the same decision.
     const h = await harness(
       [textResponse('ok')],
       { judgmentEnabled: true },
@@ -260,8 +264,11 @@ describe('EventObserver against a live loop', () => {
     send(agent, '我更喜欢 pnpm')
     await waitForIdle(h.ctx, agent)
 
+    expect(h.sink.judgments).toHaveLength(1)
+    expect(h.sink.judgments[0]?.hints).toContain('user_preference')
+    expect(h.sink.judgments[0]?.localJudgment).toBe('remember')
+    // The signal keeps its type: the hint does not rewrite what was said.
     expect(h.sink.signals).toHaveLength(1)
     expect(h.sink.signals[0]?.signal.type).toBe('user_preference')
-    expect(h.sink.judgments).toHaveLength(0)
   })
 })

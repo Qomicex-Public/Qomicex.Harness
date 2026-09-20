@@ -83,6 +83,11 @@ export interface HookContext {
   hotPackEnabled: () => boolean
   /** Maximum characters of one recall block; read fresh per step. */
   recallMaxChars: () => number
+  /**
+   * Record that a memory was recalled and injected. Retention reads this as
+   * the usage signal; absent means the retention layer is not wired.
+   */
+  onRecalled?: (memoryId: string, now: number) => void
   /** Clock seam. */
   clock: () => number
 }
@@ -221,13 +226,18 @@ async function renderRecall(
   if (query === '') return undefined
   const scopes = readableScopes(scope)
   const all = await deps.core.all()
+  const now = deps.clock()
   const results = hybridRetrieve(query, {
     memories: all,
     readableScopes: scopes,
-    now: deps.clock(),
+    now,
     options: { currentScope: '', topK: 3, similarityThreshold: 0.4 },
   })
   if (results.length === 0) return undefined
+  // The blocks being built are the recall payload the model will actually see,
+  // so every hit here is a memory that was used: that is the strongest
+  // retention signal, and it fires whether or not the model acts on it.
+  for (const result of results) deps.onRecalled?.(result.memory.identity.id, now)
   const body = results
     .map(result => `- (${result.memory.epistemic.evidence[0]?.sourceType ?? 'external'}, `
       + `confidence ${result.memory.epistemic.confidence.toFixed(2)}) ${result.memory.content.raw}`)

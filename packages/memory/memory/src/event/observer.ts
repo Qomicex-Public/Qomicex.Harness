@@ -24,10 +24,10 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import type { ToolExecution, ToolExecutionResult } from '@deepseek-ai/dsh-tools'
 import { CausalLineage, toJsonText, toJsonValue } from './lineage.ts'
-import { detectAgentClaim, detectUserStatement, extractFromToolResult, GENERIC_STATEMENT_STRENGTH, observationPayload } from './signal-detect.ts'
+import { detectAgentClaim, detectHints, detectUserStatement, extractFromToolResult, observationPayload } from './signal-detect.ts'
 import type { ToolCallView } from './signal-detect.ts'
 import { judge } from '../algorithms/judgment.ts'
-import type { LocalJudge } from '../algorithms/judgment.ts'
+import type { JudgmentInput, LocalJudge } from '../algorithms/judgment.ts'
 import { projectScope, serializeScope, UNKNOWN_SCOPE_ID, userScope } from '../scope/namespace.ts'
 import { tierForSignal } from '../scope/tier.ts'
 import type { CaptureSignal, EventType, JsonValue, JudgmentLog, ObservedEvent } from '../types.ts'
@@ -323,12 +323,14 @@ export class EventObserver {
    * Start one user-message capture: detect, judge when enabled, then stage or
    * drop.
    *
-   * Only the *generic* statement is judged — a keyword-confirmed signal
-   * (preference, correction, standing instruction, project fact) is already
-   * high-confidence and goes straight to staging. The generic statement is
-   * the one the blacklist let through without a keyword, and the local judge
-   * exists exactly to grade it. When the judge is disabled, or forgets, the
-   * observation is still recorded; only the offer to stage is skipped.
+   * The judgment layer is the only "should we remember" decision, so every
+   * signal goes through it when it is enabled — including the keyword-confirmed
+   * ones. A keyword no longer bypasses judgment: it is a *hint* the judge reads,
+   * not a verdict. When judgment is disabled the rule engine is the judge and
+   * its verdict is "remember", which is what a direct stage means here.
+   *
+   * The observation is recorded either way; only the offer to stage is skipped
+   * when the judge forgets.
    * @param session - The session.
    * @param state - Its observation state.
    * @param event - The built observation.
@@ -344,6 +346,7 @@ export class EventObserver {
   ): void {
     const signal = detectUserStatement(text) ?? undefined
     const context = [...state.recentUserText]
+    const hints = detectHints(text)
     if (text.trim() !== '') {
       state.recentUserText = [...state.recentUserText, text.trim()].slice(-JUDGMENT_CONTEXT_WINDOW)
     }
@@ -351,26 +354,25 @@ export class EventObserver {
       this.start(event)
       return
     }
-    const generic = signal.type === 'user_statement' && signal.strength === GENERIC_STATEMENT_STRENGTH
-    if (!generic || !(this.options.judgmentEnabled?.() ?? false)) {
+    if (!(this.options.judgmentEnabled?.() ?? false)) {
       this.start(event, signal, root)
       return
     }
-    const pending = this.judgeAndRecord(session, state, event, signal, root, { current: text, context })
+    const pending = this.judgeAndRecord(session, state, event, signal, root, { current: text, context, hints })
     this.inFlight.add(pending)
     void pending.finally(() => {
       this.inFlight.delete(pending)
     })
   }
 
-  /** Judge one generic statement and stage it only when remembered. */
+  /** Judge one statement and stage it only when remembered. */
   private async judgeAndRecord(
     session: Session,
     state: SessionObserverState,
     event: ObservedEvent,
     signal: CaptureSignal,
     root: string,
-    input: { current: string; context: readonly string[] },
+    input: JudgmentInput,
   ): Promise<void> {
     try {
       await this.sink.recordObservation(event)
@@ -384,6 +386,10 @@ export class EventObserver {
         confidence: result.confidence,
         usageSignal: 0,
         cloudVerdict: null,
+        hints: [...input.hints],
+        usageVerdict: null,
+        adjacencySignal: null,
+        mentionSignal: null,
         sessionId: session.id,
         observedAt: this.clock(),
       })

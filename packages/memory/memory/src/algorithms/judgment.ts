@@ -27,6 +27,12 @@ export interface JudgmentInput {
   current: string
   /** The preceding bounded context (fewer than the window is fine). */
   context: readonly string[]
+  /**
+   * Rule hints that fired on the statement. They inform the prompt — a hint
+   * is a reason the rule engine found the statement notable — but they never
+   * decide the outcome: that stays with this layer.
+   */
+  hints: readonly string[]
 }
 
 /** The local judge's decision. */

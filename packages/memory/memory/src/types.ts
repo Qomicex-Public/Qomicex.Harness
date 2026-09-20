@@ -425,11 +425,91 @@ export interface JudgmentLog {
   usageSignal: number
   /** Cloud curation verdict, backfilled later; `null` until a run covers it. */
   cloudVerdict: JudgmentVerdict | null
+  /**
+   * Rule hints that fired on the statement, recorded so the training data
+   * shows what the rule engine saw. Empty when no keyword rule matched.
+   */
+  hints: string[]
+  /** Whether the resulting memory was ever used; backfilled by retention. */
+  usageVerdict: 'used' | 'not-used' | null
+  /** Whether an adjacency signal fired on the resulting memory. */
+  adjacencySignal: boolean | null
+  /** Whether the user mentioned the fact again later. */
+  mentionSignal: boolean | null
   /** Session the statement came from. */
   sessionId: string
   /** Judgment time (ms). */
   observedAt: number
 }
+
+/** The three reinforcement signals the retention layer tracks. */
+export type ReinforcementKind = 'usage' | 'adjacency' | 'mention'
+
+/** Signal strength of each reinforcement kind; usage dominates. */
+export const REINFORCEMENT_STRENGTH: Record<ReinforcementKind, number> = {
+  usage: 2,
+  adjacency: 1,
+  mention: 1,
+}
+
+/**
+ * One memory's retention state: the accumulated reinforcement signals and the
+ * excitability score recorded at write time.
+ *
+ * Kept in its own table rather than on `Memory` so the memory record schema
+ * stays untouched — the episodic and semantic tiers hold authoritative data
+ * and adding a field there would break every stored record on reopen.
+ */
+export interface RetentionRecord {
+  /** The memory this record tracks. */
+  memoryId: string
+  /** Accumulated usage signal; a recalled memory that was injected. */
+  usageScore: number
+  /** Accumulated adjacency signal; relevant to context but not recalled. */
+  adjacencyScore: number
+  /** Accumulated mention signal; the user raised the fact again. */
+  mentionScore: number
+  /** Excitability recorded when the memory was written. */
+  excitabilityScore: number
+  /** When a signal last landed (ms). */
+  lastReinforcedAt: number
+}
+
+/** An empty retention record for a freshly written memory. */
+export function emptyRetention(memoryId: string, excitabilityScore: number, now: number): RetentionRecord {
+  return {
+    memoryId,
+    usageScore: 0,
+    adjacencyScore: 0,
+    mentionScore: 0,
+    excitabilityScore,
+    lastReinforcedAt: now,
+  }
+}
+
+/** Whether a memory's fact key marks it as structural (TTL exempt). */
+export function isStructuralFact(memory: Memory): boolean {
+  const key = memory.identity.semanticKey
+  if (key === null) return false
+  return STRUCTURAL_SUBJECTS.has(key.subject) && STRUCTURAL_PREDICATES.has(key.predicate)
+}
+
+/** Subjects whose facts describe the working environment rather than one task. */
+const STRUCTURAL_SUBJECTS: ReadonlySet<string> = new Set(['project', 'user', 'environment'])
+
+/**
+ * Predicates whose facts are structural constraints. The list has to name the
+ * predicate the extractor actually emits — `uses_package_manager`, not the
+ * shorter `uses` — because a predicate that matches nothing produces an
+ * exception that never fires, which reads as working code.
+ */
+const STRUCTURAL_PREDICATES: ReadonlySet<string> = new Set([
+  'uses_package_manager',
+  'prefers',
+  'requires',
+  'follows',
+  'uses',
+])
 
 /** Detected conflict between two memories. */
 export interface Contradiction {
@@ -569,6 +649,20 @@ export interface ConsolidationReport {
   forgotten: number
   /** Candidates blocked by a tombstone. */
   blockedByTombstone: number
+  /** What the retention TTL pass did. */
+  ttl: TtlReport
+}
+
+/** What one retention TTL pass did. */
+export interface TtlReport {
+  /** Memories promoted to long-term (TTL cleared). */
+  promoted: number
+  /** Memories whose TTL was extended. */
+  extended: number
+  /** Memories archived, not deleted. */
+  archived: number
+  /** Live memories skipped because they carry no lapsed TTL. */
+  skipped: number
 }
 
 /** One ranked recall hit. */

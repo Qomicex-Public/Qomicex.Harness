@@ -43,7 +43,7 @@ export function detectUserStatement(message: string): CaptureSignal | null {
   const text = message.trim()
   if (text === '') return null
   const extracted = extractPackageManager(text)
-  if (/(?:不对|错了|不是|搞错|纠正|actually|correction|that'?s\s+(?:wrong|incorrect))/i.test(text)) {
+  if (CORRECTION_RE.test(text)) {
     return {
       type: 'user_correction',
       strength: 0.9,
@@ -52,9 +52,7 @@ export function detectUserStatement(message: string): CaptureSignal | null {
       ...(extracted === undefined ? {} : { extracted }),
     }
   }
-  if (
-    /(?:我(?:更)?(?:喜欢|偏好|倾向|习惯)|I\s+(?:prefer|like|tend\s+to)|my\s+preference)/i.test(text)
-  ) {
+  if (PREFERENCE_RE.test(text)) {
     return {
       type: 'user_preference',
       strength: 0.9,
@@ -63,7 +61,7 @@ export function detectUserStatement(message: string): CaptureSignal | null {
       ...(extracted === undefined ? {} : { extracted }),
     }
   }
-  if (/(?:以后(?:都)?|从此|接下来都|一直用|always|from\s+now\s+on|henceforth|going\s+forward)/i.test(text)) {
+  if (STANDING_RE.test(text)) {
     return {
       type: 'user_statement',
       strength: 0.95,
@@ -72,7 +70,7 @@ export function detectUserStatement(message: string): CaptureSignal | null {
       ...(extracted === undefined ? {} : { extracted }),
     }
   }
-  if (/(?:我们(?:项目)?(?:使用|采用|用)|we\s+use|our\s+project|the\s+project\s+uses)/i.test(text)) {
+  if (PROJECT_FACT_RE.test(text)) {
     return {
       type: 'user_statement',
       strength: 0.75,
@@ -90,6 +88,38 @@ export function detectUserStatement(message: string): CaptureSignal | null {
     ...(extracted === undefined ? {} : { extracted }),
   }
 }
+
+/**
+ * Every rule that fires on a statement, as hint labels for the judgment layer.
+ *
+ * A hint records *why* the rule engine found a statement notable; it does not
+ * decide anything. {@link detectUserStatement} picks the strongest single
+ * signal to build a candidate from, while the judgment layer receives the
+ * whole set so a local model can see every reason the rules flagged.
+ * @param message - The user message text.
+ * @returns The matched signal kinds, in rule order; empty when none fire.
+ */
+export function detectHints(message: string): string[] {
+  const text = message.trim()
+  const hints: string[] = []
+  if (CORRECTION_RE.test(text)) hints.push('user_correction')
+  if (PREFERENCE_RE.test(text)) hints.push('user_preference')
+  if (STANDING_RE.test(text)) hints.push('standing_instruction')
+  if (PROJECT_FACT_RE.test(text)) hints.push('project_fact')
+  return hints
+}
+
+/** Correction: the user overriding what the system believed. */
+const CORRECTION_RE = /(?:不对|错了|不是|搞错|纠正|actually|correction|that'?s\s+(?:wrong|incorrect))/i
+
+/** Preference: a stated personal preference. */
+const PREFERENCE_RE = /(?:我(?:更)?(?:喜欢|偏好|倾向|习惯)|I\s+(?:prefer|like|tend\s+to)|my\s+preference)/i
+
+/** Standing instruction: a rule the user sets going forward. */
+const STANDING_RE = /(?:以后(?:都)?|从此|接下来都|一直用|always|from\s+now\s+on|henceforth|going\s+forward)/i
+
+/** Project fact: a description of what the working project uses. */
+const PROJECT_FACT_RE = /(?:我们(?:项目)?(?:使用|采用|用)|we\s+use|our\s+project|the\s+project\s+uses)/i
 
 /** Strength of the generic statement a message receives when no specific rule fires. */
 export const GENERIC_STATEMENT_STRENGTH = 0.6
@@ -115,7 +145,7 @@ const NOISE_PATTERNS: readonly RegExp[] = [
  * @param text - The trimmed message text.
  * @returns `true` when the message should not stage a candidate.
  */
-function isNoiseByRule(text: string): boolean {
+export function isNoiseByRule(text: string): boolean {
   if (text.length < MIN_STATEMENT_LENGTH) return true
   return NOISE_PATTERNS.some(pattern => pattern.test(text))
 }

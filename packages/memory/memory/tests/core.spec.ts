@@ -244,7 +244,7 @@ describe('memory factory', () => {
 })
 
 describe('write gates', () => {
-  const pipeline = new GatePipeline({ excitabilityThreshold: () => 0, approvalScopes: ['global'] })
+  const pipeline = new GatePipeline({ approvalScopes: ['global'] })
 
   it('stores a hypothesis as an observation', async () => {
     // A guess is data about what the agent believed, so the write gate keeps
@@ -283,18 +283,23 @@ describe('write gates', () => {
     expect(result.pendingApproval?.scope).toBe('global')
   })
 
-  it('applies the excitability threshold when a scorer is configured', async () => {
-    const scored = new GatePipeline({
-      excitabilityThreshold: () => 0.45,
-      approvalScopes: [],
-      score: () => 0.2,
-    })
-    const result = await scored.evaluate(candidate(), context())
-    expect(result.reason).toBe('LOW_EXCITABILITY')
-    expect(result.score).toBe(0.2)
+  it('does not block a write on excitability: worthiness is the judgment layer\u2019s call', async () => {
+    // The write gate no longer runs a novelty/confirmation score. Deciding
+    // whether a statement deserves a slot belongs to the judgment layer, and
+    // a second gate here would be a parallel "should we remember" check. A
+    // low-scoring candidate is therefore stored, not refused.
+    const result = await pipeline.evaluate(candidate(), context())
+    expect(result.accepted).toBe(true)
+    expect(result.candidate?.id).toBe('cand_1')
+    expect(result.reason).toBeUndefined()
+  })
 
-    const passing = new GatePipeline({ excitabilityThreshold: () => 0.45, approvalScopes: [], score: () => 0.9 })
-    expect((await passing.evaluate(candidate(), context())).accepted).toBe(true)
+  it('still refuses sensitive, tombstoned, and unapproved-global candidates', async () => {
+    expect((await pipeline.evaluate(candidate({ content: 'sk-abcdefghijklmnopqrstuvwxyz' }), context())).reason)
+      .toBe('SENSITIVE_CONTENT_DETECTED')
+    expect((await pipeline.evaluate(candidate({ scope: 'global' }), context())).reason)
+      .toBe('GLOBAL_WRITE_NEEDS_APPROVAL')
+    expect((await pipeline.evaluate(candidate(), context())).accepted).toBe(true)
   })
 
   it('accepts an ordinary candidate and returns the stored form', async () => {
@@ -456,7 +461,7 @@ describe('memory core', () => {
   })
 
   it('S003: a hypothesis is stored but never consolidates', async () => {
-    const core = await coreWith(new GatePipeline({ excitabilityThreshold: () => 0, approvalScopes: [] }))
+    const core = await coreWith(new GatePipeline({ approvalScopes: [] }))
     await core.offerSignal({
       event: observation(),
       signal: { type: 'agent_claim', strength: 0.4, epistemic: 'hypothesis', sourceType: 'agent_inference' },
@@ -472,7 +477,7 @@ describe('memory core', () => {
   })
 
   it('S004: a tool-verified fact is written with tool_verified status', async () => {
-    const core = await coreWith(new GatePipeline({ excitabilityThreshold: () => 0, approvalScopes: [] }))
+    const core = await coreWith(new GatePipeline({ approvalScopes: [] }))
     await core.offerSignal({
       event: observation(),
       signal: {
@@ -493,7 +498,7 @@ describe('memory core', () => {
   })
 
   it('S008: an injected instruction is stored labelled, never as an instruction', async () => {
-    const core = await coreWith(new GatePipeline({ excitabilityThreshold: () => 0, approvalScopes: [] }))
+    const core = await coreWith(new GatePipeline({ approvalScopes: [] }))
     await core.offerSignal({
       event: {
         ...observation(),

@@ -21,6 +21,9 @@ import { distillFactWithProvider } from './distill.ts'
 import type { DistillProvider } from './distill.ts'
 import { buildTombstone, isBlockedByTombstone } from '../security/tombstone.ts'
 import { detectAll, markDisputed } from './contradiction.ts'
+import { evaluateTTL, inStartupGrace, sessionCount } from './retention.ts'
+import type { RetentionConfig } from './retention.ts'
+import { emptyTtlReport } from './retention.ts'
 import type { MemoryRepository } from '../repository.ts'
 import type { MemoryTiers } from '../memory/tiers.ts'
 import type { ConsolidationReport, Memory, StagingCandidate } from '../types.ts'
@@ -36,6 +39,8 @@ export interface ConsolidationOptions {
   repository: MemoryRepository
   /** Forget-score thresholds, read fresh per cycle. */
   thresholds: () => { demote: number; archive: number; hardForget: number }
+  /** Retention knobs, read fresh per cycle. */
+  retention?: () => RetentionConfig
   /** Clock seam; tests replace it for deterministic timestamps. */
   clock?: () => number
   /** Optional LLM rephrasing provider. */
@@ -56,6 +61,7 @@ export class ConsolidationDaemon {
   private readonly thresholds: () => { demote: number; archive: number; hardForget: number }
   private readonly clock: () => number
   private readonly provider: DistillProvider | undefined
+  private readonly retention: () => RetentionConfig
   private running: Promise<ConsolidationReport> | undefined
 
   /**
@@ -67,6 +73,12 @@ export class ConsolidationDaemon {
     this.thresholds = options.thresholds
     this.clock = options.clock ?? Date.now
     this.provider = options.provider
+    this.retention = options.retention ?? (() => ({
+      initialTTLDays: 7,
+      promotionThreshold: 3,
+      startupGraceSessions: 20,
+      structuralException: true,
+    }))
   }
 
   /**
@@ -108,11 +120,58 @@ export class ConsolidationDaemon {
 
     await this.resolveSupersessions(now)
     await this.detectContradictions(now)
-    await this.decay(now, report)
+    const grace = inStartupGrace(await sessionCount(this.repository), this.retention())
+    await this.decay(now, report, grace)
+    await this.evaluateRetention(report)
 
     const meta = await this.repository.meta()
     await this.repository.setMeta({ ...meta, lastConsolidationAt: now })
     return report
+  }
+
+  /**
+   * Run the TTL pass, then backfill the judgment log with what it learned.
+   *
+   * TTL runs before the backfill so the usage verdict a judgment row receives
+   * reflects the retention state after this cycle's promotions.
+   * @param report - The cycle's report, updated in place.
+   */
+  private async evaluateRetention(report: ConsolidationReport): Promise<void> {
+    report.ttl = await evaluateTTL(this.repository, this.tiers, this.retention(), this.clock())
+    await this.backfillJudgments()
+  }
+
+  /**
+   * Backfill `usageVerdict` on judgment rows whose memory has settled.
+   *
+   * A judgment row records what the intake layer decided; this adds the part
+   * only the retention layer could know — whether the resulting memory was
+   * ever recalled. The row carries no memory id, so the relation is the
+   * statement's own text against the memory's raw content, which holds for
+   * every memory built from a statement. Rows already carrying a verdict are
+   * left alone, so a later cycle never overwrites an answer.
+   * @returns resolution after durability.
+   */
+  private async backfillJudgments(): Promise<void> {
+    const retentions = await this.repository.allRetentions()
+    if (retentions.length === 0) return
+    const usedMemories = new Set(
+      retentions.filter(record => record.usageScore > 0).map(record => record.memoryId),
+    )
+    const usedContent = new Set<string>()
+    const storedContent = new Set<string>()
+    for (const { memory } of await this.tiers.every()) {
+      storedContent.add(memory.content.raw)
+      if (usedMemories.has(memory.identity.id)) usedContent.add(memory.content.raw)
+    }
+    for (const row of await this.repository.allJudgments()) {
+      if (row.usageVerdict !== null) continue
+      if (!storedContent.has(row.content)) continue
+      await this.repository.putJudgment({
+        ...row,
+        usageVerdict: usedContent.has(row.content) ? 'used' : 'not-used',
+      })
+    }
   }
 
   /** Distill one episode's fact group, when it is distillable and unblocked. */
@@ -259,7 +318,7 @@ export class ConsolidationDaemon {
   }
 
   /** Age every live memory by its forget score. */
-  private async decay(now: number, report: ConsolidationReport): Promise<void> {
+  private async decay(now: number, report: ConsolidationReport, grace: boolean): Promise<void> {
     const entries = await this.tiers.every()
     const byFact = new Map<string, number>()
     for (const { memory } of entries) {
@@ -285,11 +344,18 @@ export class ConsolidationDaemon {
         }
         continue
       }
-      report.decayed += tierAction === 'hard_forget' ? 0 : 1
-      if (tierAction === 'hard_forget') report.forgotten += 1
-      const state: Memory['lifecycle']['state'] = tierAction === 'hard_forget'
+
+      // Startup grace: while the reinforcement signals are still thin, a
+      // memory the score would hard-forget is archived instead. Deleting a
+      // fact on the strength of a score computed before the system had seen
+      // enough to know what matters is exactly the mistake the grace exists
+      // to prevent, and archiving keeps the row recoverable.
+      const forgets = tierAction === 'hard_forget' && !grace
+      const state: Memory['lifecycle']['state'] = forgets
         ? 'tombstoned'
-        : tierAction === 'archive' ? 'archived' : 'active'
+        : tierAction === 'archive' || tierAction === 'hard_forget' ? 'archived' : 'active'
+      if (forgets) report.forgotten += 1
+      else report.decayed += 1
       await tier.update(memory.identity.id, current => ({
         ...current,
         lifecycle: { ...current.lifecycle, state, forgetScore: score, forgetScoreUpdatedAt: now },
@@ -300,7 +366,7 @@ export class ConsolidationDaemon {
 
 /** An empty report. */
 export function emptyReport(): ConsolidationReport {
-  return { replayed: 0, distilled: 0, decayed: 0, forgotten: 0, blockedByTombstone: 0 }
+  return { replayed: 0, distilled: 0, decayed: 0, forgotten: 0, blockedByTombstone: 0, ttl: emptyTtlReport() }
 }
 
 /** Whether any tombstone blocks this memory's own fact and lineage. */

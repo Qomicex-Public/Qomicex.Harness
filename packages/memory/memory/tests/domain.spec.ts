@@ -5,6 +5,7 @@ import { DomainFacility } from '@deepseek-ai/dsh-storage-domain'
 import { MemoryMediaPool, MemoryStorageBackend } from '../../../storage/storage-domain/tests/helpers/memory-backend.ts'
 import { memoryDomain, MEMORY_TABLES } from '../src/domain.ts'
 import { MemoryRepository, contentHash } from '../src/repository.ts'
+import { emptyRetention } from '../src/types.ts'
 import type { Memory, ObservedEvent, Tombstone } from '../src/types.ts'
 
 const opened: Context[] = []
@@ -62,7 +63,7 @@ function memory(id: string, table: 'episodic' | 'semantic' = 'episodic'): Memory
 }
 
 describe('memory domain declaration', () => {
-  it('declares the ten tables and opens over the routed backend', async () => {
+  it('declares the eleven tables and opens over the routed backend', async () => {
     const { domain } = await harness()
     expect(Object.keys(memoryDomain.tables)).toEqual([
       'observations',
@@ -75,6 +76,7 @@ describe('memory domain declaration', () => {
       'authorizations',
       'audits',
       'judgments',
+      'retention',
     ])
     for (const table of MEMORY_TABLES) {
       expect(domain.table(table).size).toBe(0)
@@ -240,6 +242,10 @@ describe('MemoryRepository', () => {
       confidence: 0.5,
       usageSignal: 0,
       cloudVerdict: null,
+      hints: ['project_fact'],
+      usageVerdict: null,
+      adjacencySignal: null,
+      mentionSignal: null,
       sessionId: 's1',
       observedAt: 1,
     })
@@ -252,9 +258,34 @@ describe('MemoryRepository', () => {
       confidence: 0.5,
       usageSignal: 0,
       cloudVerdict: null,
+      hints: ['project_fact'],
+      usageVerdict: null,
+      adjacencySignal: null,
+      mentionSignal: null,
       sessionId: 's1',
       observedAt: 1,
     }])
+  })
+
+  it('stores and reads retention records', async () => {
+    const { repository } = await harness()
+    const record = emptyRetention('mem_1', 0.72, 1_000)
+    expect(record).toEqual({
+      memoryId: 'mem_1',
+      usageScore: 0,
+      adjacencyScore: 0,
+      mentionScore: 0,
+      excitabilityScore: 0.72,
+      lastReinforcedAt: 1_000,
+    })
+    await repository.putRetention(record)
+    expect(await repository.getRetention('mem_1')).toEqual(record)
+    const updated = await repository.updateRetention('mem_1', current => ({
+      ...current,
+      usageScore: current.usageScore + 2,
+    }))
+    expect(updated.usageScore).toBe(2)
+    expect((await repository.allRetentions()).map(row => row.memoryId)).toEqual(['mem_1'])
   })
 
   it('projects a runtime authorization onto a stored grant row', () => {

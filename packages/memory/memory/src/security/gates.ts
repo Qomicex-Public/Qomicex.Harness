@@ -1,12 +1,19 @@
 /**
- * The write gates: the five checks a candidate must survive before it becomes
- * a memory. Each gate owns one question, and a gate that declines ends the
+ * The write gates: the checks a candidate must survive before it becomes a
+ * memory. Each gate owns one question, and a gate that declines ends the
  * pipeline for that candidate.
  *
  * The gates are ordered cheapest-and-most-decisive first: a status check needs
  * no data, a tombstone check needs one table scan, and the approval gate is
  * last because it is the only one that can hold a candidate rather than
  * reject it.
+ *
+ * **Excitability is deliberately not a gate.** Deciding whether a statement is
+ * worth remembering belongs to the judgment layer, and the write path is where
+ * that decision has already been made; a second novelty/confirmation score
+ * here would be a parallel "should we remember" check. The score is still
+ * computed at write time, but it is recorded for retention and recall
+ * weighting instead of blocking the write.
  *
  * This module is the only writer of the `[HISTORICAL_MEMORY_NON_INSTRUCTIONAL]`
  * marker. That marker is load-bearing: a memory containing imperative language
@@ -45,27 +52,11 @@ export const IMPERATIVE_TAG = '_imperative_content_detected'
 /** Gate configuration. */
 export interface GateOptions {
   /**
-   * Minimum excitability for a candidate to be written. `0` disables the
-   * novelty/confirmation scoring entirely, which is what the R3 tier needs
-   * before the excitability algorithm exists.
-   *
-   * A thunk rather than a value because the threshold is a live setting: the
-   * Settings page can change it while the harness runs, and re-reading it per
-   * evaluation is what makes the change take effect without a restart.
-   */
-  excitabilityThreshold: () => number
-  /**
    * Scopes that require approval rather than being written directly.
    * `global` is here by default: promoting a fact out of a project into
    * everyone's context is exactly the operation that must be asked about.
    */
   approvalScopes: readonly string[]
-  /**
-   * Excitability scorer. When absent, the threshold check is skipped — a
-   * threshold of 0 and no scorer mean the same thing, and only one of them
-   * has to be configured.
-   */
-  score?: (candidate: StagingCandidate, context: GateContext) => number
 }
 
 /**
@@ -109,14 +100,6 @@ export class GatePipeline implements WriteGate {
         reason: 'GLOBAL_WRITE_NEEDS_APPROVAL',
         pendingApproval: labelled,
       })
-    }
-
-    // Gate 5: excitability — is this worth a slot at all?
-    if (this.options.score !== undefined) {
-      const score = this.options.score(labelled, context)
-      if (score < this.options.excitabilityThreshold()) {
-        return Promise.resolve({ accepted: false, reason: 'LOW_EXCITABILITY', score })
-      }
     }
 
     // A hypothesis is stored: it is an observation, and the record that the

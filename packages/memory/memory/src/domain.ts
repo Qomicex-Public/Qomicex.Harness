@@ -316,8 +316,26 @@ export const judgmentLogSchema = z.object({
   confidence: z.number(),
   usageSignal: z.number(),
   cloudVerdict: z.enum(['remember', 'forget']).nullable(),
+  hints: z.array(z.string()).default([]),
+  usageVerdict: z.enum(['used', 'not-used']).nullable().default(null),
+  adjacencySignal: z.boolean().nullable().default(null),
+  mentionSignal: z.boolean().nullable().default(null),
   sessionId: z.string(),
   observedAt: z.number(),
+})
+
+/**
+ * One memory's retention state. Deliberately its own table: `episodic` and
+ * `semantic` hold authoritative records whose schema must not move, so the
+ * signals and the write-time excitability score live here, keyed by memory id.
+ */
+export const retentionSchema = z.object({
+  memoryId: z.string(),
+  usageScore: z.number(),
+  adjacencyScore: z.number(),
+  mentionScore: z.number(),
+  excitabilityScore: z.number(),
+  lastReinforcedAt: z.number(),
 })
 
 /**
@@ -343,6 +361,7 @@ export const memoryDomain = defineDomain({
     authorizations: domainTable<string, z.infer<typeof authorizationSchema>>(authorizationSchema),
     audits: domainTable<string, z.infer<typeof auditSchema>>(auditSchema),
     judgments: domainTable<string, z.infer<typeof judgmentLogSchema>>(judgmentLogSchema),
+    retention: domainTable<string, z.infer<typeof retentionSchema>>(retentionSchema),
   },
 })
 
@@ -361,6 +380,7 @@ export const MEMORY_TABLES = [
   'authorizations',
   'audits',
   'judgments',
+  'retention',
 ] as const
 
 /** One declared table name. */

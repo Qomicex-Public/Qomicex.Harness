@@ -30,6 +30,9 @@ import type {
   WriteResult,
   JudgmentLog,
 } from '../types.ts'
+import { computeExcitability } from '../algorithms/excitability.ts'
+import { DAY_MS } from '../algorithms/fsrs.ts'
+import { emptyRetention, isStructuralFact } from '../types.ts'
 
 /** What a write gate may inspect before deciding. */
 export interface GateContext {
@@ -62,6 +65,8 @@ export interface MemoryCoreOptions {
   workingCapacity: number
   /** Staging capacity per session. */
   stagingCapacity: number
+  /** Retention knobs, read fresh per write so a Settings edit applies. */
+  retention?: () => { initialTTLDays: number; structuralException: boolean }
   /** Clock seam; tests replace it for deterministic timestamps. */
   clock?: () => number
   /** Failure reporter; observation failures never propagate to the caller. */
@@ -80,6 +85,7 @@ export class MemoryCore implements ObservationSink {
   private readonly gate: WriteGate
   private readonly clock: () => number
   private readonly onError: (error: unknown) => void
+  private readonly retention: () => { initialTTLDays: number; structuralException: boolean }
 
   /**
    * @param options - Collaborators and bounds.
@@ -91,6 +97,7 @@ export class MemoryCore implements ObservationSink {
     this.staging = new StagingPool(options.stagingCapacity)
     this.clock = options.clock ?? Date.now
     this.onError = options.onError ?? (() => {})
+    this.retention = options.retention ?? (() => ({ initialTTLDays: 7, structuralException: true }))
   }
 
   /**
@@ -199,8 +206,11 @@ export class MemoryCore implements ObservationSink {
     if (!decision.accepted) return undefined
     const accepted = decision.candidate ?? candidate
     const id = await this.tiers.store.nextId('mem')
-    const memory = this.build(accepted, id)
+    const memory = this.withInitialTtl(this.build(accepted, id))
     await this.tiers.episodic.put(memory)
+    await this.tiers.store.putRetention(
+      emptyRetention(memory.identity.id, computeExcitability(accepted, context), this.clock()),
+    )
     this.working.remove(candidate.id)
     this.working.add({
       id: memory.identity.id,
@@ -210,6 +220,27 @@ export class MemoryCore implements ObservationSink {
       addedAt: this.clock(),
     })
     return memory
+  }
+
+  /**
+   * Grant a freshly written memory its initial TTL.
+   *
+   * A structural fact is exempt: it describes the working environment rather
+   * than one task, so an expiry would retire something still true. Everything
+   * else starts with the configured window, and the retention layer decides
+   * at each lapse whether it has earned a renewal.
+   * @param memory - The memory as built.
+   * @returns The memory with its TTL set.
+   */
+  private withInitialTtl(memory: Memory): Memory {
+    const { initialTTLDays, structuralException } = this.retention()
+    if (structuralException && isStructuralFact(memory)) {
+      return memory.temporal.expiresAt === null
+        ? memory
+        : { ...memory, temporal: { ...memory.temporal, expiresAt: null } }
+    }
+    const expiresAt = this.clock() + initialTTLDays * DAY_MS
+    return { ...memory, temporal: { ...memory.temporal, expiresAt } }
   }
 
   /**
