@@ -108,6 +108,21 @@ export interface MemoryCurationConfig {
   maxLevel: number
 }
 
+/** Integration-module knobs. */
+export interface MemoryIntegrationConfig {
+  /** Whether integrations are probed at all. */
+  autoDetect: boolean
+  /** Whether the toolkit integration may contribute a hot-pack section. */
+  toolkitReadHotPackSection: boolean
+  /** Whether an approved pattern is written back to the toolkit's file. */
+  toolkitWriteBackOnApproval: boolean
+  /**
+   * Root holding the toolkit's `.memory/` directory. Empty disables the
+   * toolkit integration rather than guessing a location.
+   */
+  toolkitRoot: string
+}
+
 /** Retention-layer knobs. */
 export interface MemoryRetentionConfig {
   /** Days a fresh memory is granted before its first TTL evaluation. */
@@ -184,6 +199,8 @@ export interface Config {
   patternApplication?: MemoryPatternApplicationConfig
   /** Curation layer. */
   curation?: MemoryCurationConfig
+  /** Integration modules. */
+  integrations?: MemoryIntegrationConfig
 }
 
 /** Validated plugin configuration. */
@@ -303,6 +320,17 @@ export const Config: z<Config> = z.object({
     inputRatio: 0.6,
     maxLevel: 5,
   }),
+  integrations: z.object({
+    autoDetect: z.boolean().default(false),
+    toolkitReadHotPackSection: z.boolean().default(false),
+    toolkitWriteBackOnApproval: z.boolean().default(false),
+    toolkitRoot: z.string().default(''),
+  }).default({
+    autoDetect: false,
+    toolkitReadHotPackSection: false,
+    toolkitWriteBackOnApproval: false,
+    toolkitRoot: '',
+  }),
 })
 
 /**
@@ -315,13 +343,14 @@ export const Config: z<Config> = z.object({
 export function resolveConfig(config: Config): ResolvedConfig {
   const {
     thresholds, bounds, retrieval, injection, authorization, llmDistill,
-    judgment, retention, patternExtraction, patternApplication, curation,
+    judgment, retention, patternExtraction, patternApplication, curation, integrations,
   } = config
   if (
     thresholds === undefined || bounds === undefined || retrieval === undefined
     || injection === undefined || authorization === undefined || llmDistill === undefined
     || judgment === undefined || retention === undefined || patternExtraction === undefined
     || patternApplication === undefined || curation === undefined
+    || integrations === undefined
   ) {
     throw new Error('bio-memory: plugin config was not resolved against the Config schema')
   }
@@ -337,6 +366,7 @@ export function resolveConfig(config: Config): ResolvedConfig {
     patternExtraction: { ...patternExtraction },
     patternApplication: { ...patternApplication },
     curation: { ...curation },
+    integrations: { ...integrations },
   }
 }
 
@@ -364,4 +394,6 @@ export interface ResolvedConfig {
   patternApplication: MemoryPatternApplicationConfig
   /** Curation layer. */
   curation: MemoryCurationConfig
+  /** Integration modules. */
+  integrations: MemoryIntegrationConfig
 }

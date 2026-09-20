@@ -32,6 +32,8 @@ import { reinforce } from './algorithms/retention.ts'
 import { runExtraction, matchPatterns, recordApplication, feedbackFor, recordFeedback } from './algorithms/patterns.ts'
 import { LlamaCppJudge, loadLlamaCppModel } from './algorithms/local-judge.ts'
 import { runCuration } from './algorithms/curation.ts'
+import { collectIntegrationSections, loadIntegrations } from './integration.ts'
+import { createToolkitIntegration } from './integrations/toolkit.ts'
 import type { DistillProvider } from './algorithms/distill.ts'
 import { EventObserver } from './event/observer.ts'
 import { registerMemorySettings } from './settings.ts'
@@ -136,6 +138,10 @@ export {
   verdictFor,
 } from './algorithms/curation.ts'
 export type { BatchPolicy, CurationProvider, CurationReport, NextLayerPolicy } from './algorithms/curation.ts'
+export { collectIntegrationSections, loadIntegrations } from './integration.ts'
+export type { HotPackSection, Integration, IntegrationLoadReport } from './integration.ts'
+export { createToolkitIntegration, TOOLKIT_PREFERENCES_FILE, TOOLKIT_SECTION_BUDGET } from './integrations/toolkit.ts'
+export type { ToolkitIntegrationOptions } from './integrations/toolkit.ts'
 export {
   DEFAULT_PATTERN_THRESHOLDS,
   computePatternScore,
@@ -508,6 +514,25 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     }
   })()
 
+  /**
+   * The integrations, probed once at mount.
+   *
+   * Probing is best-effort and contained per integration: one that throws is
+   * skipped and the rest still load. Nothing here can fail the mount, which is
+   * what makes the core independent of the integrations — unloading every one
+   * of them leaves capture, judgment, retention, extraction, application, and
+   * curation exactly as they were.
+   */
+  const integrationReport = await loadIntegrations(
+    currentConfig().integrations.autoDetect && currentConfig().integrations.toolkitRoot !== ''
+      ? [createToolkitIntegration({ root: currentConfig().integrations.toolkitRoot })]
+      : [],
+  )
+  const integrations = integrationReport.active
+  for (const skipped of integrationReport.skipped) {
+    ctx.logger.warn(`bio-memory: integration ${skipped.name} skipped: ${skipped.reason}`)
+  }
+
   const observer = new EventObserver(ctx, {
     sink: core,
     userId: () => userId,
@@ -572,7 +597,20 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       const patterns = inject
         ? (await repository.allPatterns()).filter(item => item.state === 'active')
         : []
-      return buildHotPack(core, scope, Date.now(), patterns)
+      const sections = currentConfig().integrations.toolkitReadHotPackSection
+        ? await collectIntegrationSections(integrations, scope.kind === 'global' ? 'global' : readableScopes(scope)[0] ?? 'global')
+        : []
+      return buildHotPack(
+        core,
+        scope,
+        Date.now(),
+        patterns,
+        sections.map(section => ({
+          name: section.name,
+          content: section.content.slice(0, section.budgetBytes),
+          budgetBytes: section.budgetBytes,
+        })),
+      )
     },
     hotPackEnabled: () => currentConfig().injection.hotPack,
     recallMaxChars: () => currentConfig().injection.recallMaxChars,

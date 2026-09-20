@@ -17,6 +17,7 @@ import type { MemoryCore } from './memory/core.ts'
 import type {
   ConstraintEntry,
   HotPack,
+  HotPackIntegration,
   IndexEntry,
   Memory,
   Pattern,
@@ -57,6 +58,7 @@ export async function buildHotPack(
   scope: ScopeNode,
   now: number,
   patterns: readonly Pattern[] = [],
+  integrations: readonly HotPackIntegration[] = [],
 ): Promise<HotPack> {
   const scopes = new Set(readableScopes(scope))
   const memories = (await core.all()).filter(memory =>
@@ -73,6 +75,7 @@ export async function buildHotPack(
     patterns: buildPatterns(patterns),
     index: buildIndex(memories),
     pointers: buildPointers(memories),
+    integrations: [...integrations],
   }
 }
 

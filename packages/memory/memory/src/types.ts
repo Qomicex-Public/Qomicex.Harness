@@ -865,6 +865,22 @@ export interface BatchPlan {
   estimatedTokens: number
 }
 
+/**
+ * One section an integration contributed to a hot pack.
+ *
+ * Kept apart from the core sections so a reader can tell what the memory
+ * system knows from what another tool told it: the core's sections are its own
+ * beliefs, and an integration's section is somebody else's note being relayed.
+ */
+export interface HotPackIntegration {
+  /** Which integration contributed it. */
+  name: string
+  /** The contributed text. */
+  content: string
+  /** Byte budget the section was allowed. */
+  budgetBytes: number
+}
+
 /** The session-start injection payload. */
 export interface HotPack {
   /** Wire schema version. */
@@ -885,6 +901,11 @@ export interface HotPack {
   index: IndexEntry[]
   /** Pointers to deeper stores. */
   pointers: PointerEntry[]
+  /**
+   * Sections contributed by integrations, kept apart from the core sections so
+   * a reader can tell the core's own beliefs from another tool's note.
+   */
+  integrations: HotPackIntegration[]
 }
 
 /** System metadata persisted in the domain's global slot. */
