@@ -513,6 +513,21 @@
     - id: mcp-resources
       name: '@deepseek-ai/dsh-mcp-resources'
 
+    # Browser and desktop providers, default-enabled: the browser-use and
+    # computer-use seams plus one default provider/driver each. An overlay
+    # swaps the provider/driver to another backend.
+    - id: browser-use
+      name: '@deepseek-ai/dsh-browser-use'
+    - id: browser-use-playwright-mcp
+      name: '@deepseek-ai/dsh-browser-use-playwright-mcp'
+      config:
+        mode: launch
+        headless: true
+    - id: computer-use
+      name: '@deepseek-ai/dsh-computer-use'
+    - id: computer-use-cua-driver-native
+      name: '@deepseek-ai/dsh-computer-use-cua-driver-native'
+
     # ── rows every mode mounts, whose values each overlay may state ──────────────
 
     # The tool registry. Presentation mode is a deployment choice; omitting it here

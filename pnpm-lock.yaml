@@ -1795,6 +1795,12 @@ importers:
       '@deepseek-ai/dsh-bash-sandbox':
         specifier: workspace:^
         version: link:../../shell/bash-sandbox
+      '@deepseek-ai/dsh-browser-use':
+        specifier: workspace:^
+        version: link:../../browser-use/browser-use
+      '@deepseek-ai/dsh-browser-use-playwright-mcp':
+        specifier: workspace:^
+        version: link:../../browser-use/playwright-mcp
       '@deepseek-ai/dsh-command-compact':
         specifier: workspace:^
         version: link:../../compaction/command-compact
@@ -1816,6 +1822,12 @@ importers:
       '@deepseek-ai/dsh-compaction-tool-result-pruner':
         specifier: workspace:^
         version: link:../../compaction/compaction-tool-result-pruner
+      '@deepseek-ai/dsh-computer-use':
+        specifier: workspace:^
+        version: link:../../computer-use/computer-use
+      '@deepseek-ai/dsh-computer-use-cua-driver-native':
+        specifier: workspace:^
+        version: link:../../computer-use/cua-driver-native
       '@deepseek-ai/dsh-credentials-local':
         specifier: workspace:^
         version: link:../../credentials/credentials-local
