@@ -30,6 +30,7 @@ import { ScopePromotionGate } from './authorization/scope-promotion.ts'
 import { ConsolidationDaemon } from './algorithms/consolidation.ts'
 import { reinforce } from './algorithms/retention.ts'
 import { runExtraction, matchPatterns, recordApplication, feedbackFor, recordFeedback } from './algorithms/patterns.ts'
+import { LlamaCppJudge, loadLlamaCppModel } from './algorithms/local-judge.ts'
 import type { DistillProvider } from './algorithms/distill.ts'
 import { EventObserver } from './event/observer.ts'
 import { registerMemorySettings } from './settings.ts'
@@ -111,6 +112,15 @@ export {
   wasUsed,
 } from './algorithms/retention.ts'
 export type { RetentionConfig } from './algorithms/retention.ts'
+export {
+  JUDGE_PROMPT_VERSION,
+  JUDGE_SYSTEM_PROMPT,
+  LlamaCppJudge,
+  buildJudgePrompt,
+  loadLlamaCppModel,
+  parseJudgeVerdict,
+} from './algorithms/local-judge.ts'
+export type { JudgeModelLoader, LoadedJudgeModel, LocalJudgeOptions } from './algorithms/local-judge.ts'
 export {
   DEFAULT_PATTERN_THRESHOLDS,
   computePatternScore,
@@ -486,6 +496,23 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     sink: core,
     userId: () => userId,
     judgmentEnabled: () => currentConfig().judgment.enabled,
+    // The local model is only constructed when it is both enabled and given a
+    // path. Without a path there is nothing to load, and the rule path is the
+    // correct judge — so the seam stays closed rather than failing per message.
+    ...(currentConfig().judgment.localLlm.enabled && currentConfig().judgment.localLlm.modelPath !== ''
+      ? {
+        judge: new LlamaCppJudge({
+          modelPath: currentConfig().judgment.localLlm.modelPath,
+          gpuLayers: currentConfig().judgment.localLlm.gpuLayers,
+          contextSize: currentConfig().judgment.localLlm.contextSize,
+          loader: (path: string) => loadLlamaCppModel(
+            path,
+            currentConfig().judgment.localLlm.gpuLayers,
+            currentConfig().judgment.localLlm.contextSize,
+          ),
+        }),
+      }
+      : {}),
   })
   /** The retention usage signal: a recalled memory is one that was used. */
   const onRecalled = (memoryId: string, now: number): void => {

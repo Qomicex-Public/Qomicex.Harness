@@ -30,6 +30,9 @@
     "@deepseek-ai/schemastery": "workspace:^",
     "zod": "^4.4.3"
   },
+  "optionalDependencies": {
+    "node-llama-cpp": "^3.21.1"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-agent": "workspace:^",

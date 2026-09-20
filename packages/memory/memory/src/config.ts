@@ -70,6 +70,20 @@ export interface MemoryLlmDistillConfig {
 export interface MemoryJudgmentConfig {
   /** Whether the local judgment layer participates at capture time. */
   enabled: boolean
+  /** Local-model knobs; off means the rule path alone decides. */
+  localLlm: MemoryLocalLlmConfig
+}
+
+/** Local judgment model knobs. */
+export interface MemoryLocalLlmConfig {
+  /** Whether the local model judges instead of only the rule fallback. */
+  enabled: boolean
+  /** Path or URI of the GGUF model; empty disables the model even when enabled. */
+  modelPath: string
+  /** Layers offloaded to the GPU; `0` runs on CPU. */
+  gpuLayers: number
+  /** Context size in tokens. */
+  contextSize: number
 }
 
 /** Retention-layer knobs. */
@@ -185,7 +199,16 @@ export const Config: z<Config> = z.object({
   }).default({ enabled: false, provider: '', model: '' }),
   judgment: z.object({
     enabled: z.boolean().default(false),
-  }).default({ enabled: false }),
+    localLlm: z.object({
+      enabled: z.boolean().default(false),
+      modelPath: z.string().default(''),
+      gpuLayers: z.number().step(1).min(0).default(0),
+      contextSize: z.number().step(1).min(256).default(2048),
+    }).default({ enabled: false, modelPath: '', gpuLayers: 0, contextSize: 2048 }),
+  }).default({
+    enabled: false,
+    localLlm: { enabled: false, modelPath: '', gpuLayers: 0, contextSize: 2048 },
+  }),
   retention: z.object({
     initialTTLDays: z.number().step(1).min(1).default(7),
     promotionThreshold: z.number().min(0).default(3),
