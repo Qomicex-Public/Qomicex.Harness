@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-20-glass-passthrough-and-settings-controls.md
-2026-09-20-glass-passthrough-and-settings-controls.md: f77da20c547c3cd14a55e3765f3cdba37c3bc4b4
-2026-09-20-glass-passthrough-and-settings-controls.zh.md: 8d570f39b2846b5f048f3b4328c3c74d3aff2c19
+2026-09-20-glass-passthrough-and-settings-controls.md: 94e3bf68b15c96de0007ddfa337cb819b7d15a07
+2026-09-20-glass-passthrough-and-settings-controls.zh.md: da9412f65dd7883523100182d2f2441bf767f255

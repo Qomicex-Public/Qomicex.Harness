@@ -53,7 +53,7 @@ The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-a
 
 ### What the model and user see
 
-The model sees only the asking consumer's eventual tool outcome — allowed, rejected, cancelled, or unavailable — plus the current policy in the runtime-context snapshot; the audit events and the human permission UI are not model context. A `never` switch is announced to the model by a sourced user message, and both policies contribute their complete current meaning to the snapshot.
+The model sees only the asking consumer's eventual tool outcome — allowed, rejected, cancelled, or unavailable — plus the current policy in the runtime-context snapshot; the audit events and the human permission UI are not model context. A policy switch is announced to the model by a sourced user message, and all three policies contribute their complete current meaning to the snapshot.
 
 -----
 
@@ -79,7 +79,7 @@ The observable behavior is covered in [Use this package](#use-this-package); thi
 
 ### Policy and the runtime-context snapshot
 
-The system-prompt contribution `approval:policy` states the complete current meaning of the effective policy — `ask` with its fail-closed consequence, or `never` with its non-escalation consequence — after retained history, so switching policy appends a new full snapshot instead of rewriting the stable request header. `setPolicy()` also injects a sourced user message announcing the change for the next step.
+The system-prompt contribution `approval:policy` states the complete current meaning of the effective policy — `ask` with its fail-closed consequence, `never` with its non-escalation consequence, or `always` with its unattended auto-approval consequence — after retained history, so switching policy appends a new full snapshot instead of rewriting the stable request header. `setPolicy()` also injects a sourced user message announcing the change for the next step.
 
 ### Audit
 
@@ -134,7 +134,7 @@ One concise context message on the first request and on an effective change; unc
 
 #### KV Cache effect
 
-Append-only after retained history. An `ask`/`never` switch preserves the stable system and conversation prefix instead of rewriting the first wire message.
+Append-only after retained history. An `ask`/`never`/`always` switch preserves the stable system and conversation prefix instead of rewriting the first wire message.
 
 ### Tool outcome
 

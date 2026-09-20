@@ -122,7 +122,7 @@ Approval policy: ask. Operations that require approval may ask through the confi
 Approval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`).
 ```
 
-#### Always 策略贡献
+##### Always 策略贡献
 
 ```markdown
 Approval prompts are disabled in this session: actions that require approval are approved automatically with no human in the loop — unattended YOLO mode.
