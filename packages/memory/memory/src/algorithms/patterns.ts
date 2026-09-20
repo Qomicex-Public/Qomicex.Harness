@@ -27,6 +27,7 @@
 
 import type { MemoryRepository } from '../repository.ts'
 import type { Memory, Pattern, PatternKind, RetentionRecord } from '../types.ts'
+import { bigramSimilarity } from './excitability.ts'
 
 /** Thresholds one extraction run applies. */
 export interface PatternThresholds {
@@ -438,4 +439,122 @@ export function extractionDue(
   if (lastExtractionAt === null) return true
   const DAY_MS = 86_400_000
   return now - lastExtractionAt >= intervalDays * DAY_MS
+}
+
+/** One pattern the scene matcher selected, with the score that selected it. */
+export interface PatternMatch {
+  /** The matched pattern. */
+  pattern: Pattern
+  /** Best similarity found between the query and the pattern's evidence. */
+  score: number
+}
+
+/**
+ * Select the active patterns a turn's query is about.
+ *
+ * Matching runs against the pattern's *evidence* rather than its description:
+ * the description is a statistical summary ("across 3 projects") that nobody
+ * would ever type, while the evidence is what the user actually said. Taking
+ * the best-scoring evidence rather than an average keeps one well-matching
+ * memory from being diluted by several loosely related ones.
+ *
+ * Only `active` patterns are eligible. A candidate is a proposal nobody has
+ * agreed to, and matching it would put an unreviewed regularity in front of the
+ * model.
+ * @param query - The text the turn is about.
+ * @param patterns - Every stored pattern.
+ * @param evidence - Memory content by id, for the evidence lookup.
+ * @param threshold - Minimum similarity for a match.
+ * @returns The matches, best first.
+ */
+export function matchPatterns(
+  query: string,
+  patterns: readonly Pattern[],
+  evidence: ReadonlyMap<string, string>,
+  threshold: number,
+): PatternMatch[] {
+  if (query.trim() === '') return []
+  const matches: PatternMatch[] = []
+  for (const pattern of patterns) {
+    if (pattern.state !== 'active') continue
+    let best = 0
+    for (const id of pattern.evidenceMemoryIds) {
+      const content = evidence.get(id)
+      if (content === undefined) continue
+      const similarity = bigramSimilarity(query, content)
+      if (similarity > best) best = similarity
+    }
+    if (best >= threshold) matches.push({ pattern, score: best })
+  }
+  return matches.sort((left, right) => right.score - left.score)
+}
+
+/**
+ * Record that a pattern was applied to a turn.
+ * @param repository - The repository.
+ * @param patternId - The pattern that was applied.
+ * @param now - Application time (ms).
+ * @returns resolution after durability.
+ */
+export async function recordApplication(
+  repository: MemoryRepository,
+  patternId: string,
+  now: number,
+): Promise<void> {
+  const existing = await repository.getPattern(patternId)
+  if (existing === undefined) return
+  await repository.updatePattern(patternId, pattern => ({
+    ...pattern,
+    appliedCount: pattern.appliedCount + 1,
+    lastAppliedAt: now,
+  }))
+}
+
+/**
+ * The feedback a turn's output implies for one pattern.
+ *
+ * **This is a bigram approximation, not a judgment.** With no embedding
+ * service the only available question is "does the output share text with what
+ * the pattern was read from", which detects a pattern that was plainly
+ * followed and nothing subtler. `corrected` is deliberately never returned
+ * here: telling "the output ignored it" from "the output argued against it"
+ * needs semantics this system does not have, and guessing would put a −2 on
+ * the score for a pattern that was merely unhelpful. A person can still record
+ * a correction, and the score's asymmetry makes that count.
+ * @param output - The assistant's text.
+ * @param evidence - The pattern's evidence content.
+ * @param threshold - Similarity at or above which the pattern counts as adopted.
+ * @returns `adopted` or `ignored`.
+ */
+export function feedbackFor(
+  output: string,
+  evidence: readonly string[],
+  threshold: number,
+): 'adopted' | 'ignored' {
+  if (output.trim() === '') return 'ignored'
+  const best = evidence.reduce((highest, content) =>
+    Math.max(highest, bigramSimilarity(output, content)), 0)
+  return best >= threshold ? 'adopted' : 'ignored'
+}
+
+/**
+ * Apply one feedback tally to a pattern.
+ * @param repository - The repository.
+ * @param patternId - The pattern to update.
+ * @param feedback - Which tally to increment.
+ * @returns resolution after durability.
+ */
+export async function recordFeedback(
+  repository: MemoryRepository,
+  patternId: string,
+  feedback: 'adopted' | 'ignored' | 'corrected',
+): Promise<void> {
+  const existing = await repository.getPattern(patternId)
+  if (existing === undefined) return
+  await repository.updatePattern(patternId, pattern => ({
+    ...pattern,
+    adopted: pattern.adopted + (feedback === 'adopted' ? 1 : 0),
+    ignored: pattern.ignored + (feedback === 'ignored' ? 1 : 0),
+    corrected: pattern.corrected + (feedback === 'corrected' ? 1 : 0),
+  }))
 }

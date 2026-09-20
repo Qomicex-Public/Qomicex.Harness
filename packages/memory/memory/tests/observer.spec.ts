@@ -208,6 +208,27 @@ describe('EventObserver against a live loop', () => {
     expect(h.sink.observations).toHaveLength(0)
   })
 
+  it('captures an agent claim from the assistant message it observed', async () => {
+    // Regression: the `assistant/message` session event nests its text one
+    // level down (`data.message.content`), so reading `data.content` yielded
+    // an empty string and every agent claim was silently dropped. The
+    // observation still landed, which is why nothing looked broken.
+    const h = await harness([textResponse('这说明项目用的是 pnpm')])
+    const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
+    send(agent, '我们项目用什么包管理器')
+    await waitForIdle(h.ctx, agent)
+    // Capture is fire-and-forget: the observation is pushed synchronously but
+    // the signal that follows it is offered after the write settles, so the
+    // assertions must wait for the in-flight writes rather than assume order.
+    await h.observer.settle()
+
+    const response = h.sink.observations.find(event => event.eventType === 'agent_response')
+    expect(response?.payload).toMatchObject({ text: '这说明项目用的是 pnpm' })
+    const claim = h.sink.signals.find(item => item.signal.type === 'agent_claim')
+    expect(claim?.signal.type).toBe('agent_claim')
+    expect(claim?.signal.epistemic).toBe('inferred')
+  })
+
   it('detaches cleanly: no observations after the disposer runs', async () => {
     const h = await harness([textResponse('ok'), textResponse('ok')])
     const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })

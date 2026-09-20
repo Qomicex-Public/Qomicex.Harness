@@ -106,6 +106,24 @@ export interface MemoryPatternConfig {
   pruneStaleDays: number
 }
 
+/** Pattern-application knobs. */
+export interface MemoryPatternApplicationConfig {
+  /** Whether approved patterns ride in the hot pack. */
+  injectHotPack: boolean
+  /** Whether per-step scene matching injects pattern hints. */
+  sceneMatching: boolean
+  /** Whether application outcomes feed the pattern feedback tallies. */
+  feedbackCollection: boolean
+  /** Byte budget of the hot pack's patterns section. */
+  hotPackPatternsBudget: number
+  /** Similarity at or above which a query matches a pattern. */
+  matchThreshold: number
+  /** Similarity at or above which an output counts as following a pattern. */
+  feedbackThreshold: number
+  /** Patterns whose application is still fresh enough to receive feedback. */
+  feedbackWindowMs: number
+}
+
 /** Plugin configuration. */
 export interface Config {
   /** Write-gate and forgetting thresholds. */
@@ -126,6 +144,8 @@ export interface Config {
   retention?: MemoryRetentionConfig
   /** Pattern-extraction layer. */
   patternExtraction?: MemoryPatternConfig
+  /** Pattern-application layer. */
+  patternApplication?: MemoryPatternApplicationConfig
 }
 
 /** Validated plugin configuration. */
@@ -198,6 +218,23 @@ export const Config: z<Config> = z.object({
     pruneMinScore: 0,
     pruneStaleDays: 30,
   }),
+  patternApplication: z.object({
+    injectHotPack: z.boolean().default(false),
+    sceneMatching: z.boolean().default(false),
+    feedbackCollection: z.boolean().default(false),
+    hotPackPatternsBudget: z.number().step(1).min(1).default(2048),
+    matchThreshold: z.number().min(0).max(1).default(0.5),
+    feedbackThreshold: z.number().min(0).max(1).default(0.5),
+    feedbackWindowMs: z.number().step(1).min(1).default(300_000),
+  }).default({
+    injectHotPack: false,
+    sceneMatching: false,
+    feedbackCollection: false,
+    hotPackPatternsBudget: 2048,
+    matchThreshold: 0.5,
+    feedbackThreshold: 0.5,
+    feedbackWindowMs: 300_000,
+  }),
 })
 
 /**
@@ -208,11 +245,15 @@ export const Config: z<Config> = z.object({
  * @returns Fully resolved configuration.
  */
 export function resolveConfig(config: Config): ResolvedConfig {
-  const { thresholds, bounds, retrieval, injection, authorization, llmDistill, judgment, retention, patternExtraction } = config
+  const {
+    thresholds, bounds, retrieval, injection, authorization, llmDistill,
+    judgment, retention, patternExtraction, patternApplication,
+  } = config
   if (
     thresholds === undefined || bounds === undefined || retrieval === undefined
     || injection === undefined || authorization === undefined || llmDistill === undefined
     || judgment === undefined || retention === undefined || patternExtraction === undefined
+    || patternApplication === undefined
   ) {
     throw new Error('bio-memory: plugin config was not resolved against the Config schema')
   }
@@ -226,6 +267,7 @@ export function resolveConfig(config: Config): ResolvedConfig {
     judgment: { ...judgment },
     retention: { ...retention },
     patternExtraction: { ...patternExtraction },
+    patternApplication: { ...patternApplication },
   }
 }
 
@@ -249,4 +291,6 @@ export interface ResolvedConfig {
   retention: MemoryRetentionConfig
   /** Pattern-extraction layer. */
   patternExtraction: MemoryPatternConfig
+  /** Pattern-application layer. */
+  patternApplication: MemoryPatternApplicationConfig
 }

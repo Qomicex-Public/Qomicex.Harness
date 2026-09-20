@@ -29,11 +29,11 @@ import { PolicyPlane } from './authorization/policy-plane.ts'
 import { ScopePromotionGate } from './authorization/scope-promotion.ts'
 import { ConsolidationDaemon } from './algorithms/consolidation.ts'
 import { reinforce } from './algorithms/retention.ts'
-import { runExtraction } from './algorithms/patterns.ts'
+import { runExtraction, matchPatterns, recordApplication, feedbackFor, recordFeedback } from './algorithms/patterns.ts'
 import type { DistillProvider } from './algorithms/distill.ts'
 import { EventObserver } from './event/observer.ts'
 import { registerMemorySettings } from './settings.ts'
-import { registerHooks, PLUGIN_NAME } from './hooks.ts'
+import { registerHooks, PLUGIN_NAME, PATTERN_OPEN, PATTERN_CLOSE } from './hooks.ts'
 import { registerTools } from './tools.ts'
 import { buildHotPack } from './hot-pack.ts'
 import { projectScope, readableScopes, UNKNOWN_SCOPE_ID } from './scope/namespace.ts'
@@ -118,11 +118,15 @@ export {
   emptyPruneReport,
   extractionDue,
   extractPatterns,
+  feedbackFor,
+  matchPatterns,
   prunePatterns,
   promoteCandidates,
+  recordApplication,
+  recordFeedback,
   runExtraction,
 } from './algorithms/patterns.ts'
-export type { ExtractionReport, PatternCandidate, PatternThresholds, PruneReport } from './algorithms/patterns.ts'
+export type { ExtractionReport, PatternCandidate, PatternMatch, PatternThresholds, PruneReport } from './algorithms/patterns.ts'
 export {
   areIndependent,
   computeConfidence,
@@ -489,15 +493,48 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       ctx.logger.warn(`bio-memory: reinforcement write failed: ${String(error)}`)
     })
   }
+  /**
+   * The pattern-application seam, wired only when the layer is enabled.
+   *
+   * Three pieces, and the budget lives in the hot-pack builder rather than
+   * here: the injection budget is a property of the pack, not of the caller.
+   */
+  const applyPatterns = currentConfig().patternApplication.sceneMatching
+    ? async (query: string): Promise<string | undefined> => {
+      const { matchThreshold } = currentConfig().patternApplication
+      const patterns = (await repository.allPatterns()).filter(pattern => pattern.state === 'active')
+      if (patterns.length === 0) return undefined
+      const evidence = new Map(
+        (await core.all()).map(memory => [memory.identity.id, memory.content.raw]),
+      )
+      const matched = matchPatterns(query, patterns, evidence, matchThreshold)
+      if (matched.length === 0) return undefined
+      const now = Date.now()
+      for (const { pattern } of matched) {
+        await recordApplication(repository, pattern.id, now)
+      }
+      const body = matched
+        .map(({ pattern }) => `- [${pattern.kind}] ${pattern.content}`)
+        .join('\n')
+      return `${PATTERN_OPEN}\n${body}\n${PATTERN_CLOSE}`
+    }
+    : undefined
   const hooks = registerHooks(ctx, {
     core,
     daemon,
     settle: () => observer.settle(),
     scopeOf,
-    buildHotPack: scope => buildHotPack(core, scope, Date.now()),
+    buildHotPack: async (scope) => {
+      const inject = currentConfig().patternApplication.injectHotPack
+      const patterns = inject
+        ? (await repository.allPatterns()).filter(item => item.state === 'active')
+        : []
+      return buildHotPack(core, scope, Date.now(), patterns)
+    },
     hotPackEnabled: () => currentConfig().injection.hotPack,
     recallMaxChars: () => currentConfig().injection.recallMaxChars,
     onRecalled,
+    applyPatterns,
     clock: () => Date.now(),
   })
   const tools = registerTools(ctx, {
@@ -516,6 +553,40 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     clock: () => Date.now(),
   })
   const detachObserver = observer.attach()
+
+  /**
+   * Feed application outcomes back into the pattern tallies.
+   *
+   * Runs when an assistant message lands, which is the first moment there is
+   * an output to compare against what was injected. Only patterns applied
+   * inside the feedback window are scored: an older application belongs to a
+   * different turn and attributing this output to it would credit a pattern
+   * for something it never influenced.
+   */
+  const detachFeedback = currentConfig().patternApplication.feedbackCollection
+    ? ctx.on('session/event', (_session, event) => {
+      void (async () => {
+        if (event.type !== 'assistant/message') return
+        const { feedbackThreshold, feedbackWindowMs } = currentConfig().patternApplication
+        const now = Date.now()
+        const evidence = new Map((await core.all()).map(memory => [memory.identity.id, memory.content.raw]))
+        const applied = (await repository.allPatterns())
+          .filter(item => item.lastAppliedAt !== null && now - item.lastAppliedAt <= feedbackWindowMs)
+        if (applied.length === 0) return
+        const output = assistantText(event.data.message)
+        if (output.trim() === '') return
+        for (const item of applied) {
+          const texts = item.evidenceMemoryIds
+            .map(id => evidence.get(id))
+            .filter((content): content is string => content !== undefined)
+          if (texts.length === 0) continue
+          await recordFeedback(repository, item.id, feedbackFor(output, texts, feedbackThreshold))
+        }
+      })().catch((error: unknown) => {
+        ctx.logger.warn(`bio-memory: pattern feedback failed: ${String(error)}`)
+      })
+    })
+    : undefined
 
   // The authorization plane only participates when it is enabled. Registering
   // the listener unconditionally would make a memory plugin change tool
@@ -551,6 +622,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     ctx.provide(MEMORY_SERVICES.daemon, daemon)
     return async () => {
       detachObserver()
+      detachFeedback?.()
       hooks()
       tools()
       authorization?.()
@@ -568,6 +640,30 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
 
 /** Re-exported so consumers can build the same scope the hooks use. */
 export { projectScope as memoryProjectScope }
+
+/**
+ * The text of an assistant message's content blocks.
+ *
+ * The `assistant/message` session event nests the message one level down
+ * (`data.message.content`), and its content is a block array rather than a
+ * string, so both the shape and the location differ from the user-message
+ * case. Reading it wrong yields an empty string, which silently disables
+ * anything that depends on what the model said.
+ * @param content - The message's content blocks.
+ * @returns Their text, joined.
+ */
+function assistantText(message: unknown): string {
+  if (typeof message !== 'object' || message === null) return ''
+  const content = (message as { content?: unknown }).content
+  if (!Array.isArray(content)) return ''
+  return content
+    .map((block: unknown) => {
+      if (typeof block !== 'object' || block === null) return ''
+      const text = (block as { text?: unknown }).text
+      return typeof text === 'string' ? text : ''
+    })
+    .join('\n')
+}
 
 /**
  * The resource a tool call names, for the authorization tuple.

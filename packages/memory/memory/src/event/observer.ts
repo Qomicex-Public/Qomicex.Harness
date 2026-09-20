@@ -426,7 +426,7 @@ export class EventObserver {
         return
       }
       case 'assistant/message': {
-        const text = messageText(event.data)
+        const text = assistantMessageText(event.data)
         const root = this.lineage.for(session.id).assistantRoot(Number(event.seq))
         state.seq = Math.max(state.seq, Number(event.seq))
         this.start(
@@ -528,6 +528,23 @@ function messageText(data: unknown): string {
     .filter(block => block.type === 'text' && typeof block.text === 'string')
     .map(block => block.text as string)
     .join('\n')
+}
+
+/**
+ * Render an assistant message's text, which the session event nests one level
+ * down.
+ *
+ * The `assistant/message` event carries `{ turn, step, message, stream }`, and
+ * the text lives in `message.content` as a block array — not at `data.content`
+ * the way a user message carries it. Reading the wrong level yields an empty
+ * string, and an empty string fails every rule quietly, so the agent's own
+ * claims never reach staging while the observation itself looks fine.
+ * @param data - The event data.
+ * @returns The message text.
+ */
+function assistantMessageText(data: unknown): string {
+  if (typeof data !== 'object' || data === null) return ''
+  return messageText((data as { message?: unknown }).message)
 }
 
 /** The JSON value of one settled tool result. */

@@ -783,10 +783,32 @@ export interface PointerEntry {
   target: string
 }
 
+/**
+ * One entry in the hot pack's patterns section.
+ *
+ * Only `active` patterns reach here: a `candidate` has not been approved by a
+ * person, and injecting an unreviewed regularity would be the black box the
+ * review gate exists to prevent.
+ */
+export interface PatternEntry {
+  /** Pattern id, so the model can cite it and the feedback can attribute to it. */
+  id: string
+  /** Which kind of regularity this is. */
+  kind: PatternKind
+  /** Human-readable description. */
+  content: string
+  /** Extraction confidence in `[0, 1]`. */
+  confidence: number
+  /** Distinct project scopes the evidence spans. */
+  projectCount: number
+  /** How many memories support it. */
+  occurrenceCount: number
+}
+
 /** The session-start injection payload. */
 export interface HotPack {
   /** Wire schema version. */
-  schemaVersion: 3
+  schemaVersion: 4
   /** Build time (ms). */
   generatedAt: number
   /** Serialized scope. */
@@ -797,6 +819,8 @@ export interface HotPack {
   profile: ProfileEntry[]
   /** Hard constraints. */
   constraints: ConstraintEntry[]
+  /** Approved patterns, so a fresh session starts knowing the regularities. */
+  patterns: PatternEntry[]
   /** Memory index. */
   index: IndexEntry[]
   /** Pointers to deeper stores. */
