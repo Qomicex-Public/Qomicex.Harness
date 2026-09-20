@@ -568,7 +568,7 @@ Source: [`packages/experimental/agent-team/src/types.ts:130`](../packages/experi
 
 <a id="deepseek-aidsh-experimental-browser-use-chrome-devtools-mcp"></a>
 
-## `@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp`
+## `@deepseek-ai/dsh-browser-use-chrome-devtools-mcp`
 
 Requires: `browserUse` · `agents` · `tools` · `systemPrompt`
 
@@ -577,13 +577,13 @@ Requires: `browserUse` · `agents` · `tools` · `systemPrompt`
 export type Config = BrowserMcpConfig
 ```
 
-Depends on: `BrowserMcpConfig` (`@deepseek-ai/dsh-experimental-browser-use-runtime/mcp`)
+Depends on: `BrowserMcpConfig` (`@deepseek-ai/dsh-browser-use-runtime/mcp`)
 
-Source: [`packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts:14`](../packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts)
+Source: [`packages/browser-use/chrome-devtools-mcp/src/index.ts:14`](../packages/browser-use/chrome-devtools-mcp/src/index.ts)
 
 <a id="deepseek-aidsh-experimental-browser-use-playwright-mcp"></a>
 
-## `@deepseek-ai/dsh-experimental-browser-use-playwright-mcp`
+## `@deepseek-ai/dsh-browser-use-playwright-mcp`
 
 Requires: `browserUse` · `agents` · `tools` · `systemPrompt`
 
@@ -592,13 +592,13 @@ Requires: `browserUse` · `agents` · `tools` · `systemPrompt`
 export type Config = BrowserMcpConfig
 ```
 
-Depends on: `BrowserMcpConfig` (`@deepseek-ai/dsh-experimental-browser-use-runtime/mcp`)
+Depends on: `BrowserMcpConfig` (`@deepseek-ai/dsh-browser-use-runtime/mcp`)
 
-Source: [`packages/experimental/browser-use-playwright-mcp/src/index.ts:15`](../packages/experimental/browser-use-playwright-mcp/src/index.ts)
+Source: [`packages/browser-use/playwright-mcp/src/index.ts:15`](../packages/browser-use/playwright-mcp/src/index.ts)
 
 <a id="deepseek-aidsh-experimental-browser-use-stagehand-native"></a>
 
-## `@deepseek-ai/dsh-experimental-browser-use-stagehand-native`
+## `@deepseek-ai/dsh-browser-use-stagehand-native`
 
 Requires: `browserUse` · `agents` · `tools` · `systemPrompt`
 
@@ -636,11 +636,11 @@ export interface StagehandModelConfig {
 
 Depends on: `ModelConfig` (`@browserbasehq/stagehand`)
 
-Source: [`packages/experimental/browser-use-stagehand-native/src/index.ts:28`](../packages/experimental/browser-use-stagehand-native/src/index.ts)
+Source: [`packages/browser-use/stagehand-native/src/index.ts:28`](../packages/browser-use/stagehand-native/src/index.ts)
 
 <a id="deepseek-aidsh-experimental-computer-use-cua-driver-mcp"></a>
 
-## `@deepseek-ai/dsh-experimental-computer-use-cua-driver-mcp`
+## `@deepseek-ai/dsh-computer-use-cua-driver-mcp`
 
 Requires: `computerUse` · `tools`
 
@@ -660,7 +660,7 @@ export interface Config {
 
 Depends on: [`McpClient`](../packages/mcp/mcp-client/src/index.ts)
 
-Source: [`packages/experimental/computer-use-cua-driver-mcp/src/index.ts:20`](../packages/experimental/computer-use-cua-driver-mcp/src/index.ts)
+Source: [`packages/computer-use/cua-driver-mcp/src/index.ts:20`](../packages/computer-use/cua-driver-mcp/src/index.ts)
 
 <a id="deepseek-aidsh-experimental-inspector"></a>
 
@@ -3748,7 +3748,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-deepseek-llm-api-extensions` ([`packages/llm/deepseek-llm-api-extensions/src/index.ts`](../packages/llm/deepseek-llm-api-extensions/src/index.ts))
 - `@deepseek-ai/dsh-experimental-auto-review` — requires `llm` · `permissionPresets` · `sessions` · `tools` ([`packages/experimental/auto-review/src/index.ts`](../packages/experimental/auto-review/src/index.ts))
 - `@deepseek-ai/dsh-experimental-client-ui-agent-team` ([`packages/experimental/client-ui-agent-team/src/index.ts`](../packages/experimental/client-ui-agent-team/src/index.ts))
-- `@deepseek-ai/dsh-experimental-computer-use-cua-driver-native` — requires `computerUse` · `tools` · `systemPrompt` ([`packages/experimental/computer-use-cua-driver-native/src/index.ts`](../packages/experimental/computer-use-cua-driver-native/src/index.ts))
+- `@deepseek-ai/dsh-computer-use-cua-driver-native` — requires `computerUse` · `tools` · `systemPrompt` ([`packages/computer-use/cua-driver-native/src/index.ts`](../packages/computer-use/cua-driver-native/src/index.ts))
 - `@deepseek-ai/dsh-fs-observation-policy` ([`packages/fs/fs-observation-policy/src/index.ts`](../packages/fs/fs-observation-policy/src/index.ts))
 - `@deepseek-ai/dsh-fs-ssh` — requires `ssh` · `sandboxPolicy` ([`packages/ssh/fs-ssh/src/index.ts`](../packages/ssh/fs-ssh/src/index.ts))
 - `@deepseek-ai/dsh-goal-round-driver` — requires `agents` · `goals` · `sessions` ([`packages/goal/goal-round-driver/src/index.ts`](../packages/goal/goal-round-driver/src/index.ts))
@@ -3829,7 +3829,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-deque` ([`packages/util/deque/src/index.ts`](../packages/util/deque/src/index.ts))
 - `@deepseek-ai/dsh-experimental-agent-team-profile` ([`packages/experimental/agent-team-profile/src/index.ts`](../packages/experimental/agent-team-profile/src/index.ts))
 - `@deepseek-ai/dsh-experimental-agent-team-web-profile` ([`packages/experimental/agent-team-web-profile/src/index.ts`](../packages/experimental/agent-team-web-profile/src/index.ts))
-- `@deepseek-ai/dsh-experimental-browser-use-runtime` ([`packages/experimental/browser-use-runtime/src/index.ts`](../packages/experimental/browser-use-runtime/src/index.ts))
+- `@deepseek-ai/dsh-browser-use-runtime` ([`packages/browser-use/runtime/src/index.ts`](../packages/browser-use/runtime/src/index.ts))
 - `@deepseek-ai/dsh-experimental-webworker-packer` ([`packages/experimental/webworker-packer/src/index.ts`](../packages/experimental/webworker-packer/src/index.ts))
 - `@deepseek-ai/dsh-experimental-webworker-runtime` ([`packages/experimental/webworker-runtime/src/index.ts`](../packages/experimental/webworker-runtime/src/index.ts))
 - `@deepseek-ai/dsh-home-paths` ([`packages/util/home-paths/src/index.ts`](../packages/util/home-paths/src/index.ts))

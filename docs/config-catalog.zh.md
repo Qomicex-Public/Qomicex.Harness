@@ -570,7 +570,7 @@ export interface Config {
 
 <a id="deepseek-aidsh-experimental-browser-use-chrome-devtools-mcp"></a>
 
-## `@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp`
+## `@deepseek-ai/dsh-browser-use-chrome-devtools-mcp`
 
 需要：`browserUse` · `agents` · `tools` · `systemPrompt`
 
@@ -579,13 +579,13 @@ export interface Config {
 export type Config = BrowserMcpConfig
 ```
 
-依赖：`BrowserMcpConfig` (`@deepseek-ai/dsh-experimental-browser-use-runtime/mcp`)
+依赖：`BrowserMcpConfig` (`@deepseek-ai/dsh-browser-use-runtime/mcp`)
 
-来源：[`packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts:14`](../packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts)
+来源：[`packages/browser-use/chrome-devtools-mcp/src/index.ts:14`](../packages/browser-use/chrome-devtools-mcp/src/index.ts)
 
 <a id="deepseek-aidsh-experimental-browser-use-playwright-mcp"></a>
 
-## `@deepseek-ai/dsh-experimental-browser-use-playwright-mcp`
+## `@deepseek-ai/dsh-browser-use-playwright-mcp`
 
 需要：`browserUse` · `agents` · `tools` · `systemPrompt`
 
@@ -594,13 +594,13 @@ export type Config = BrowserMcpConfig
 export type Config = BrowserMcpConfig
 ```
 
-依赖：`BrowserMcpConfig` (`@deepseek-ai/dsh-experimental-browser-use-runtime/mcp`)
+依赖：`BrowserMcpConfig` (`@deepseek-ai/dsh-browser-use-runtime/mcp`)
 
-来源：[`packages/experimental/browser-use-playwright-mcp/src/index.ts:15`](../packages/experimental/browser-use-playwright-mcp/src/index.ts)
+来源：[`packages/browser-use/playwright-mcp/src/index.ts:15`](../packages/browser-use/playwright-mcp/src/index.ts)
 
 <a id="deepseek-aidsh-experimental-browser-use-stagehand-native"></a>
 
-## `@deepseek-ai/dsh-experimental-browser-use-stagehand-native`
+## `@deepseek-ai/dsh-browser-use-stagehand-native`
 
 需要：`browserUse` · `agents` · `tools` · `systemPrompt`
 
@@ -638,11 +638,11 @@ export interface StagehandModelConfig {
 
 依赖：`ModelConfig` (`@browserbasehq/stagehand`)
 
-来源：[`packages/experimental/browser-use-stagehand-native/src/index.ts:28`](../packages/experimental/browser-use-stagehand-native/src/index.ts)
+来源：[`packages/browser-use/stagehand-native/src/index.ts:28`](../packages/browser-use/stagehand-native/src/index.ts)
 
 <a id="deepseek-aidsh-experimental-computer-use-cua-driver-mcp"></a>
 
-## `@deepseek-ai/dsh-experimental-computer-use-cua-driver-mcp`
+## `@deepseek-ai/dsh-computer-use-cua-driver-mcp`
 
 需要：`computerUse` · `tools`
 
@@ -662,7 +662,7 @@ export interface Config {
 
 依赖：[`McpClient`](../packages/mcp/mcp-client/src/index.ts)
 
-来源：[`packages/experimental/computer-use-cua-driver-mcp/src/index.ts:20`](../packages/experimental/computer-use-cua-driver-mcp/src/index.ts)
+来源：[`packages/computer-use/cua-driver-mcp/src/index.ts:20`](../packages/computer-use/cua-driver-mcp/src/index.ts)
 
 <a id="deepseek-aidsh-experimental-inspector"></a>
 
@@ -3652,7 +3652,7 @@ export interface Config {
 - `@deepseek-ai/dsh-deepseek-llm-api-extensions`（[`packages/llm/deepseek-llm-api-extensions/src/index.ts`](../packages/llm/deepseek-llm-api-extensions/src/index.ts)）
 - `@deepseek-ai/dsh-experimental-auto-review` — 需要 `llm` · `permissionPresets` · `sessions` · `tools`（[`packages/experimental/auto-review/src/index.ts`](../packages/experimental/auto-review/src/index.ts)）
 - `@deepseek-ai/dsh-experimental-client-ui-agent-team`（[`packages/experimental/client-ui-agent-team/src/index.ts`](../packages/experimental/client-ui-agent-team/src/index.ts)）
-- `@deepseek-ai/dsh-experimental-computer-use-cua-driver-native` — requires `computerUse` · `tools` · `systemPrompt` ([`packages/experimental/computer-use-cua-driver-native/src/index.ts`](../packages/experimental/computer-use-cua-driver-native/src/index.ts))
+- `@deepseek-ai/dsh-computer-use-cua-driver-native` — requires `computerUse` · `tools` · `systemPrompt` ([`packages/computer-use/cua-driver-native/src/index.ts`](../packages/computer-use/cua-driver-native/src/index.ts))
 - `@deepseek-ai/dsh-fs-observation-policy`（[`packages/fs/fs-observation-policy/src/index.ts`](../packages/fs/fs-observation-policy/src/index.ts)）
 - `@deepseek-ai/dsh-fs-ssh` — 需要 `ssh` · `sandboxPolicy`（[`packages/ssh/fs-ssh/src/index.ts`](../packages/ssh/fs-ssh/src/index.ts)）
 - `@deepseek-ai/dsh-goal-round-driver` — 需要 `agents` · `goals` · `sessions`（[`packages/goal/goal-round-driver/src/index.ts`](../packages/goal/goal-round-driver/src/index.ts)）
@@ -3725,7 +3725,7 @@ export interface Config {
 - `@deepseek-ai/dsh-deque`（[`packages/util/deque/src/index.ts`](../packages/util/deque/src/index.ts)）
 - `@deepseek-ai/dsh-experimental-agent-team-profile`（[`packages/experimental/agent-team-profile/src/index.ts`](../packages/experimental/agent-team-profile/src/index.ts)）
 - `@deepseek-ai/dsh-experimental-agent-team-web-profile`（[`packages/experimental/agent-team-web-profile/src/index.ts`](../packages/experimental/agent-team-web-profile/src/index.ts)）
-- `@deepseek-ai/dsh-experimental-browser-use-runtime` ([`packages/experimental/browser-use-runtime/src/index.ts`](../packages/experimental/browser-use-runtime/src/index.ts))
+- `@deepseek-ai/dsh-browser-use-runtime` ([`packages/browser-use/runtime/src/index.ts`](../packages/browser-use/runtime/src/index.ts))
 - `@deepseek-ai/dsh-experimental-webworker-packer`（[`packages/experimental/webworker-packer/src/index.ts`](../packages/experimental/webworker-packer/src/index.ts)）
 - `@deepseek-ai/dsh-experimental-webworker-runtime`（[`packages/experimental/webworker-runtime/src/index.ts`](../packages/experimental/webworker-runtime/src/index.ts)）
 - `@deepseek-ai/dsh-home-paths`（[`packages/util/home-paths/src/index.ts`](../packages/util/home-paths/src/index.ts)）
