@@ -20,6 +20,10 @@ Putting `backdrop-filter` directly on the sidebar element was rejected earlier: 
 
 Introducing new ui-primitives controls (Select, RangeSlider, ColorField) would have served both settings pages but adds catalog surface no other consumer needs yet; the existing `Menu`/`Switch`/`Input` atoms cover the visually divergent controls, and the catalog's "reuse the control before restyling one" rule does not require inventing a control for native primitives that carry no shared style.
 
+## Consequences
+
+The personalization background reaches the sidebar column through the stable `data-dsh-sidebar-col` attribute independent of the glass switch, and both settings pages share the ui-primitives `Switch`/`Menu`/`Input` control language. Colour, range, radio, and textarea controls stay native with tokenized styles until ui-primitives grows shared equivalents. No session snapshot covers these settings pages.
+
 ## Measurement
 
 `pnpm run test:gui` passes the touched packages (`ui-layout`, `ui-personalization`, `ui-settings-security-review`, `ui-primitives`); the 16 failures across `ui-settings-general`, `ui-theme` elevation, `ui-deliverables` open-route, and `ui-sidebar-documentpreview` pdf-license are pre-existing (they fail identically with the changes stashed). `tsc -b tsconfig.client.json` passes. No session snapshot covers these settings pages, so no recorded fixture changes. The background-through-sidebar fix keeps the `data-dsh-p13n-bg` body attribute (`solid`/`gradient`/`image`) as the single source for both `[data-dsh-app]` and `[data-dsh-sidebar-col]` transparency, so a background survives any glass switch combination; `ui-personalization` client specs still pass.

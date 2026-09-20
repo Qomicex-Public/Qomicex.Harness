@@ -20,6 +20,10 @@ Status: implemented
 
 为 ui-primitives 新增控件（Select、RangeSlider、ColorField）本可同时服务两个设置页，但这会增加尚无其他消费者需要的目录面；现有 `Menu`/`Switch`/`Input` 原子已覆盖视觉分歧的控件，且目录的"先复用控件再重排其样式"规则并不要求为不带共享样式的原生原语发明控件。
 
+## 后果
+
+个性化背景经稳定的 `data-dsh-sidebar-col` 属性到达侧边栏列，且独立于玻璃开关；两个设置页共享 ui-primitives 的 `Switch`/`Menu`/`Input` 控件语言。颜色、range、radio 与 textarea 控件保持原生并保留 token 化样式，直到 ui-primitives 长出共享等价物。没有任何会话快照覆盖这些设置页。
+
 ## 测量
 
 `pnpm run test:gui` 通过所涉及的包（`ui-layout`、`ui-personalization`、`ui-settings-security-review`、`ui-primitives`）；`ui-settings-general`、`ui-theme` elevation、`ui-deliverables` open-route 与 `ui-sidebar-documentpreview` pdf-license 的 16 个失败是预先存在的（stash 改动后仍以相同方式失败）。`tsc -b tsconfig.client.json` 通过。没有任何会话快照覆盖这些设置页，因此没有录制的 fixture 变化。背景穿透侧边栏的修复以 `data-dsh-p13n-bg` body 属性（`solid`/`gradient`/`image`）作为 `[data-dsh-app]` 与 `[data-dsh-sidebar-col]` 透明化的单一来源，因此背景在任意玻璃开关组合下都能保留；`ui-personalization` 客户端 spec 仍通过。
