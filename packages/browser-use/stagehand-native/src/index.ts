@@ -19,7 +19,7 @@ import type {} from '@deepseek-ai/dsh-system-prompt'
 import type {} from '@deepseek-ai/dsh-tools'
 
 /** Cordis identity for the native Stagehand provider. */
-export const name = 'experimental-browser-use-stagehand-native'
+export const name = 'browser-use-stagehand-native'
 
 /** Browser, Agent, and tool services required before activation. */
 export const inject = ['browserUse', 'agents', 'tools', 'systemPrompt']

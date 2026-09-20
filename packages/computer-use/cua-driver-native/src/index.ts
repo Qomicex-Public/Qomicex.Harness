@@ -14,7 +14,7 @@ import type {} from '@deepseek-ai/dsh-system-prompt'
 import type {} from '@deepseek-ai/dsh-tools'
 
 /** Cordis plugin identity for the native Cua Driver provider. */
-export const name = 'experimental-computer-use-cua-driver-native'
+export const name = 'computer-use-cua-driver-native'
 
 /** Services required before the native runtime can publish tools. */
 export const inject = ['computerUse', 'tools', 'systemPrompt']

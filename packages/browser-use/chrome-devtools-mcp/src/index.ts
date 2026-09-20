@@ -5,7 +5,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { BrowserMcpConfig, mountSessionMcp, validateBrowserMcpConfig } from '@deepseek-ai/dsh-browser-use-runtime/mcp'
 
 /** Cordis identity for the Chrome DevTools MCP browser provider. */
-export const name = 'experimental-browser-use-chrome-devtools-mcp'
+export const name = 'browser-use-chrome-devtools-mcp'
 
 /** Services required for scoped MCP startup and prompt readiness checks. */
 export const inject = ['browserUse', 'agents', 'tools', 'systemPrompt']

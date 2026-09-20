@@ -6,7 +6,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { BrowserMcpConfig, mountSessionMcp, validateBrowserMcpConfig } from '@deepseek-ai/dsh-browser-use-runtime/mcp'
 
 /** Cordis identity for the Playwright MCP browser provider. */
-export const name = 'experimental-browser-use-playwright-mcp'
+export const name = 'browser-use-playwright-mcp'
 
 /** Services required for scoped MCP startup and prompt readiness checks. */
 export const inject = ['browserUse', 'agents', 'tools', 'systemPrompt']

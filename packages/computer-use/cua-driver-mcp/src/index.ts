@@ -11,7 +11,7 @@ import * as McpClient from '@deepseek-ai/dsh-mcp-client'
 import type {} from '@deepseek-ai/dsh-computer-use'
 
 /** Cordis plugin identity for the installed Cua Driver provider. */
-export const name = 'experimental-computer-use-cua-driver-mcp'
+export const name = 'computer-use-cua-driver-mcp'
 
 /** The shared reservation and tool registry must exist before connection. */
 export const inject = ['computerUse', 'tools']
