@@ -239,6 +239,9 @@ importers:
       '@deepseek-ai/dsh-jobs-local':
         specifier: workspace:^
         version: link:../../packages/jobs/jobs-local
+      '@deepseek-ai/dsh-junsi-routing':
+        specifier: workspace:^
+        version: link:../../packages/junsi/routing
       '@deepseek-ai/dsh-launch-environment':
         specifier: workspace:^
         version: link:../../packages/util/launch-environment
@@ -314,15 +317,24 @@ importers:
       '@deepseek-ai/dsh-tool-fs-search':
         specifier: workspace:^
         version: link:../../packages/fs/tool-fs-search
+      '@deepseek-ai/dsh-tool-git':
+        specifier: workspace:^
+        version: link:../../packages/junsi/git
       '@deepseek-ai/dsh-tool-goal':
         specifier: workspace:^
         version: link:../../packages/goal/tool-goal
       '@deepseek-ai/dsh-tool-jobs':
         specifier: workspace:^
         version: link:../../packages/jobs/tool-jobs
+      '@deepseek-ai/dsh-tool-memory':
+        specifier: workspace:^
+        version: link:../../packages/junsi/memory-tools
       '@deepseek-ai/dsh-tool-present':
         specifier: workspace:^
         version: link:../../packages/fs/tool-present
+      '@deepseek-ai/dsh-tool-project-docs':
+        specifier: workspace:^
+        version: link:../../packages/junsi/project-docs
       '@deepseek-ai/dsh-tool-pwsh':
         specifier: workspace:^
         version: link:../../packages/shell/tool-pwsh
@@ -347,12 +359,18 @@ importers:
       '@deepseek-ai/dsh-tool-todo':
         specifier: workspace:^
         version: link:../../packages/todo/tool-todo
+      '@deepseek-ai/dsh-tool-tool-search':
+        specifier: workspace:^
+        version: link:../../packages/junsi/tool-search
       '@deepseek-ai/dsh-tool-web':
         specifier: workspace:^
         version: link:../../packages/web/tool-web
       '@deepseek-ai/dsh-tool-workflow':
         specifier: workspace:^
         version: link:../../packages/workflow/tool-workflow
+      '@deepseek-ai/dsh-tool-wsl-pentest':
+        specifier: workspace:^
+        version: link:../../packages/security/wsl-pentest
       '@deepseek-ai/dsh-web-app':
         specifier: workspace:^
         version: link:../../packages/bundle/web-app
