@@ -64,94 +64,103 @@ export const JUDGE_MODEL_VERSION = `${JUDGE_MODEL_FILE}@${JUDGE_MODEL_REVISION.s
  */
 export const DEFAULT_JUDGE_MODEL_PATH = join(dshHomePath('models'), JUDGE_MODEL_FILE)
 
-/** The instruction block, matching the design document's judgment prompt. */
-export const JUDGE_SYSTEM_PROMPT = [
-  '判断以下内容是否值得跨会话保留。',
-  '',
-  '值得记：项目事实、用户偏好、用户纠正、决策点、错误与解决方法、经验教训、结构性约束',
-  '不值得记：一次性问题、闲聊、确认性回复、已过时信息、可从代码推导的信息、纯任务状态',
-  '',
-  '只返回 JSON，不要解释：',
-  '{"shouldRemember": true | false, "confidence": 0.0-1.0, "rationale": "简短理由"}',
-].join('\n')
+/**
+ * The `developer` turn's content.
+ *
+ * English on purpose: measured with Chinese wording the model never emits a
+ * call at all (0/4 in the zero-shot probe), while this exact string is the one
+ * its function-calling training used. Not a stylistic choice.
+ */
+export const JUDGE_DEVELOPER_PROMPT
+  = 'You are a model that can do function calling with the following functions'
 
 /**
- * Build the user turn the model is asked to judge.
+ * The function the model is asked to call, in FunctionGemma's own declaration
+ * syntax — `declaration:name{description:<escape>…<escape>,parameters:{…}}`.
  *
- * Hints and context are both included, and neither is allowed to decide: the
- * hint says *why the rules flagged this*, the context says *what came before*,
- * and the verdict is still the model's. A hint is prefixed rather than
- * described so the model sees it as a tag rather than as an instruction.
- * @param input - The statement, its context, and its hints.
+ * Not JSON: FunctionGemma does not read a JSON tool schema, and handing it one
+ * is why the judge never produced a verdict before. `shouldRemember` is a
+ * BOOLEAN and `rationale` a STRING, matching what the LoRA fine-tune was
+ * trained to emit.
+ */
+export const JUDGE_FUNCTION_DECLARATION = 'declaration:judge_statement'
+  + '{description:<escape>判断一段内容是否值得跨会话保留。<escape>'
+  + ',parameters:{type:<escape>OBJECT<escape>,properties:{'
+  + 'shouldRemember:{type:<escape>BOOLEAN<escape>,description:<escape>是否值得保留<escape>}'
+  + ',rationale:{type:<escape>STRING<escape>,description:<escape>简短理由<escape>}}}}'
+
+/** Marker opening the function-declaration block. */
+const DECLARATION_OPEN = '<start_function_declaration>'
+/** Marker closing the function-declaration block. */
+const DECLARATION_CLOSE = '<end_function_declaration>'
+/** Marker opening a model's function call. */
+export const FUNCTION_CALL_OPEN = '<start_function_call>'
+/** Marker closing a model's function call. */
+export const FUNCTION_CALL_CLOSE = '<end_function_call>'
+
+/**
+ * Render one statement as a complete FunctionGemma conversation.
+ *
+ * The whole template is written out here rather than handed to a chat wrapper:
+ * the model was fine-tuned against exactly this byte sequence, and any wrapper
+ * that re-formats it (role names, spacing, added turns) changes what the model
+ * sees. `<escape>` wraps string values and the boolean is left bare — the
+ * asymmetry is what the training data used.
+ * @param content - The statement to judge.
  * @returns The rendered prompt.
  */
-export function buildJudgePrompt(input: JudgmentInput): string {
-  const hints = input.hints.length > 0 ? `[规则 hint: ${input.hints.join(', ')}]\n` : ''
-  const context = input.context.length > 0
-    ? `[上下文]\n${input.context.map(line => `- ${line}`).join('\n')}\n`
-    : ''
-  return `${hints}${context}[内容]\n${input.current}`
+export function buildJudgePrompt(content: string): string {
+  return '<bos><start_of_turn>developer\n'
+    + `${JUDGE_DEVELOPER_PROMPT}\n`
+    + `${DECLARATION_OPEN}${JUDGE_FUNCTION_DECLARATION}${DECLARATION_CLOSE}\n`
+    + '<end_of_turn>\n'
+    + '<start_of_turn>user\n'
+    + `${content}\n`
+    + '<end_of_turn>\n'
+    + '<start_of_turn>model\n'
 }
 
 /**
  * Parse one model answer into a verdict.
  *
- * Models wrap JSON in prose and fences even when told not to, so the parser
- * looks for the first balanced object rather than trusting the whole string.
- * Anything unparseable, or missing a boolean `shouldRemember`, returns
- * `undefined` — which the caller reads as "fall back to the rule path" rather
- * than as a verdict. Confidence is clamped because a model reporting `1.4`
- * means "very sure", not "surer than sure".
+ * The answer is a FunctionGemma function call, not JSON:
+ *
+ * ```text
+ * <start_function_call>call:judge_statement{shouldRemember:true,rationale:<escape>理由<escape>}<end_function_call>
+ * ```
+ *
+ * A JSON parse would find `{shouldRemember:true,…}` and reject it — unquoted
+ * keys are not JSON — which is exactly the silent drop that used to send every
+ * statement down the rule path. Anything without a boolean `shouldRemember`
+ * returns `undefined`, which the caller reads as "fall back to the rule path".
  * @param text - The raw model output.
  * @returns The verdict, or `undefined` when the answer is unusable.
  */
 export function parseJudgeVerdict(text: string): JudgmentResult | undefined {
-  const candidate = extractJsonObject(text)
-  if (candidate === undefined) return undefined
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(candidate)
-  } catch {
-    return undefined
-  }
-  if (typeof parsed !== 'object' || parsed === null) return undefined
-  const record = parsed as { shouldRemember?: unknown; confidence?: unknown }
-  if (typeof record.shouldRemember !== 'boolean') return undefined
-  const confidence = typeof record.confidence === 'number' && Number.isFinite(record.confidence)
-    ? Math.max(0, Math.min(1, record.confidence))
-    : 0.5
+  const call = text.indexOf(FUNCTION_CALL_OPEN)
+  if (call < 0) return undefined
+  const body = text.slice(call + FUNCTION_CALL_OPEN.length)
+  const close = body.indexOf(FUNCTION_CALL_CLOSE)
+  const args = close < 0 ? body : body.slice(0, close)
+  const verdict = /shouldRemember\s*:\s*(true|false)/.exec(args)
+  if (verdict === null) return undefined
   return {
-    verdict: record.shouldRemember ? 'remember' : 'forget',
-    confidence,
+    verdict: verdict[1] === 'true' ? 'remember' : 'forget',
+    confidence: CONFIDENCE_WHEN_UNSTATED,
     source: 'local-llm',
   }
 }
 
-/** The first balanced `{...}` object in a string, or `undefined`. */
-function extractJsonObject(text: string): string | undefined {
-  const start = text.indexOf('{')
-  if (start < 0) return undefined
-  let depth = 0
-  let inString = false
-  let escaped = false
-  for (let index = start; index < text.length; index += 1) {
-    const char = text[index]
-    if (char === undefined) break
-    if (inString) {
-      if (escaped) escaped = false
-      else if (char === '\\') escaped = true
-      else if (char === '"') inString = false
-      continue
-    }
-    if (char === '"') inString = true
-    else if (char === '{') depth += 1
-    else if (char === '}') {
-      depth -= 1
-      if (depth === 0) return text.slice(start, index + 1)
-    }
-  }
-  return undefined
-}
+/**
+ * Confidence recorded when the model states none.
+ *
+ * The fine-tuned model answers with a bare boolean and no score, and inventing
+ * one would be worse than admitting it is absent: the row is training data, and
+ * a fabricated number would teach the next model something untrue.
+ */
+const CONFIDENCE_WHEN_UNSTATED = 0.5
+
+
 
 /** What a loaded model can do: take a prompt, return text. */
 export interface LoadedJudgeModel {
@@ -208,27 +217,44 @@ export async function loadLlamaCppModel(
   gpuLayers = 0,
   contextSize: number = DEFAULT_JUDGE_CONTEXT_SIZE,
 ): Promise<LoadedJudgeModel> {
-  const { getLlama, LlamaChatSession } = await import('node-llama-cpp')
+  const { getLlama, LlamaCompletion } = await import('node-llama-cpp')
   const llama = await getLlama()
   const model = await llama.loadModel({ modelPath, gpuLayers })
   const context = await model.createContext({ contextSize })
-  const session = new LlamaChatSession({
-    contextSequence: context.getSequence(),
-    systemPrompt: JUDGE_SYSTEM_PROMPT,
-  })
   return {
     async complete(prompt: string): Promise<string> {
-      return session.prompt(prompt)
+      // parseSpecial=true is load-bearing. The prompt is a fully rendered
+      // FunctionGemma conversation, and with the default (false) the structural
+      // markers — <start_of_turn>, <end_of_turn>, <escape> — are ordinary text
+      // that gets BPE-split, so the model sees a scrambled conversation and
+      // answers nothing. Measured: 14.7% of statements got a verdict with
+      // `false`, 100% with `true`.
+      const ids = model.tokenize(prompt, true)
+      const completion = new LlamaCompletion({
+        contextSequence: context.getSequence(),
+        autoDisposeSequence: true,
+      })
+      try {
+        return await completion.generateCompletion(ids, {
+          maxTokens: MAX_JUDGE_TOKENS,
+          temperature: 0,
+          customStopTriggers: ['<end_of_turn>', '<start_function_response>'],
+        })
+      } finally {
+        completion.dispose()
+      }
     },
     async dispose(): Promise<void> {
-      // The session releases synchronously; the context and model own the
-      // native handles and are the part worth awaiting.
-      session.dispose()
+      // The context and model own the native handles and are the part worth
+      // awaiting; the completion is per-call and already disposed above.
       await context.dispose()
       await model.dispose()
     },
   }
 }
+
+/** Tokens allowed for one verdict; the call is a sentence, not an essay. */
+const MAX_JUDGE_TOKENS = 120
 
 /**
  * The local judge: FunctionGemma behind node-llama-cpp.
@@ -259,7 +285,7 @@ export class LlamaCppJudge implements LocalJudge {
     try {
       const model = await this.ensureLoaded()
       if (model === undefined) return undefined
-      const answer = await model.complete(buildJudgePrompt(input))
+      const answer = await model.complete(buildJudgePrompt(input.current))
       return parseJudgeVerdict(answer)
     } catch {
       // Containment over diagnosis: a model that throws once is treated as
