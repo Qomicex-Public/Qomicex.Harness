@@ -9,6 +9,8 @@ import { MemoryTiers } from '../src/memory/tiers.ts'
 import { ConsolidationDaemon } from '../src/algorithms/consolidation.ts'
 import {
   DEFAULT_BATCH_POLICY,
+  DEFAULT_CURATION_BUDGET,
+  DEFAULT_FULL_REBUILD_POLICY,
   DEFAULT_NEXT_LAYER_POLICY,
   emptyCurationReport,
   estimateTokens,
@@ -238,7 +240,7 @@ describe('runCuration', () => {
     const { repository } = await harness()
     await repository.putMemory('episodic', memory('m1', 'project uses pnpm', pnpmKey))
     await repository.putMemory('episodic', memory('m2', 'another fact', npmKey))
-    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, 1_000, 'run_1')
+    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 1_000, 'run_1', 0)
 
     expect(report.selected).toBe(2)
     expect(report.curated).toBe(2)
@@ -253,8 +255,8 @@ describe('runCuration', () => {
   it('is incremental: a second pass covers nothing new', async () => {
     const { repository } = await harness()
     await repository.putMemory('episodic', memory('m1', 'project uses pnpm', pnpmKey))
-    await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, 1_000, 'run_1')
-    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, 2_000, 'run_2')
+    await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 1_000, 'run_1', 0)
+    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 2_000, 'run_2', 0)
     expect(report.selected).toBe(0)
     expect(report.curated).toBe(0)
     // Still one summary: the second pass did not resubmit covered work.
@@ -264,16 +266,16 @@ describe('runCuration', () => {
   it('covers only what a later pass adds', async () => {
     const { repository } = await harness()
     await repository.putMemory('episodic', memory('m1', 'project uses pnpm', pnpmKey))
-    await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, 1_000, 'run_1')
+    await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 1_000, 'run_1', 0)
     await repository.putMemory('episodic', memory('m2', 'a new fact', npmKey))
-    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, 2_000, 'run_2')
+    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 2_000, 'run_2', 0)
     expect(report.selected).toBe(1)
     expect(report.curated).toBe(1)
   })
 
   it('reports an empty pass on an empty store', async () => {
     const { repository } = await harness()
-    expect(await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, 1_000, 'run_1'))
+    expect(await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 1_000, 'run_1', 0))
       .toEqual(emptyCurationReport())
   })
 
@@ -282,7 +284,7 @@ describe('runCuration', () => {
     // The same fact key with different objects is a definite conflict.
     await repository.putMemory('episodic', memory('m1', 'project uses_package_manager pnpm', pnpmKey))
     await repository.putMemory('episodic', memory('m2', 'project uses_package_manager npm', npmKey))
-    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, 1_000, 'run_1')
+    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 1_000, 'run_1', 0)
     expect(report.conflicts).toBeGreaterThan(0)
     const curations = await repository.allCurations()
     expect(curations.every(row => row.verdict === 'needs-review')).toBe(true)
@@ -296,7 +298,7 @@ describe('runCuration', () => {
     const provider: CurationProvider = {
       async summarize() { return '模型生成的概括' },
     }
-    await runCuration(repository, provider, DEFAULT_BATCH_POLICY, 1_000, 'run_1')
+    await runCuration(repository, provider, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 1_000, 'run_1', 0)
     expect((await repository.allSummaries())[0]?.content).toBe('模型生成的概括')
   })
 
@@ -306,7 +308,7 @@ describe('runCuration', () => {
     const provider: CurationProvider = {
       async summarize() { throw new Error('model down') },
     }
-    await runCuration(repository, provider, DEFAULT_BATCH_POLICY, 1_000, 'run_1')
+    await runCuration(repository, provider, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 1_000, 'run_1', 0)
     // The pass still completes; only the wording degrades.
     expect((await repository.allSummaries())[0]?.content).toContain('本批覆盖')
   })
@@ -318,7 +320,7 @@ describe('runCuration', () => {
       ...current,
       lifecycle: { ...current.lifecycle, state: 'archived' },
     }))
-    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, 1_000, 'run_1')
+    const report = await runCuration(repository, undefined, DEFAULT_BATCH_POLICY, DEFAULT_NEXT_LAYER_POLICY, DEFAULT_FULL_REBUILD_POLICY, DEFAULT_CURATION_BUDGET, 1_000, 'run_1', 0)
     expect(report.selected).toBe(0)
     expect(report.curated).toBe(0)
   })
@@ -330,7 +332,7 @@ describe('curation inside the consolidation cycle', () => {
     systemReserve: 8_192,
     safetyMargin: 8_192,
     inputRatio: 0.6,
-    maxLevel: 5,
+    outputRatio: 0.4,
   }
 
   /** A daemon with curation on or off. */
@@ -339,19 +341,38 @@ describe('curation inside the consolidation cycle', () => {
       tiers,
       repository,
       thresholds: () => ({ demote: 0.45, archive: 0.65, hardForget: 0.85 }),
-      retention: () => ({ initialTTLDays: 7, promotionThreshold: 3, startupGraceSessions: 20, structuralException: true }),
+      retention: () => ({
+        initialTTLDays: 7,
+        promotionThreshold: 3,
+        startupGraceSessions: 20,
+        archiveOnExpiry: true,
+        structuralException: true,
+        adjacencyThreshold: 0.5,
+        enableAdjacency: true,
+        enableMention: true,
+      }),
       patterns: () => ({
         enabled: false,
-        intervalDays: 7,
+        schedule: 'weekly',
         requireHumanApproval: true,
-        preferenceMinProjects: 3,
-        failureMinOccurrences: 2,
-        environmentMinProjects: 3,
-        pruningEnabled: true,
-        pruneMinScore: 0,
-        pruneStaleDays: 30,
+        thresholds: {
+          preferenceMinProjects: 3,
+          failureMinOccurrences: 2,
+          environmentMinProjects: 3,
+          workflowMinOccurrences: 5,
+        },
+        pruning: { enabled: true, minScore: 0, staleDays: 30 },
       }),
-      curation: () => ({ ...policy, enabled, provider: '', model: '', intervalDays: 7 }),
+      curation: () => ({
+        enabled,
+        provider: '',
+        model: '',
+        schedule: 'weekly',
+        batchPolicy: policy,
+        nextLayer: DEFAULT_NEXT_LAYER_POLICY,
+        fullRebuild: DEFAULT_FULL_REBUILD_POLICY,
+        budget: DEFAULT_CURATION_BUDGET,
+      }),
       clock,
     })
   }

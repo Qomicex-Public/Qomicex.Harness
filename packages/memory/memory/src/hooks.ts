@@ -24,7 +24,7 @@ import { hybridRetrieve } from './algorithms/retrieval.ts'
 import type { ConsolidationDaemon } from './algorithms/consolidation.ts'
 import { readableScopes } from './scope/namespace.ts'
 import type { MemoryCore } from './memory/core.ts'
-import type { HotPack, ScopeNode } from './types.ts'
+import type { HotPack, Memory, ScopeNode } from './types.ts'
 
 /** Plugin name stamped on injected messages. */
 export const PLUGIN_NAME = 'bio-memory'
@@ -67,6 +67,20 @@ export function registerPromptSection(ctx: Context): () => void {
   })
 }
 
+/** One turn's raw material for the adjacency and mention signals. */
+export interface TurnSignals {
+  /** What the model is being asked, for relevance. */
+  query: string
+  /** The user's own latest words, for mention. */
+  message: string
+  /** Memories recalled and injected this turn; adjacency excludes them. */
+  recalledIds: readonly string[]
+  /** Live memories, the candidate set for both signals. */
+  memories: readonly Memory[]
+  /** Current time (ms). */
+  now: number
+}
+
 /** What the hooks need. */
 export interface HookContext {
   /** The memory core. */
@@ -93,6 +107,13 @@ export interface HookContext {
    * the usage signal; absent means the retention layer is not wired.
    */
   onRecalled?: (memoryId: string, now: number) => void
+  /**
+   * Record the retention signals a turn implies beyond usage: adjacency for
+   * memories relevant to the query but not recalled, and mention for facts the
+   * user restated. Absent means the retention layer reads usage alone, which is
+   * what a deployment with both signals disabled gets.
+   */
+  onTurnSignals?: (turn: TurnSignals) => void
   /**
    * Match patterns against a turn's query and render the hint block.
    *
@@ -265,6 +286,22 @@ async function renderHotPack(deps: HookContext, scope: ScopeNode): Promise<strin
 }
 
 /**
+ * The text of the last message about to be sent.
+ *
+ * Mention has to read what the *user* said, not the whole outgoing turn: the
+ * turn also carries everything the plugin itself injected (the hot pack quotes
+ * stored memories), and scoring that as a mention would reinforce a memory for
+ * the fact that it was already injected.
+ * @param messages - The messages.
+ * @returns The last message's text, trimmed.
+ */
+function lastTextOf(messages: readonly { content: readonly { type: string; text?: string }[] }[]): string {
+  const last = messages.at(-1)
+  if (last === undefined) return ''
+  return textOf([last])
+}
+
+/**
  * The text of the messages about to be sent, concatenated.
  *
  * Both the recall hook and the pattern hook need "what is the model being
@@ -303,6 +340,15 @@ async function renderRecall(
     readableScopes: scopes,
     now,
     options: { currentScope: '', topK: 3, similarityThreshold: 0.4 },
+  })
+  // Adjacency and mention fire whether or not recall hit anything: adjacency
+  // exists precisely to reinforce a fact the retrieval pipeline missed.
+  deps.onTurnSignals?.({
+    query,
+    message: lastTextOf(messages),
+    recalledIds: results.map(result => result.memory.identity.id),
+    memories: all,
+    now,
   })
   if (results.length === 0) return undefined
   // The blocks being built are the recall payload the model will actually see,

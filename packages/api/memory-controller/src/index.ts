@@ -15,10 +15,17 @@
  */
 
 import { Context } from '@deepseek-ai/cordis'
-import { memoryServices, applyGovernanceAction, applyLifecycleAction } from '@deepseek-ai/dsh-memory'
+import {
+  memoryServices,
+  applyGovernanceAction,
+  applyLifecycleAction,
+  downloadJudgeModel,
+  JUDGE_MODEL_VERSION,
+} from '@deepseek-ai/dsh-memory'
 import type { Memory } from '@deepseek-ai/dsh-memory'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {
+  MemoryDownloadValue,
   MemoryEdgeKind,
   MemoryEdgeView,
   MemoryForgetRequest,
@@ -242,6 +249,38 @@ export class MemoryController extends TypertRemoteService {
       throw new RemoteError('memory/not-found', `no memory ${request.memoryId}`, { memoryId: request.memoryId })
     }
     return { ok: true, detail: `Applied ${request.mode} to ${request.memoryId}.` }
+  }
+
+  /**
+   * Download the local judge model into the configured path.
+   *
+   * The one remote thing in the memory system, which is why it lives behind a
+   * click rather than inside a judgment: the download is a user action, and a
+   * plugin that fetches weights while deciding what to remember would make the
+   * rule path depend on the network. Nothing about the download is automatic
+   * here — `localLlm.autoDownload` covers the case where the user already
+   * agreed in configuration.
+   * @returns Whether the download completed, with a human-readable detail.
+   * @throws RemoteError `memory/unavailable`, `memory/no-model-path`, or `memory/download-failed`.
+   */
+  @Remote
+  async downloadModel(): Promise<MemoryDownloadValue> {
+    const services = memoryServices(this.ctx)
+    if (services === undefined) {
+      throw new RemoteError('memory/unavailable', 'the bio-memory plugin is not mounted', {})
+    }
+    const { modelPath } = services.config.judgment.localLlm
+    if (modelPath === '') {
+      throw new RemoteError('memory/no-model-path', 'set a model file path first', {})
+    }
+    try {
+      await downloadJudgeModel(modelPath)
+    } catch (error) {
+      throw new RemoteError('memory/download-failed', String(error instanceof Error ? error.message : error), {
+        message: String(error instanceof Error ? error.message : error),
+      })
+    }
+    return { ok: true, detail: `Downloaded ${JUDGE_MODEL_VERSION} to ${modelPath}.` }
   }
 }
 

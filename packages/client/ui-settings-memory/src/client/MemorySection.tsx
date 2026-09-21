@@ -64,6 +64,12 @@ export interface MemorySectionInjected {
    * Empty when the deployment exposes no provider directory.
    */
   readonly loadDistillTargets: () => Promise<DistillTargets>
+  /**
+   * Download the local judge model into the configured path. Absent when the
+   * memory Remote namespace is not reachable, which is the same deployment that
+   * leaves the graph empty.
+   */
+  readonly downloadModel?: () => Promise<LoadOutcome<{ readonly detail: string }>>
 }
 
 /** One provider and the model ids it declares, for the distillation dropdowns. */
@@ -110,7 +116,7 @@ function toGraph(graph: MemoryGraphValue): { nodes: GraphNode[]; edges: GraphEdg
  * @returns the settings page element tree.
  */
 export function MemorySection(props: MemorySectionProps): ReactNode {
-  const { t, loadGraph, loadStatus, loadDistillTargets, settings } = props
+  const { t, loadGraph, loadStatus, loadDistillTargets, downloadModel, settings } = props
   const [graph, setGraph] = useState<MemoryGraphValue | undefined>(undefined)
   const [mounted, setMounted] = useState<boolean | undefined>(undefined)
   const [failure, setFailure] = useState<string | undefined>(undefined)
@@ -221,7 +227,17 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
       {settings === undefined
         ? <p className={css.muted}>{t('settingsUnavailable')}</p>
         : (
-          <MemorySettingsForm settings={settings} t={t} distillTargets={distillTargets} />
+          <MemorySettingsForm
+            settings={settings}
+            t={t}
+            distillTargets={distillTargets}
+            downloadModel={downloadModel === undefined
+              ? undefined
+              : async () => {
+                const outcome = await downloadModel()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+              }}
+          />
         )}
     </section>
   )

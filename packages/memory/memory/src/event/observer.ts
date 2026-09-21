@@ -30,7 +30,7 @@ import { judge } from '../algorithms/judgment.ts'
 import type { JudgmentInput, LocalJudge } from '../algorithms/judgment.ts'
 import { projectScope, serializeScope, UNKNOWN_SCOPE_ID, userScope } from '../scope/namespace.ts'
 import { tierForSignal } from '../scope/tier.ts'
-import type { CaptureSignal, EventType, JsonValue, JudgmentLog, ObservedEvent } from '../types.ts'
+import type { CaptureSignal, EventType, JsonValue, JudgmentLog, ObservedEvent, RuleEngineMode } from '../types.ts'
 
 /** One rule signal together with the causal chain it came from. */
 export interface ObservedSignal {
@@ -91,6 +91,17 @@ export interface ObserverOptions {
   judge?: LocalJudge
   /** Whether the local judgment layer is enabled at capture time. */
   judgmentEnabled?: () => boolean
+  /**
+   * How eagerly the rule engine stages, read fresh per message so a Settings
+   * change applies without a restart. Absent means `relaxed`.
+   */
+  ruleMode?: () => RuleEngineMode
+  /**
+   * Version labels stamped onto each judgment row: which weights judged, and
+   * which prompt they were asked under. Absent leaves both empty, which is the
+   * honest answer when the rule path decided and no model was involved.
+   */
+  judgeVersions?: () => { modelVersion: string; promptVersion: string }
 }
 
 /** How many preceding user statements a judgment sees as context. */
@@ -344,7 +355,7 @@ export class EventObserver {
     text: string,
     root: string,
   ): void {
-    const signal = detectUserStatement(text) ?? undefined
+    const signal = detectUserStatement(text, this.options.ruleMode?.() ?? 'relaxed') ?? undefined
     const context = [...state.recentUserText]
     const hints = detectHints(text)
     if (text.trim() !== '') {
@@ -377,12 +388,15 @@ export class EventObserver {
     try {
       await this.sink.recordObservation(event)
       const result = await judge(this.options.judge, input)
+      const versions = this.options.judgeVersions?.() ?? { modelVersion: '', promptVersion: '' }
       await this.sink.recordJudgment({
         id: `${event.id}:judgment`,
         content: input.current,
         context: [...input.context],
         localJudgment: result.verdict,
         source: result.source,
+        modelVersion: result.source === 'local-llm' ? versions.modelVersion : '',
+        promptVersion: result.source === 'local-llm' ? versions.promptVersion : '',
         confidence: result.confidence,
         usageSignal: 0,
         cloudVerdict: null,

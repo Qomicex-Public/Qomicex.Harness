@@ -31,6 +31,12 @@ export interface MemorySettingsFormProps {
   readonly t: (key: MemoryLocaleKey) => string
   /** Providers and their configured models, for the distillation dropdowns. */
   readonly distillTargets: DistillTargets
+  /**
+   * Fetch the judge model into the configured path. Absent when no memory
+   * controller is mounted, which is the same deployment where the graph and the
+   * forget button are absent too.
+   */
+  readonly downloadModel?: (() => Promise<void>) | undefined
 }
 
 /** How a field renders and what shape it writes. */
@@ -38,6 +44,31 @@ type FieldKind = 'number' | 'boolean' | 'text' | 'select'
 
 /** Which option list a select field draws from. */
 type SelectSource = 'providers' | 'models'
+
+/**
+ * Enum options a select offers when the list is not discovered.
+ *
+ * These are the closed sets the schema itself declares, so a wrong option here
+ * is a compile-time-visible mismatch rather than a value the Host would reject
+ * at runtime. Their display names come from the dictionary.
+ */
+const ENUM_OPTIONS = {
+  ruleEngineMode: ['relaxed', 'strict'],
+  schedule: ['daily', 'weekly', 'monthly'],
+  toolkitEnabled: ['auto', 'on', 'off'],
+} as const
+
+/** Dictionary keys naming each enum option, so a select shows prose. */
+const ENUM_LABELS: Record<string, MemoryLocaleKey> = {
+  relaxed: 'option.relaxed',
+  strict: 'option.strict',
+  daily: 'option.daily',
+  weekly: 'option.weekly',
+  monthly: 'option.monthly',
+  auto: 'option.auto',
+  on: 'option.on',
+  off: 'option.off',
+}
 
 /** The sections the form is grouped into, in display order. */
 export type FieldGroup =
@@ -64,6 +95,8 @@ interface FieldSpec {
   readonly kind: FieldKind
   /** For a select, which option list it offers. */
   readonly source?: SelectSource
+  /** For a select over a closed set, which set it offers. */
+  readonly options?: readonly string[]
   /** Inclusive bounds for a number field. */
   readonly min?: number
   readonly max?: number
@@ -88,12 +121,12 @@ const GROUP_ORDER: readonly { group: FieldGroup; title: MemoryLocaleKey; hint: M
 /**
  * The fields the page exposes.
  *
- * Deliberately not every key in the schema. Two are withheld because showing a
- * control that cannot change behaviour would be worse than omitting it:
- * `retrieval.useVector` is reserved until an embedding service exists, and the
- * authorization `policyVersion` is an audit label rather than a preference.
- * `retention.archiveOnExpiry` is absent because archiving never deletes — it is
- * what the pass does, not something to switch off.
+ * Deliberately not every key in the schema. A few are withheld because showing
+ * a control that cannot change behaviour would be worse than omitting it:
+ * `retrieval.useVector` is reserved until an embedding service exists, the
+ * authorization `policyVersion` is an audit label rather than a preference, and
+ * the local model's `modelVersion` and `promptVersion` are stamped onto
+ * judgment rows for a trainer rather than tuned by a user.
  *
  * Labels and hints are dictionary keys, not literals: the page is localized,
  * and an English-only form would leave a Chinese user guessing what each knob
@@ -104,6 +137,12 @@ const GROUP_ORDER: readonly { group: FieldGroup; title: MemoryLocaleKey; hint: M
  * that changes, and what tidies up afterwards.
  */
 const FIELDS: readonly FieldSpec[] = [
+  { path: ['enabled'], id: 'memory-enabled', label: 'field.enabled.label', hint: 'field.enabled.hint', kind: 'boolean', group: 'basic' },
+  { path: ['judgment', 'ruleEngine', 'mode'], id: 'memory-rule-engine-mode', label: 'field.ruleEngineMode.label', hint: 'field.ruleEngineMode.hint', kind: 'select', options: ENUM_OPTIONS.ruleEngineMode, group: 'basic' },
+  { path: ['thresholds', 'excitability'], id: 'memory-excitability', label: 'field.excitability.label', hint: 'field.excitability.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
+  { path: ['thresholds', 'forgetDemote'], id: 'memory-forget-demote', label: 'field.forgetDemote.label', hint: 'field.forgetDemote.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
+  { path: ['thresholds', 'forgetArchive'], id: 'memory-forget-archive', label: 'field.forgetArchive.label', hint: 'field.forgetArchive.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
+  { path: ['thresholds', 'forgetHard'], id: 'memory-forget-hard', label: 'field.forgetHard.label', hint: 'field.forgetHard.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
   { path: ['judgment', 'enabled'], id: 'memory-judgment-enabled', label: 'field.judgmentEnabled.label', hint: 'field.judgmentEnabled.hint', kind: 'boolean', group: 'judgment' },
   { path: ['judgment', 'localLlm', 'enabled'], id: 'memory-local-llm-enabled', label: 'field.localLlmEnabled.label', hint: 'field.localLlmEnabled.hint', kind: 'boolean', group: 'judgment' },
   { path: ['judgment', 'localLlm', 'modelPath'], id: 'memory-local-llm-model-path', label: 'field.localLlmModelPath.label', hint: 'field.localLlmModelPath.hint', kind: 'text', group: 'judgment' },
@@ -112,13 +151,15 @@ const FIELDS: readonly FieldSpec[] = [
   { path: ['retention', 'initialTTLDays'], id: 'memory-initial-ttl', label: 'field.initialTTLDays.label', hint: 'field.initialTTLDays.hint', kind: 'number', min: 1, step: 1, group: 'retention' },
   { path: ['retention', 'promotionThreshold'], id: 'memory-promotion-threshold', label: 'field.promotionThreshold.label', hint: 'field.promotionThreshold.hint', kind: 'number', min: 0, step: 0.5, group: 'retention' },
   { path: ['retention', 'startupGraceSessions'], id: 'memory-startup-grace', label: 'field.startupGraceSessions.label', hint: 'field.startupGraceSessions.hint', kind: 'number', min: 0, step: 1, group: 'retention' },
+  { path: ['retention', 'archiveOnExpiry'], id: 'memory-archive-on-expiry', label: 'field.archiveOnExpiry.label', hint: 'field.archiveOnExpiry.hint', kind: 'boolean', group: 'retention' },
   { path: ['retention', 'structuralException'], id: 'memory-structural-exception', label: 'field.structuralException.label', hint: 'field.structuralException.hint', kind: 'boolean', group: 'retention' },
   { path: ['patternExtraction', 'enabled'], id: 'memory-pattern-enabled', label: 'field.patternEnabled.label', hint: 'field.patternEnabled.hint', kind: 'boolean', group: 'patternExtraction' },
-  { path: ['patternExtraction', 'intervalDays'], id: 'memory-pattern-interval', label: 'field.patternIntervalDays.label', hint: 'field.patternIntervalDays.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternExtraction', 'schedule'], id: 'memory-pattern-schedule', label: 'field.patternSchedule.label', hint: 'field.patternSchedule.hint', kind: 'select', options: ENUM_OPTIONS.schedule, group: 'patternExtraction' },
   { path: ['patternExtraction', 'requireHumanApproval'], id: 'memory-pattern-approval', label: 'field.patternRequireApproval.label', hint: 'field.patternRequireApproval.hint', kind: 'boolean', group: 'patternExtraction' },
-  { path: ['patternExtraction', 'preferenceMinProjects'], id: 'memory-pattern-preference-projects', label: 'field.patternPreferenceProjects.label', hint: 'field.patternPreferenceProjects.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
-  { path: ['patternExtraction', 'failureMinOccurrences'], id: 'memory-pattern-failure-occurrences', label: 'field.patternFailureOccurrences.label', hint: 'field.patternFailureOccurrences.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
-  { path: ['patternExtraction', 'environmentMinProjects'], id: 'memory-pattern-environment-projects', label: 'field.patternEnvironmentProjects.label', hint: 'field.patternEnvironmentProjects.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternExtraction', 'thresholds', 'preferenceMinProjects'], id: 'memory-pattern-preference-projects', label: 'field.patternPreferenceProjects.label', hint: 'field.patternPreferenceProjects.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternExtraction', 'thresholds', 'failureMinOccurrences'], id: 'memory-pattern-failure-occurrences', label: 'field.patternFailureOccurrences.label', hint: 'field.patternFailureOccurrences.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternExtraction', 'thresholds', 'environmentMinProjects'], id: 'memory-pattern-environment-projects', label: 'field.patternEnvironmentProjects.label', hint: 'field.patternEnvironmentProjects.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternExtraction', 'thresholds', 'workflowMinOccurrences'], id: 'memory-pattern-workflow-occurrences', label: 'field.patternWorkflowOccurrences.label', hint: 'field.patternWorkflowOccurrences.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
   { path: ['patternApplication', 'injectHotPack'], id: 'memory-pattern-inject-hot-pack', label: 'field.patternInjectHotPack.label', hint: 'field.patternInjectHotPack.hint', kind: 'boolean', group: 'patternApplication' },
   { path: ['patternApplication', 'sceneMatching'], id: 'memory-pattern-scene-matching', label: 'field.patternSceneMatching.label', hint: 'field.patternSceneMatching.hint', kind: 'boolean', group: 'patternApplication' },
   { path: ['patternApplication', 'feedbackCollection'], id: 'memory-pattern-feedback', label: 'field.patternFeedback.label', hint: 'field.patternFeedback.hint', kind: 'boolean', group: 'patternApplication' },
@@ -127,25 +168,22 @@ const FIELDS: readonly FieldSpec[] = [
   { path: ['curation', 'enabled'], id: 'memory-curation-enabled', label: 'field.curationEnabled.label', hint: 'field.curationEnabled.hint', kind: 'boolean', group: 'curation' },
   { path: ['curation', 'provider'], id: 'memory-curation-provider', label: 'field.curationProvider.label', hint: 'field.curationProvider.hint', kind: 'select', source: 'providers', group: 'curation' },
   { path: ['curation', 'model'], id: 'memory-curation-model', label: 'field.curationModel.label', hint: 'field.curationModel.hint', kind: 'select', source: 'models', group: 'curation' },
-  { path: ['curation', 'intervalDays'], id: 'memory-curation-interval', label: 'field.curationIntervalDays.label', hint: 'field.curationIntervalDays.hint', kind: 'number', min: 1, step: 1, group: 'curation' },
-  { path: ['integrations', 'autoDetect'], id: 'memory-integrations-auto-detect', label: 'field.integrationsAutoDetect.label', hint: 'field.integrationsAutoDetect.hint', kind: 'boolean', group: 'integrations' },
-  { path: ['integrations', 'toolkitRoot'], id: 'memory-integrations-toolkit-root', label: 'field.integrationsToolkitRoot.label', hint: 'field.integrationsToolkitRoot.hint', kind: 'text', group: 'integrations' },
-  { path: ['integrations', 'toolkitReadHotPackSection'], id: 'memory-integrations-read-section', label: 'field.integrationsReadSection.label', hint: 'field.integrationsReadSection.hint', kind: 'boolean', group: 'integrations' },
-  { path: ['integrations', 'toolkitWriteBackOnApproval'], id: 'memory-integrations-write-back', label: 'field.integrationsWriteBack.label', hint: 'field.integrationsWriteBack.hint', kind: 'boolean', group: 'integrations' },
-  { path: ['bounds', 'workingCapacity'], id: 'memory-working-capacity', label: 'field.workingCapacity.label', hint: 'field.workingCapacity.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
-  { path: ['bounds', 'stagingCapacity'], id: 'memory-staging-capacity', label: 'field.stagingCapacity.label', hint: 'field.stagingCapacity.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
-  { path: ['retrieval', 'topK'], id: 'memory-top-k', label: 'field.topK.label', hint: 'field.topK.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
-  { path: ['retrieval', 'similarityThreshold'], id: 'memory-similarity', label: 'field.similarityThreshold.label', hint: 'field.similarityThreshold.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'retrieval' },
-  { path: ['injection', 'hotPack'], id: 'memory-hot-pack', label: 'field.hotPack.label', hint: 'field.hotPack.hint', kind: 'boolean', group: 'retrieval' },
-  { path: ['injection', 'recallMaxChars'], id: 'memory-recall-chars', label: 'field.recallMaxChars.label', hint: 'field.recallMaxChars.hint', kind: 'number', min: 1, step: 100, group: 'retrieval' },
-  { path: ['thresholds', 'excitability'], id: 'memory-excitability', label: 'field.excitability.label', hint: 'field.excitability.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
-  { path: ['thresholds', 'forgetDemote'], id: 'memory-forget-demote', label: 'field.forgetDemote.label', hint: 'field.forgetDemote.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
-  { path: ['thresholds', 'forgetArchive'], id: 'memory-forget-archive', label: 'field.forgetArchive.label', hint: 'field.forgetArchive.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
-  { path: ['thresholds', 'forgetHard'], id: 'memory-forget-hard', label: 'field.forgetHard.label', hint: 'field.forgetHard.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
-  { path: ['authorization', 'enabled'], id: 'memory-authorization', label: 'field.authorization.label', hint: 'field.authorization.hint', kind: 'boolean', group: 'authorization' },
+  { path: ['curation', 'schedule'], id: 'memory-curation-schedule', label: 'field.curationSchedule.label', hint: 'field.curationSchedule.hint', kind: 'select', options: ENUM_OPTIONS.schedule, group: 'curation' },
   { path: ['llmDistill', 'enabled'], id: 'memory-distill', label: 'field.distill.label', hint: 'field.distill.hint', kind: 'boolean', group: 'curation' },
   { path: ['llmDistill', 'provider'], id: 'memory-distill-provider', label: 'field.distillProvider.label', hint: 'field.distillProvider.hint', kind: 'select', source: 'providers', group: 'curation' },
   { path: ['llmDistill', 'model'], id: 'memory-distill-model', label: 'field.distillModel.label', hint: 'field.distillModel.hint', kind: 'select', source: 'models', group: 'curation' },
+  { path: ['integrations', 'autoDetect'], id: 'memory-integrations-auto-detect', label: 'field.integrationsAutoDetect.label', hint: 'field.integrationsAutoDetect.hint', kind: 'boolean', group: 'integrations' },
+  { path: ['integrations', 'toolkit', 'enabled'], id: 'memory-integrations-toolkit-enabled', label: 'field.integrationsToolkitEnabled.label', hint: 'field.integrationsToolkitEnabled.hint', kind: 'select', options: ENUM_OPTIONS.toolkitEnabled, group: 'integrations' },
+  { path: ['integrations', 'toolkit', 'root'], id: 'memory-integrations-toolkit-root', label: 'field.integrationsToolkitRoot.label', hint: 'field.integrationsToolkitRoot.hint', kind: 'text', group: 'integrations' },
+  { path: ['integrations', 'toolkit', 'readHotPackSection'], id: 'memory-integrations-read-section', label: 'field.integrationsReadSection.label', hint: 'field.integrationsReadSection.hint', kind: 'boolean', group: 'integrations' },
+  { path: ['integrations', 'toolkit', 'writeBackOnApproval'], id: 'memory-integrations-write-back', label: 'field.integrationsWriteBack.label', hint: 'field.integrationsWriteBack.hint', kind: 'boolean', group: 'integrations' },
+  { path: ['capacity', 'workingMemorySlots'], id: 'memory-working-capacity', label: 'field.workingCapacity.label', hint: 'field.workingCapacity.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
+  { path: ['capacity', 'stagingPoolCapacity'], id: 'memory-staging-capacity', label: 'field.stagingCapacity.label', hint: 'field.stagingCapacity.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
+  { path: ['capacity', 'recallTopK'], id: 'memory-top-k', label: 'field.topK.label', hint: 'field.topK.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
+  { path: ['capacity', 'similarityThreshold'], id: 'memory-similarity', label: 'field.similarityThreshold.label', hint: 'field.similarityThreshold.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'retrieval' },
+  { path: ['capacity', 'recallBlockMaxChars'], id: 'memory-recall-chars', label: 'field.recallMaxChars.label', hint: 'field.recallMaxChars.hint', kind: 'number', min: 1, step: 100, group: 'retrieval' },
+  { path: ['injection', 'injectHotPack'], id: 'memory-hot-pack', label: 'field.hotPack.label', hint: 'field.hotPack.hint', kind: 'boolean', group: 'retrieval' },
+  { path: ['authorization', 'usePolicyPlane'], id: 'memory-authorization', label: 'field.authorization.label', hint: 'field.authorization.hint', kind: 'boolean', group: 'authorization' },
 ]
 
 /**
@@ -188,10 +226,11 @@ export function userHasPath(user: unknown, path: readonly string[]): boolean {
  * @returns the form element tree.
  */
 export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
-  const { settings, t, distillTargets } = props
+  const { settings, t, distillTargets, downloadModel } = props
   const [snapshot, setSnapshot] = useState<SettingsSnapshotView>(() => settings.snapshot())
   const [failure, setFailure] = useState<string | undefined>(undefined)
   const [saved, setSaved] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   // The scope publishes through a snapshot store, so the form subscribes rather
   // than polling: a write from anywhere else (another tab, a file edit) has to
@@ -211,6 +250,22 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
     }
   }
 
+  /** The download is long enough that the button has to say so, and a failure
+   *  has to reach the same place a failed save does rather than vanish. */
+  const runDownload = async (): Promise<void> => {
+    if (downloadModel === undefined) return
+    setFailure(undefined)
+    setDownloading(true)
+    try {
+      await downloadModel()
+      setSaved(true)
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : String(error))
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   if (snapshot.status === 'unavailable') {
     return <p className={css.muted}>{t('settingsUnavailable')}</p>
   }
@@ -224,11 +279,17 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
     ? String(readPath(section, ['llmDistill', 'provider']))
     : ''
   const optionsFor = (field: FieldSpec): readonly string[] => {
+    if (field.options !== undefined) return field.options
     if (field.source === 'providers') return distillTargets.providers.map(entry => entry.provider)
     const match = distillTargets.providers.find(entry => entry.provider === selectedProvider)
     return match?.models ?? []
   }
   const labelsFor = (field: FieldSpec): Record<string, string> => {
+    if (field.options !== undefined) {
+      return Object.fromEntries(
+        field.options.map(option => [option, t(ENUM_LABELS[option] ?? (option as MemoryLocaleKey))]),
+      )
+    }
     if (field.source !== 'providers') return {}
     return Object.fromEntries(distillTargets.providers.map(entry => [entry.provider, entry.displayName]))
   }
@@ -256,6 +317,19 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
                 onClear={() => write([{ op: 'unset', path: [...field.path] }])}
               />
             ))}
+            {group === 'judgment' && downloadModel !== undefined && (
+              <div className={css.row}>
+                <div className={css.rowText}>
+                  <span className={css.label}>{t('field.downloadModel.label')}</span>
+                  <span className={css.hint}>{t('field.downloadModel.hint')}</span>
+                </div>
+                <div className={css.rowControl}>
+                  <Button onClick={() => { void runDownload() }} disabled={downloading}>
+                    {downloading ? t('field.downloadModel.running') : t('field.downloadModel.action')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </section>
         )
       })}
@@ -333,7 +407,7 @@ function MemoryField(props: {
         <label className={css.label} htmlFor={field.id}>{t(field.label)}</label>
         <span className={css.hint}>
           {t(field.hint)}
-          {field.kind === 'select' && empty && ` ${t('settingsNoModels')}`}
+          {field.kind === 'select' && empty && field.options === undefined && ` ${t('settingsNoModels')}`}
         </span>
       </div>
       <div className={css.rowControl}>

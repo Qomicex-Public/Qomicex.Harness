@@ -15,7 +15,7 @@
  * @module @deepseek-ai/dsh-memory/src/event/signal-detect
  */
 
-import type { CaptureSignal, JsonValue } from '../types.ts'
+import type { CaptureSignal, JsonValue, RuleEngineMode } from '../types.ts'
 import { normalizeToken } from '../evidence/independence.ts'
 import { toJsonText, toJsonValue } from './lineage.ts'
 
@@ -36,10 +36,15 @@ export interface ToolCallView {
  * the noise blacklist is staged as a generic low-strength statement, so intake
  * no longer requires a keyword — what it requires is that the message is not
  * procedural noise.
+ *
+ * The generic fallback is the whole of `relaxed` mode, and the whole of the
+ * difference between the two modes: `strict` turns it off, leaving only the
+ * rules that named a reason to remember.
  * @param message - The user message text.
- * @returns The signal, or `null` when the message is empty or noise.
+ * @param mode - `relaxed` (default) admits unconfirmed statements; `strict` does not.
+ * @returns The signal, or `null` when the message is empty, noise, or unconfirmed under `strict`.
  */
-export function detectUserStatement(message: string): CaptureSignal | null {
+export function detectUserStatement(message: string, mode: RuleEngineMode = 'relaxed'): CaptureSignal | null {
   const text = message.trim()
   if (text === '') return null
   const extracted = extractPackageManager(text)
@@ -80,6 +85,7 @@ export function detectUserStatement(message: string): CaptureSignal | null {
     }
   }
   if (isNoiseByRule(text)) return null
+  if (mode === 'strict') return null
   return {
     type: 'user_statement',
     strength: GENERIC_STATEMENT_STRENGTH,

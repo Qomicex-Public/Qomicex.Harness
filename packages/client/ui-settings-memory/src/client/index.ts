@@ -88,6 +88,11 @@ export function apply(ctx: ClientContext): void {
         })),
       }
     },
+    downloadModel: async () => {
+      const response = await ctx.remote.memory.downloadModel()
+      if (response.ok) return { kind: 'ok', value: { detail: response.value.detail } }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
     settings: scope === undefined
       ? undefined
       : {

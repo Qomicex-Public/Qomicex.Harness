@@ -24,11 +24,36 @@
  * @module @deepseek-ai/dsh-memory/src/algorithms/local-judge
  */
 
+import { Readable } from 'node:stream'
+import { createWriteStream } from 'node:fs'
+import { mkdir, rename, stat } from 'node:fs/promises'
+import { dirname } from 'node:path'
+
 import type { JudgmentInput, JudgmentResult, LocalJudge } from './judgment.ts'
 import type { JudgmentVerdict } from '../types.ts'
 
 /** The prompt version, stamped so a trainer can tell which prompt produced a row. */
 export const JUDGE_PROMPT_VERSION = 'v1'
+
+/**
+ * The default judge model: the llama.cpp conversion of FunctionGemma 270M.
+ *
+ * The weights come from `ggml-org/functiongemma-270m-it-GGUF`, not from
+ * `google/functiongemma-270m-it`, because node-llama-cpp loads GGUF and the
+ * upstream repo ships neither GGUF nor ungated access — its files are
+ * safetensors plus one `.litertlm`, behind a manual license gate. Pinned to a
+ * commit revision so the download is reproducible and a silent upstream
+ * re-quantization cannot change what the judge runs.
+ */
+export const JUDGE_MODEL_REPO = 'ggml-org/functiongemma-270m-it-GGUF'
+/** Commit revision the model URL is pinned to. */
+export const JUDGE_MODEL_REVISION = '2566ce14aedfc14fdd0de955ba67346425e67126'
+/** The quantized weights: 8-bit, near-BF16 quality at half the file size. */
+export const JUDGE_MODEL_FILE = 'functiongemma-270m-it-q8_0.gguf'
+/** The pinned download URL. */
+export const JUDGE_MODEL_URL = `https://huggingface.co/${JUDGE_MODEL_REPO}/resolve/${JUDGE_MODEL_REVISION}/${JUDGE_MODEL_FILE}`
+/** The version label stamped on judgment rows when the config leaves it empty. */
+export const JUDGE_MODEL_VERSION = `${JUDGE_MODEL_FILE}@${JUDGE_MODEL_REVISION.slice(0, 8)}`
 
 /** The instruction block, matching the design document's judgment prompt. */
 export const JUDGE_SYSTEM_PROMPT = [
@@ -257,4 +282,70 @@ export class LlamaCppJudge implements LocalJudge {
 /** The verdict a boolean answer maps to; exported so tests read one name. */
 export function verdictOf(shouldRemember: boolean): JudgmentVerdict {
   return shouldRemember ? 'remember' : 'forget'
+}
+
+/**
+ * Download the default judge model to a path.
+ *
+ * Streamed into a `.part` sibling and renamed on completion, so an interrupted
+ * download cannot leave a truncated GGUF behind — that is the failure a
+ * rename-in-place would produce, and it would surface later as a model that
+ * fails to load with nothing to say why. A response that is not `ok`, or that
+ * carries no body, throws rather than writing an empty file.
+ * @param target - Destination path for the GGUF file.
+ * @param url - Source URL; defaults to the pinned FunctionGemma quant.
+ * @returns The path written.
+ */
+export async function downloadJudgeModel(target: string, url: string = JUDGE_MODEL_URL): Promise<string> {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`judge model download failed: HTTP ${response.status} from ${url}`)
+  const body = response.body
+  if (body === null) throw new Error('judge model download failed: empty response body')
+  await mkdir(dirname(target), { recursive: true })
+  const part = `${target}.part`
+  await new Promise<void>((resolve, reject) => {
+    Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0])
+      .pipe(createWriteStream(part))
+      .on('finish', () => {
+        resolve()
+      })
+      .on('error', reject)
+  })
+  if ((await stat(part)).size === 0) {
+    throw new Error('judge model download failed: zero bytes written')
+  }
+  await rename(part, target)
+  return target
+}
+
+/**
+ * Fetch the judge model when it is missing and automatic download is on.
+ *
+ * Deliberately separate from {@link LlamaCppJudge}: the judge has to stay able
+ * to answer without a network, so the download cannot be a step inside a
+ * judgment. This is a mount-time repair job — it downloads at most once, and a
+ * failure is reported rather than thrown, because a plugin whose local model
+ * is missing still judges, with the rule path.
+ * @param modelPath - Where the model belongs; empty means there is nowhere to put it.
+ * @param onError - Failure reporter.
+ * @returns resolution after the attempt, whether or not it downloaded.
+ */
+export async function ensureJudgeModel(
+  modelPath: string,
+  onError: (error: unknown) => void,
+): Promise<void> {
+  if (modelPath === '') {
+    onError(new Error('autoDownload needs a modelPath to download into'))
+    return
+  }
+  try {
+    if ((await stat(modelPath)).size > 0) return
+  } catch {
+    // Not there yet: fall through and fetch it.
+  }
+  try {
+    await downloadJudgeModel(modelPath)
+  } catch (error) {
+    onError(error)
+  }
 }

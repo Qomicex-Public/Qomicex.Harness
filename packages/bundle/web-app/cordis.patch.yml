@@ -33,18 +33,44 @@
       forgetDemote: 0.45
       forgetArchive: 0.65
       forgetHard: 0.85
-    bounds:
-      workingCapacity: 64
-      stagingCapacity: 128
+    judgment:
+      enabled: false
+      ruleEngine:
+        mode: relaxed
+      localLlm:
+        enabled: false
+        autoDownload: false
+        modelPath: ''
+        gpuLayers: 0
+        contextSize: 2048
+    retention:
+      initialTTLDays: 7
+      promotionThreshold: 3
+      startupGraceSessions: 20
+      archiveOnExpiry: true
+      structuralException: true
+    patternExtraction:
+      enabled: false
+      requireHumanApproval: true
+    patternApplication:
+      injectHotPack: false
+      sceneMatching: false
+      feedbackCollection: false
+    curation:
+      enabled: false
+      provider: ''
+      model: ''
+    integrations:
+      autoDetect: true
+    capacity:
+      workingMemorySlots: 64
+      stagingPoolCapacity: 128
     retrieval:
-      topK: 5
-      similarityThreshold: 0.35
       useVector: false
     injection:
-      hotPack: true
-      recallMaxChars: 4000
+      injectHotPack: true
     authorization:
-      enabled: false
+      usePolicyPlane: false
       policyVersion: bio-memory-1
     llmDistill:
       enabled: false

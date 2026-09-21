@@ -222,15 +222,15 @@ describe('the core is independent of the integrations', () => {
     // this is the out-of-the-box shape.
     const resolved = resolveConfig(Config({}))
     expect(resolved.integrations.autoDetect).toBe(false)
-    expect(resolved.integrations.toolkitRoot).toBe('')
+    expect(resolved.integrations.toolkit.root).toBe('')
   })
 
   it('defaults both integration directions off', async () => {
     // Reading in and writing back are separately gated, and neither is on by
     // default: an integration must be opted into twice, once per direction.
     const resolved = resolveConfig(Config({}))
-    expect(resolved.integrations.toolkitReadHotPackSection).toBe(false)
-    expect(resolved.integrations.toolkitWriteBackOnApproval).toBe(false)
+    expect(resolved.integrations.toolkit.readHotPackSection).toBe(false)
+    expect(resolved.integrations.toolkit.writeBackOnApproval).toBe(false)
   })
 
   it('keeps a disabled integration out of the candidate list entirely', async () => {
@@ -239,13 +239,11 @@ describe('the core is independent of the integrations', () => {
     const resolved = resolveConfig(Config({
       integrations: {
         autoDetect: false,
-        toolkitReadHotPackSection: false,
-        toolkitWriteBackOnApproval: false,
-        toolkitRoot: '',
+        toolkit: { enabled: 'auto', readHotPackSection: false, writeBackOnApproval: false, root: '' },
       },
     }))
-    const candidates = resolved.integrations.autoDetect && resolved.integrations.toolkitRoot !== ''
-      ? [createToolkitIntegration({ root: resolved.integrations.toolkitRoot })]
+    const candidates = resolved.integrations.autoDetect && resolved.integrations.toolkit.root !== ''
+      ? [createToolkitIntegration({ root: resolved.integrations.toolkit.root })]
       : []
     expect(candidates).toEqual([])
   })

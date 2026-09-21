@@ -26,6 +26,7 @@ import type { RetentionConfig } from './retention.ts'
 import { emptyTtlReport } from './retention.ts'
 import { extractionDue, prunePatterns, runExtraction } from './patterns.ts'
 import { runCuration } from './curation.ts'
+import { scheduleToDays } from '../config.ts'
 import type { MemoryPatternConfig, MemoryCurationConfig } from '../config.ts'
 import type { MemoryRepository } from '../repository.ts'
 import type { MemoryTiers } from '../memory/tiers.ts'
@@ -86,29 +87,39 @@ export class ConsolidationDaemon {
       initialTTLDays: 7,
       promotionThreshold: 3,
       startupGraceSessions: 20,
+      archiveOnExpiry: true,
       structuralException: true,
+      adjacencyThreshold: 0.5,
+      enableAdjacency: true,
+      enableMention: true,
     }))
     this.patterns = options.patterns ?? (() => ({
       enabled: false,
-      intervalDays: 7,
+      schedule: 'weekly',
       requireHumanApproval: true,
-      preferenceMinProjects: 3,
-      failureMinOccurrences: 2,
-      environmentMinProjects: 3,
-      pruningEnabled: true,
-      pruneMinScore: 0,
-      pruneStaleDays: 30,
+      thresholds: {
+        preferenceMinProjects: 3,
+        failureMinOccurrences: 2,
+        environmentMinProjects: 3,
+        workflowMinOccurrences: 5,
+      },
+      pruning: { enabled: true, minScore: 0, staleDays: 30 },
     }))
     this.curation = options.curation ?? (() => ({
       enabled: false,
       provider: '',
       model: '',
-      intervalDays: 7,
-      modelContextSize: 262_144,
-      systemReserve: 8_192,
-      safetyMargin: 8_192,
-      inputRatio: 0.6,
-      maxLevel: 5,
+      schedule: 'weekly',
+      batchPolicy: {
+        modelContextSize: 262_144,
+        systemReserve: 8_192,
+        safetyMargin: 8_192,
+        inputRatio: 0.6,
+        outputRatio: 0.4,
+      },
+      nextLayer: { minTokensForNextLayer: 100_000, minCountForNextLayer: 5, maxLevel: 5 },
+      fullRebuild: { enabled: true, everyNIncrementalRuns: 10, maxMemoriesPerRebuild: 5_000 },
+      budget: { maxTokensPerRun: 2_000_000, maxRunsPerMonth: 8 },
     }))
   }
 
@@ -153,7 +164,7 @@ export class ConsolidationDaemon {
     await this.detectContradictions(now)
     const grace = inStartupGrace(await sessionCount(this.repository), this.retention())
     await this.decay(now, report, grace)
-    await this.evaluateRetention(report)
+    await this.evaluateRetention(report, grace)
     await this.extractPatterns()
     await this.curate()
 
@@ -179,15 +190,16 @@ export class ConsolidationDaemon {
     if (!config.enabled) return
     const meta = await this.repository.meta()
     const now = this.clock()
-    if (!extractionDue(meta.lastPatternExtractionAt, config.intervalDays, now)) return
+    if (!extractionDue(meta.lastPatternExtractionAt, scheduleToDays(config.schedule), now)) return
 
     const report = await runExtraction(this.repository, {
-      preferenceMinProjects: config.preferenceMinProjects,
-      failureMinOccurrences: config.failureMinOccurrences,
-      environmentMinProjects: config.environmentMinProjects,
+      preferenceMinProjects: config.thresholds.preferenceMinProjects,
+      failureMinOccurrences: config.thresholds.failureMinOccurrences,
+      environmentMinProjects: config.thresholds.environmentMinProjects,
+      workflowMinOccurrences: config.thresholds.workflowMinOccurrences,
     }, now)
-    if (config.pruningEnabled) {
-      await prunePatterns(this.repository, config.pruneMinScore, config.pruneStaleDays, now)
+    if (config.pruning.enabled) {
+      await prunePatterns(this.repository, config.pruning.minScore, config.pruning.staleDays, now)
     }
     await this.repository.setMeta({ ...meta, lastPatternExtractionAt: now })
     void report
@@ -198,10 +210,15 @@ export class ConsolidationDaemon {
    *
    * TTL runs before the backfill so the usage verdict a judgment row receives
    * reflects the retention state after this cycle's promotions.
+   *
+   * Grace is passed through because it is the one thing that overrides
+   * `archiveOnExpiry`: while the reinforcement tally is still thin, expiry
+   * archives rather than deletes.
    * @param report - The cycle's report, updated in place.
+   * @param grace - Whether the system is still inside its startup grace period.
    */
-  private async evaluateRetention(report: ConsolidationReport): Promise<void> {
-    report.ttl = await evaluateTTL(this.repository, this.tiers, this.retention(), this.clock())
+  private async evaluateRetention(report: ConsolidationReport, grace: boolean): Promise<void> {
+    report.ttl = await evaluateTTL(this.repository, this.tiers, this.retention(), this.clock(), grace)
     await this.backfillJudgments()
   }
 
@@ -219,21 +236,24 @@ export class ConsolidationDaemon {
     if (!config.enabled) return
     const meta = await this.repository.meta()
     const now = this.clock()
-    if (!extractionDue(meta.lastCurationAt, config.intervalDays, now)) return
+    if (!extractionDue(meta.lastCurationAt, scheduleToDays(config.schedule), now)) return
 
     await runCuration(
       this.repository,
       undefined,
-      {
-        modelContextSize: config.modelContextSize,
-        systemReserve: config.systemReserve,
-        safetyMargin: config.safetyMargin,
-        inputRatio: config.inputRatio,
-      },
+      config.batchPolicy,
+      config.nextLayer,
+      config.fullRebuild,
+      config.budget,
       now,
       `cur_${now.toString(36)}`,
+      meta.lastCurationRunCount ?? 0,
     )
-    await this.repository.setMeta({ ...meta, lastCurationAt: now })
+    await this.repository.setMeta({
+      ...meta,
+      lastCurationAt: now,
+      lastCurationRunCount: (meta.lastCurationRunCount ?? 0) + 1,
+    })
   }
 
   /**

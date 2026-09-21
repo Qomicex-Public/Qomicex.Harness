@@ -90,9 +90,40 @@ export const DEFAULT_NEXT_LAYER_POLICY: NextLayerPolicy = {
   maxLevel: 5,
 }
 
+/** Periodic full rebuild of the summary tree. */
+export interface FullRebuildPolicy {
+  /** Whether a full rebuild runs after enough incremental passes. */
+  enabled: boolean
+  /** Incremental passes between full rebuilds. */
+  everyNIncrementalRuns: number
+  /** Upper bound on memories one rebuild may cover. */
+  maxMemoriesPerRebuild: number
+}
+
+/** The default full-rebuild policy. */
+export const DEFAULT_FULL_REBUILD_POLICY: FullRebuildPolicy = {
+  enabled: true,
+  everyNIncrementalRuns: 10,
+  maxMemoriesPerRebuild: 5_000,
+}
+
+/** Spend limits for one run and one month. */
+export interface CurationBudget {
+  /** Tokens one run may spend. */
+  maxTokensPerRun: number
+  /** Runs one month may spend. */
+  maxRunsPerMonth: number
+}
+
+/** The default spend limits. */
+export const DEFAULT_CURATION_BUDGET: CurationBudget = {
+  maxTokensPerRun: 2_000_000,
+  maxRunsPerMonth: 8,
+}
+
 /** What one curation pass did. */
 export interface CurationReport {
-  /** Memories selected by the incremental filter. */
+  /** Memories selected by the incremental filter, or all of them on a rebuild. */
   selected: number
   /** Memories actually covered this run (may be capped by the budget). */
   curated: number
@@ -102,11 +133,23 @@ export interface CurationReport {
   conflicts: number
   /** Whether a further layer is now due. */
   nextLayerDue: boolean
+  /** Whether this pass was a full rebuild rather than an incremental one. */
+  rebuilt: boolean
+  /** Whether the token budget stopped the pass before it finished. */
+  budgetExhausted: boolean
 }
 
 /** An empty report. */
 export function emptyCurationReport(): CurationReport {
-  return { selected: 0, curated: 0, summarized: 0, conflicts: 0, nextLayerDue: false }
+  return {
+    selected: 0,
+    curated: 0,
+    summarized: 0,
+    conflicts: 0,
+    nextLayerDue: false,
+    rebuilt: false,
+    budgetExhausted: false,
+  }
 }
 
 /**
@@ -252,35 +295,57 @@ export function nextLayerDue(
  * covers is marked, and the rest waits for the next one — which is what makes
  * the pass resumable rather than all-or-nothing.
  * @param repository - The repository.
- * @param tiers - The two memory tiers.
  * @param provider - The summarizer; absent means the rule path.
  * @param policy - The batching policy.
+ * @param nextLayer - When the tree grows another layer.
+ * @param fullRebuild - Periodic full rebuild knobs.
+ * @param budget - Spend limits.
  * @param now - Pass time (ms).
  * @param runId - Identifier stamped on every record this pass writes.
+ * @param priorRunCount - Incremental runs since the last full rebuild.
  * @returns The pass report.
  */
 export async function runCuration(
   repository: MemoryRepository,
   provider: CurationProvider | undefined,
   policy: BatchPolicy,
+  nextLayer: NextLayerPolicy,
+  fullRebuild: FullRebuildPolicy,
+  budget: CurationBudget,
   now: number,
   runId: string,
+  priorRunCount: number,
 ): Promise<CurationReport> {
   const report = emptyCurationReport()
   const curated = await repository.allCurations()
   const live = [...(await repository.allMemories('episodic')), ...(await repository.allMemories('semantic'))]
     .filter(memory => memory.lifecycle.state === 'active' || memory.lifecycle.state === 'consolidated')
   const pending = selectPending(live, curated)
-  report.selected = pending.length
-  if (pending.length === 0) {
-    report.nextLayerDue = nextLayerDue(await repository.allSummaries())
+  // A rebuild re-covers everything rather than only what is pending, because
+  // its whole point is to correct drift the incremental passes accumulated.
+  const rebuildDue = fullRebuild.enabled && priorRunCount + 1 >= fullRebuild.everyNIncrementalRuns
+  const selection = rebuildDue
+    ? live.slice(0, fullRebuild.maxMemoriesPerRebuild)
+    : pending
+  report.selected = selection.length
+  report.rebuilt = rebuildDue
+  if (selection.length === 0) {
+    report.nextLayerDue = nextLayerDue(await repository.allSummaries(), nextLayer)
     return report
   }
 
-  const plans = planBatches(pending, estimateTokens, policy)
+  let spent = 0
+  const plans = planBatches(selection, estimateTokens, policy)
   for (const plan of plans) {
-    const batch = pending.slice(plan.start, plan.start + plan.count)
+    const batch = selection.slice(plan.start, plan.start + plan.count)
     if (batch.length === 0) continue
+    // The budget stops a pass rather than truncating a batch: half a batch is
+    // a summary of nothing coherent, so the remainder waits for the next run.
+    if (spent + plan.estimatedTokens > budget.maxTokensPerRun) {
+      report.budgetExhausted = true
+      break
+    }
+    spent += plan.estimatedTokens
 
     const disputed = conflictIdsOf(batch)
     report.conflicts += disputed.size
@@ -312,7 +377,7 @@ export async function runCuration(
     }
   }
 
-  report.nextLayerDue = nextLayerDue(await repository.allSummaries())
+  report.nextLayerDue = nextLayerDue(await repository.allSummaries(), nextLayer)
   return report
 }
 

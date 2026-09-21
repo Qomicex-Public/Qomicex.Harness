@@ -323,6 +323,7 @@ describe('extraction thresholds are reused unchanged', () => {
       preferenceMinProjects: 3,
       failureMinOccurrences: 2,
       environmentMinProjects: 3,
+      workflowMinOccurrences: 5,
     })
   })
 })
