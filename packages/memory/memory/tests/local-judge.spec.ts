@@ -20,6 +20,8 @@ import {
   JUDGE_PROMPT_VERSION,
   JUDGE_DEVELOPER_PROMPT,
   FUNCTION_CALL_CLOSE,
+  JUDGE_MODEL_PROXIES,
+  judgeModelSources,
   LlamaCppJudge,
   buildJudgePrompt,
   parseJudgeVerdict,
@@ -110,6 +112,22 @@ describe('judge prompt', () => {
 
   it('stamps a prompt version so a trainer can tell which prompt produced a row', () => {
     expect(JUDGE_PROMPT_VERSION).toBe('v1')
+  })
+})
+
+describe('judge model sources', () => {
+  it('offers the direct URL first, then every mirror', () => {
+    const sources = judgeModelSources('https://example.test/model.gguf')
+    expect(sources[0]).toBe('https://example.test/model.gguf')
+    expect(sources).toHaveLength(1 + JUDGE_MODEL_PROXIES.length)
+    for (const proxy of JUDGE_MODEL_PROXIES) {
+      expect(sources).toContain(`${proxy}https://example.test/model.gguf`)
+    }
+  })
+
+  it('has no source duplicated, so timing cannot rank the same host twice', () => {
+    const sources = judgeModelSources()
+    expect(new Set(sources).size).toBe(sources.length)
   })
 })
 

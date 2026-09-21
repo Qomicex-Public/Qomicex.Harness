@@ -37,29 +37,46 @@ import type { JudgmentVerdict } from '../types.ts'
 export const JUDGE_PROMPT_VERSION = 'v1'
 
 /**
- * The default judge model: the llama.cpp conversion of FunctionGemma 270M.
+ * Where the judge model comes from.
  *
- * The weights come from `ggml-org/functiongemma-270m-it-GGUF`, not from
- * `google/functiongemma-270m-it`, because node-llama-cpp loads GGUF and the
- * upstream repo ships neither GGUF nor ungated access — its files are
- * safetensors plus one `.litertlm`, behind a manual license gate. Pinned to a
- * commit revision so the download is reproducible and a silent upstream
- * re-quantization cannot change what the judge runs.
+ * A release asset on `Qomicex-Public/Qomicex.Harness-memory`, reached through
+ * whichever mirror answers fastest. The model is a 278 MB binary produced by
+ * fine-tuning `google/functiongemma-270m-it`, so it lives in its own repo
+ * rather than in the source tree — a clone should not pay for weights.
  */
-export const JUDGE_MODEL_REPO = 'ggml-org/functiongemma-270m-it-GGUF'
-/** Commit revision the model URL is pinned to. */
-export const JUDGE_MODEL_REVISION = '2566ce14aedfc14fdd0de955ba67346425e67126'
-/** The quantized weights: 8-bit, near-BF16 quality at half the file size. */
-export const JUDGE_MODEL_FILE = 'functiongemma-270m-it-q8_0.gguf'
-/** The pinned download URL. */
-export const JUDGE_MODEL_URL = `https://huggingface.co/${JUDGE_MODEL_REPO}/resolve/${JUDGE_MODEL_REVISION}/${JUDGE_MODEL_FILE}`
-/** The version label stamped on judgment rows when the config leaves it empty. */
-export const JUDGE_MODEL_VERSION = `${JUDGE_MODEL_FILE}@${JUDGE_MODEL_REVISION.slice(0, 8)}`
+export const JUDGE_MODEL_REPO = 'Qomicex-Public/Qomicex.Harness-memory'
+/** Release tag the asset is published under. */
+export const JUDGE_MODEL_TAG = 'v1.0.0'
+/** The quantized weights: Q8_0, 278 MiB. */
+export const JUDGE_MODEL_FILE = 'functiongemma-judge-q8_0.gguf'
+/**
+ * The direct release URL.
+ *
+ * Kept as the fallback: every mirror is this URL with a prefix, so if they all
+ * fail the direct one is still a candidate rather than a special case.
+ */
+export const JUDGE_MODEL_URL = `https://github.com/${JUDGE_MODEL_REPO}/releases/download/${JUDGE_MODEL_TAG}/${JUDGE_MODEL_FILE}`
+/**
+ * Mirrors tried before the direct URL.
+ *
+ * Ordered by nothing in particular: the download measures them rather than
+ * trusting this order, because which one is fastest depends on where the
+ * machine is and what time of day it is.
+ */
+export const JUDGE_MODEL_PROXIES: readonly string[] = [
+  'https://edgeone.gh-proxy.org/',
+  'https://cdn.gh-proxy.org/',
+  'https://hk.gh-proxy.org/',
+  'https://v6.gh-proxy.org/',
+  'https://ghfast.top/',
+]
+/** Version label stamped on judgment rows when the config leaves it empty. */
+export const JUDGE_MODEL_VERSION = JUDGE_MODEL_TAG
 /**
  * Where the model lands when the config names no path.
  *
  * The harness home rather than the workspace: the weights are a machine-wide
- * asset, and putting them in one project would download 292 MB again for every
+ * asset, and putting them in one project would download 278 MB again for every
  * other workspace that enables the judge.
  */
 export const DEFAULT_JUDGE_MODEL_PATH = join(dshHomePath('models'), JUDGE_MODEL_FILE)
@@ -330,6 +347,66 @@ export function verdictOf(shouldRemember: boolean): JudgmentVerdict {
 }
 
 /**
+ * Every URL a download may try: the direct one first, then each mirror.
+ *
+ * Exported so the ordering is testable without a network call.
+ * @param url - The direct URL.
+ * @returns The candidates in preference order.
+ */
+export function judgeModelSources(url: string = JUDGE_MODEL_URL): string[] {
+  return [url, ...JUDGE_MODEL_PROXIES.map(prefix => `${prefix}${url}`)]
+}
+
+/** Bytes fetched when timing a source: enough to measure a real transfer. */
+const PROBE_BYTES = 256 * 1024
+
+/** One source and how long it took to hand over the probe bytes. */
+interface SourceTiming {
+  readonly url: string
+  readonly ms: number
+}
+
+/**
+ * Time one source with a ranged request.
+ *
+ * A failure is `undefined` rather than a throw: a mirror that is down is a
+ * normal outcome here, not an error, and the caller is choosing between
+ * candidates rather than performing one download.
+ * @param url - The candidate URL.
+ * @returns The timing, or `undefined` when the source is unreachable.
+ */
+async function timeSource(url: string): Promise<SourceTiming | undefined> {
+  const started = Date.now()
+  try {
+    const response = await fetch(url, { headers: { Range: `bytes=0-${PROBE_BYTES - 1}` } })
+    if (!response.ok) return undefined
+    // Drain the body: timing headers alone would rank a slow mirror first.
+    const body = await response.arrayBuffer()
+    if (body.byteLength === 0) return undefined
+    return { url, ms: Date.now() - started }
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Pick the fastest reachable source, falling back to the direct URL.
+ *
+ * Probed in parallel because a serial walk would make the user wait for every
+ * dead mirror before reaching a working one. When nothing answers, the direct
+ * URL is returned anyway — the caller's own download attempt then produces the
+ * error message worth reading, instead of this function inventing one.
+ * @param url - The direct URL.
+ * @returns The URL to download from.
+ */
+export async function pickFastestSource(url: string = JUDGE_MODEL_URL): Promise<string> {
+  const timings = await Promise.all(judgeModelSources(url).map(timeSource))
+  const usable = timings.filter((timing): timing is SourceTiming => timing !== undefined)
+  if (usable.length === 0) return url
+  return usable.reduce((fastest, candidate) => (candidate.ms < fastest.ms ? candidate : fastest)).url
+}
+
+/**
  * Download the default judge model to a path.
  *
  * Streamed into a `.part` sibling and renamed on completion, so an interrupted
@@ -337,13 +414,17 @@ export function verdictOf(shouldRemember: boolean): JudgmentVerdict {
  * rename-in-place would produce, and it would surface later as a model that
  * fails to load with nothing to say why. A response that is not `ok`, or that
  * carries no body, throws rather than writing an empty file.
+ *
+ * The source is chosen by {@link pickFastestSource}: mirrors are tried and the
+ * fastest one wins, with the direct URL as the last resort.
  * @param target - Destination path for the GGUF file.
- * @param url - Source URL; defaults to the pinned FunctionGemma quant.
+ * @param url - The direct URL to fetch; mirrors are derived from it.
  * @returns The path written.
  */
 export async function downloadJudgeModel(target: string, url: string = JUDGE_MODEL_URL): Promise<string> {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`judge model download failed: HTTP ${response.status} from ${url}`)
+  const source = await pickFastestSource(url)
+  const response = await fetch(source)
+  if (!response.ok) throw new Error(`judge model download failed: HTTP ${response.status} from ${source}`)
   const body = response.body
   if (body === null) throw new Error('judge model download failed: empty response body')
   await mkdir(dirname(target), { recursive: true })

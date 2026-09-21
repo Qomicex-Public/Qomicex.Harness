@@ -123,9 +123,12 @@ export type { RetentionConfig } from './algorithms/retention.ts'
 export {
   JUDGE_MODEL_FILE,
   JUDGE_MODEL_REPO,
-  JUDGE_MODEL_REVISION,
+  JUDGE_MODEL_TAG,
+  JUDGE_MODEL_PROXIES,
   JUDGE_MODEL_URL,
   JUDGE_MODEL_VERSION,
+  judgeModelSources,
+  pickFastestSource,
   JUDGE_PROMPT_VERSION,
   JUDGE_DEVELOPER_PROMPT,
   JUDGE_FUNCTION_DECLARATION,
