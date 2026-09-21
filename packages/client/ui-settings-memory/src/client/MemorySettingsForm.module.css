@@ -107,3 +107,9 @@
   font-size: 12px;
   color: var(--dsw-alias-state-success-primary);
 }
+
+.progress {
+  width: 160px;
+  height: 6px;
+  accent-color: var(--dsh-accent, #4c8dff);
+}

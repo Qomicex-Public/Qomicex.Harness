@@ -67,9 +67,14 @@ export interface MemorySectionInjected {
   /**
    * Download the local judge model into the configured path. Absent when the
    * memory Remote namespace is not reachable, which is the same deployment that
-   * leaves the graph empty.
+   * leaves the graph empty. Resolves once the download has been started; watch
+   * {@link modelDownloadStatus} for progress.
    */
-  readonly downloadModel?: () => Promise<LoadOutcome<{ readonly detail: string }>>
+  readonly downloadModel?: () => Promise<LoadOutcome<unknown>>
+  /** Poll the download's progress, or its absence. */
+  readonly modelDownloadStatus?: () => Promise<unknown>
+  /** Reveal the model file in the platform's file manager. */
+  readonly revealModelFile?: () => Promise<unknown>
 }
 
 /** One provider and the model ids it declares, for the distillation dropdowns. */
@@ -116,7 +121,7 @@ function toGraph(graph: MemoryGraphValue): { nodes: GraphNode[]; edges: GraphEdg
  * @returns the settings page element tree.
  */
 export function MemorySection(props: MemorySectionProps): ReactNode {
-  const { t, loadGraph, loadStatus, loadDistillTargets, downloadModel, settings } = props
+  const { t, loadGraph, loadStatus, loadDistillTargets, downloadModel, modelDownloadStatus, revealModelFile, settings } = props
   const [graph, setGraph] = useState<MemoryGraphValue | undefined>(undefined)
   const [mounted, setMounted] = useState<boolean | undefined>(undefined)
   const [failure, setFailure] = useState<string | undefined>(undefined)
@@ -236,7 +241,14 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
               : async () => {
                 const outcome = await downloadModel()
                 if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
               }}
+            modelDownloadStatus={modelDownloadStatus === undefined
+              ? undefined
+              : () => modelDownloadStatus()}
+            revealModelFile={revealModelFile === undefined
+              ? undefined
+              : () => revealModelFile()}
           />
         )}
     </section>

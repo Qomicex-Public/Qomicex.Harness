@@ -20,6 +20,38 @@ import type { DistillTargets, MemorySettingsFace, SettingsSnapshotView } from '.
 import type { MemoryLocaleKey } from './locales.ts'
 import css from './MemorySettingsForm.module.css'
 
+/** Progress of the judge-model download, as the Settings page shows it. */
+interface DownloadView {
+  readonly status: 'idle' | 'downloading' | 'done' | 'failed'
+  readonly receivedBytes: number
+  readonly totalBytes: number
+  readonly path: string
+  readonly error?: string
+}
+
+/** Read a download state out of whatever the Remote returned. */
+function downloadViewOf(value: unknown): DownloadView | undefined {
+  if (typeof value !== 'object' || value === null) return undefined
+  const record = value as Record<string, unknown>
+  const status = record.status
+  if (status !== 'idle' && status !== 'downloading' && status !== 'done' && status !== 'failed') {
+    return undefined
+  }
+  return {
+    status,
+    receivedBytes: typeof record.receivedBytes === 'number' ? record.receivedBytes : 0,
+    totalBytes: typeof record.totalBytes === 'number' ? record.totalBytes : 0,
+    path: typeof record.path === 'string' ? record.path : '',
+    ...(typeof record.error === 'string' ? { error: record.error } : {}),
+  }
+}
+
+/** One progress figure, in the unit a human reads. */
+function formatBytes(bytes: number): string {
+  if (bytes <= 0) return '0 MB'
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
 /** Props assembled by the page. */
 export interface MemorySettingsFormProps {
   readonly settings: MemorySettingsFace
@@ -32,11 +64,16 @@ export interface MemorySettingsFormProps {
   /** Providers and their configured models, for the distillation dropdowns. */
   readonly distillTargets: DistillTargets
   /**
-   * Fetch the judge model into the configured path. Absent when no memory
-   * controller is mounted, which is the same deployment where the graph and the
-   * forget button are absent too.
+   * Fetch the judge model into the configured path. Resolves as soon as the
+   * download has been *started*; watch `modelDownloadStatus` for progress.
+   * Absent when the memory Remote namespace is not reachable, which is the
+   * same deployment that leaves the graph empty.
    */
-  readonly downloadModel?: (() => Promise<void>) | undefined
+  readonly downloadModel?: (() => Promise<unknown>) | undefined
+  /** Poll the download's progress, or its absence. */
+  readonly modelDownloadStatus?: (() => Promise<unknown>) | undefined
+  /** Reveal the model file in the platform's file manager. */
+  readonly revealModelFile?: (() => Promise<unknown>) | undefined
 }
 
 /** How a field renders and what shape it writes. */
@@ -224,11 +261,11 @@ export function userHasPath(user: unknown, path: readonly string[]): boolean {
  * @returns the form element tree.
  */
 export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
-  const { settings, t, distillTargets, downloadModel } = props
+  const { settings, t, distillTargets, downloadModel, modelDownloadStatus, revealModelFile } = props
   const [snapshot, setSnapshot] = useState<SettingsSnapshotView>(() => settings.snapshot())
   const [failure, setFailure] = useState<string | undefined>(undefined)
   const [saved, setSaved] = useState(false)
-  const [downloading, setDownloading] = useState(false)
+  const [download, setDownload] = useState<DownloadView | undefined>(undefined)
   /**
    * Which action the message on screen belongs to.
    *
@@ -257,20 +294,67 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
     }
   }
 
+  /**
+   * Ask the host whether the model is already on disk.
+   *
+   * Runs once on mount so a machine that downloaded in an earlier session
+   * shows the finished state immediately instead of offering a second fetch.
+   */
+  useEffect(() => {
+    if (modelDownloadStatus === undefined) return
+    let active = true
+    void modelDownloadStatus()
+      .then((value): void => {
+        if (active) setDownload(downloadViewOf(value))
+      })
+      .catch((): void => {
+        // A status probe that fails is not worth surfacing: the download button
+        // still works, and the download attempt produces the real error.
+      })
+    return (): void => {
+      active = false
+    }
+  }, [modelDownloadStatus])
+
+  /** Poll the download's progress while one is running. */
+  useEffect(() => {
+    if (download?.status !== 'downloading' || modelDownloadStatus === undefined) return
+    const timer = setInterval((): void => {
+      void modelDownloadStatus()
+        .then((value): void => {
+          const next = downloadViewOf(value)
+          if (next !== undefined) setDownload(next)
+        })
+        .catch((): void => {
+          // Keep the last known progress rather than blanking the bar.
+        })
+    }, 500)
+    return () => {
+      clearInterval(timer)
+    }
+  }, [download?.status, modelDownloadStatus])
+
   /** The download is long enough that the button has to say so, and a failure
    *  has to reach the same place a failed save does rather than vanish. */
   const runDownload = async (): Promise<void> => {
     if (downloadModel === undefined) return
     setFailure(undefined)
     setFailureOf('download')
-    setDownloading(true)
     try {
-      await downloadModel()
-      setSaved(true)
+      const started = downloadViewOf(await downloadModel())
+      if (started !== undefined) setDownload(started)
     } catch (error) {
       setFailure(error instanceof Error ? error.message : String(error))
-    } finally {
-      setDownloading(false)
+    }
+  }
+
+  const runReveal = async (): Promise<void> => {
+    if (revealModelFile === undefined) return
+    setFailure(undefined)
+    try {
+      await revealModelFile()
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : String(error))
     }
   }
 
@@ -329,12 +413,49 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
               <div className={css.row}>
                 <div className={css.rowText}>
                   <span className={css.label}>{t('field.downloadModel.label')}</span>
-                  <span className={css.hint}>{t('field.downloadModel.hint')}</span>
+                  <span className={css.hint}>
+                    {download?.status === 'done'
+                      ? `${t('field.downloadModel.done')} ${download.path}`
+                      : t('field.downloadModel.hint')}
+                  </span>
                 </div>
                 <div className={css.rowControl}>
-                  <Button onClick={() => { void runDownload() }} disabled={downloading}>
-                    {downloading ? t('field.downloadModel.running') : t('field.downloadModel.action')}
-                  </Button>
+                  {download?.status === 'done'
+                    ? (
+                      <>
+                        <span className={css.hint}>{t('field.downloadModel.done')}</span>
+                        <Button onClick={() => { void runReveal() }}>
+                          {t('field.downloadModel.reveal')}
+                        </Button>
+                      </>
+                    )
+                    : (
+                      <Button
+                        onClick={() => { void runDownload() }}
+                        disabled={download?.status === 'downloading'}
+                      >
+                        {download?.status === 'downloading'
+                          ? t('field.downloadModel.running')
+                          : t('field.downloadModel.action')}
+                      </Button>
+                    )}
+                </div>
+              </div>
+            )}
+            {group === 'judgment' && download?.status === 'downloading' && (
+              <div className={css.row}>
+                <div className={css.rowText}>
+                  <span className={css.hint}>
+                    {`${formatBytes(download.receivedBytes)} / ${
+                      download.totalBytes > 0 ? formatBytes(download.totalBytes) : '?'
+                    }`}
+                  </span>
+                </div>
+                <div className={css.rowControl}>
+                  <progress
+                    className={css.progress}
+                    value={download.totalBytes > 0 ? download.receivedBytes / download.totalBytes : undefined}
+                  />
                 </div>
               </div>
             )}

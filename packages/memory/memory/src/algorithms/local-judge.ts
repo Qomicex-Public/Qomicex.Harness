@@ -406,6 +406,14 @@ export async function pickFastestSource(url: string = JUDGE_MODEL_URL): Promise<
   return usable.reduce((fastest, candidate) => (candidate.ms < fastest.ms ? candidate : fastest)).url
 }
 
+/** Progress of one download, in bytes. */
+export interface DownloadProgress {
+  /** Bytes written so far. */
+  readonly received: number
+  /** Total size when the server declared one; `0` when it did not. */
+  readonly total: number
+}
+
 /**
  * Download the default judge model to a path.
  *
@@ -419,9 +427,14 @@ export async function pickFastestSource(url: string = JUDGE_MODEL_URL): Promise<
  * fastest one wins, with the direct URL as the last resort.
  * @param target - Destination path for the GGUF file.
  * @param url - The direct URL to fetch; mirrors are derived from it.
+ * @param onProgress - Called as bytes land, so a caller can show a bar.
  * @returns The path written.
  */
-export async function downloadJudgeModel(target: string, url: string = JUDGE_MODEL_URL): Promise<string> {
+export async function downloadJudgeModel(
+  target: string,
+  url: string = JUDGE_MODEL_URL,
+  onProgress?: (progress: DownloadProgress) => void,
+): Promise<string> {
   const source = await pickFastestSource(url)
   const response = await fetch(source)
   if (!response.ok) throw new Error(`judge model download failed: HTTP ${response.status} from ${source}`)
@@ -429,14 +442,22 @@ export async function downloadJudgeModel(target: string, url: string = JUDGE_MOD
   if (body === null) throw new Error('judge model download failed: empty response body')
   await mkdir(dirname(target), { recursive: true })
   const part = `${target}.part`
+  const declared = Number(response.headers.get('content-length') ?? '0')
+  const total = Number.isFinite(declared) ? declared : 0
+  let received = 0
   await new Promise<void>((resolve, reject) => {
     Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0])
+      .on('data', (chunk: Buffer) => {
+        received += chunk.length
+        onProgress?.({ received, total })
+      })
       .pipe(createWriteStream(part))
       .on('finish', () => {
         resolve()
       })
       .on('error', reject)
   })
+  onProgress?.({ received, total })
   if ((await stat(part)).size === 0) {
     throw new Error('judge model download failed: zero bytes written')
   }

@@ -90,9 +90,11 @@ export function apply(ctx: ClientContext): void {
     },
     downloadModel: async () => {
       const response = await ctx.remote.memory.downloadModel()
-      if (response.ok) return { kind: 'ok', value: { detail: response.value.detail } }
+      if (response.ok) return { kind: 'ok', value: response.value }
       return { kind: 'failed', code: response.error.code, message: response.error.message }
     },
+    modelDownloadStatus: () => ctx.remote.memory.modelDownloadStatus(),
+    revealModelFile: () => ctx.remote.memory.revealModelFile(),
     settings: scope === undefined
       ? undefined
       : {

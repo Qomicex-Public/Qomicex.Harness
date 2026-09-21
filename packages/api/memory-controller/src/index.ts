@@ -20,12 +20,12 @@ import {
   applyGovernanceAction,
   applyLifecycleAction,
   downloadJudgeModel,
-  JUDGE_MODEL_VERSION,
 } from '@deepseek-ai/dsh-memory'
 import type { Memory } from '@deepseek-ai/dsh-memory'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import { dirname } from 'node:path'
 import type {
-  MemoryDownloadValue,
+  MemoryDownloadState,
   MemoryEdgeKind,
   MemoryEdgeView,
   MemoryForgetRequest,
@@ -166,6 +166,8 @@ function linkedCount(edges: readonly MemoryEdgeView[]): number {
  * the two paths would disagree about what "deleted" means.
  */
 export class MemoryController extends TypertRemoteService {
+  /** The download this host is running, if one has been started. */
+  private download: MemoryDownloadState | undefined
   /** @param ctx - Host context where the memory plugin may be mounted. */
   constructor(ctx: Context) {
     super(ctx, 'memoryController', { namespace: 'memory' })
@@ -264,7 +266,7 @@ export class MemoryController extends TypertRemoteService {
    * @throws RemoteError `memory/unavailable`, `memory/no-model-path`, or `memory/download-failed`.
    */
   @Remote
-  async downloadModel(): Promise<MemoryDownloadValue> {
+  downloadModel(): Promise<MemoryDownloadState> {
     const services = memoryServices(this.ctx)
     if (services === undefined) {
       throw new RemoteError('memory/unavailable', 'the bio-memory plugin is not mounted', {})
@@ -273,14 +275,106 @@ export class MemoryController extends TypertRemoteService {
     // resolved config the controller reads always names somewhere to put the
     // weights. Clamping here instead would be a second owner of that rule.
     const { modelPath } = services.config.judgment.localLlm
+    // The download runs in the background: a 278 MB fetch over a mirror can
+    // take minutes, and holding the Remote call open that long would invite a
+    // timeout. `modelDownloadStatus` is how the caller watches it instead.
+    const path = modelPath
+    this.download = { status: 'downloading', receivedBytes: 0, totalBytes: 0, path }
+    // The kick-off is deliberately not awaited: it can take minutes over a
+    // mirror, and the caller polls `modelDownloadStatus` for progress instead
+    // of holding the Remote call open that long.
+    void this.runDownload(path)
+    return Promise.resolve(this.download)
+  }
+
+  /** Drive one download to completion, recording its state as it goes. */
+  private async runDownload(path: string): Promise<void> {
     try {
-      await downloadJudgeModel(modelPath)
-    } catch (error) {
-      throw new RemoteError('memory/download-failed', String(error instanceof Error ? error.message : error), {
-        message: String(error instanceof Error ? error.message : error),
+      await downloadJudgeModel(path, undefined, (progress): void => {
+        this.download = {
+          status: 'downloading',
+          receivedBytes: progress.received,
+          totalBytes: progress.total,
+          path,
+        }
       })
+      this.download = { status: 'done', receivedBytes: 0, totalBytes: 0, path }
+    } catch (error) {
+      const message = String(error instanceof Error ? error.message : error)
+      this.download = { status: 'failed', receivedBytes: 0, totalBytes: 0, path, error: message }
     }
-    return { ok: true, detail: `Downloaded ${JUDGE_MODEL_VERSION} to ${modelPath}.` }
+  }
+
+  /**
+   * Report the model download, or its absence.
+   *
+   * Doubles as the "is it already here" check: when no download has run this
+   * session, the target path is stat-ed so a machine that downloaded on an
+   * earlier run still shows the finished state rather than offering a second
+   * 278 MB fetch.
+   * @returns The download state.
+   * @throws RemoteError `memory/unavailable` when the plugin is not mounted.
+   */
+  @Remote
+  async modelDownloadStatus(): Promise<MemoryDownloadState> {
+    const services = memoryServices(this.ctx)
+    if (services === undefined) {
+      throw new RemoteError('memory/unavailable', 'the bio-memory plugin is not mounted', {})
+    }
+    if (this.download !== undefined && this.download.status !== 'done') return this.download
+    const path = services.config.judgment.localLlm.modelPath
+    if (this.download?.status === 'done') return this.download
+    const present = await fileExists(path)
+    return present
+      ? { status: 'done', receivedBytes: 0, totalBytes: 0, path }
+      : { status: 'idle', receivedBytes: 0, totalBytes: 0, path }
+  }
+
+  /**
+   * Reveal the model file in the platform's file manager.
+   *
+   * Selects the file rather than opening the directory, because "which of these
+   * files is it" is the question the button answers. A failure is reported
+   * rather than thrown: the file is already downloaded, so a manager that will
+   * not open is an annoyance, not a broken state.
+   * @returns Whether the file manager was launched.
+   * @throws RemoteError `memory/unavailable` when the plugin is not mounted.
+   */
+  @Remote
+  async revealModelFile(): Promise<{ ok: boolean; detail: string }> {
+    const services = memoryServices(this.ctx)
+    if (services === undefined) {
+      throw new RemoteError('memory/unavailable', 'the bio-memory plugin is not mounted', {})
+    }
+    const path = services.config.judgment.localLlm.modelPath
+    if (!(await fileExists(path))) {
+      return { ok: false, detail: `模型文件不存在：${path}` }
+    }
+    try {
+      const { spawn } = await import('node:child_process')
+      if (process.platform === 'win32') {
+        // explorer needs the path quoted and separated from its own arguments,
+        // otherwise a space in the path splits into a second explorer window.
+        spawn('explorer', ['/select,', `"${path}"`], { detached: true, stdio: 'ignore' }).unref()
+      } else if (process.platform === 'darwin') {
+        spawn('open', ['-R', path], { detached: true, stdio: 'ignore' }).unref()
+      } else {
+        spawn('xdg-open', [dirname(path)], { detached: true, stdio: 'ignore' }).unref()
+      }
+      return { ok: true, detail: path }
+    } catch (error) {
+      return { ok: false, detail: String(error instanceof Error ? error.message : error) }
+    }
+  }
+}
+
+/** Whether a file exists and is non-empty. */
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    const { stat } = await import('node:fs/promises')
+    return (await stat(path)).size > 0
+  } catch {
+    return false
   }
 }
 

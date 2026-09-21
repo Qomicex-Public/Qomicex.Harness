@@ -105,6 +105,25 @@ export interface MemoryDownloadValue {
   readonly detail: string
 }
 
+/**
+ * Where a judge-model download stands.
+ *
+ * `idle` also means "checked and not there", which is what a machine that has
+ * never downloaded reports — so the Settings page can show the finished state
+ * on a later run without offering a second 278 MB fetch.
+ */
+export interface MemoryDownloadState {
+  readonly status: 'idle' | 'downloading' | 'done' | 'failed'
+  /** Bytes written so far; `0` unless a download is running. */
+  readonly receivedBytes: number
+  /** Total size when known; `0` when the server did not declare one. */
+  readonly totalBytes: number
+  /** Where the model belongs. */
+  readonly path: string
+  /** Why it failed, when it did. */
+  readonly error?: string
+}
+
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface RemoteErrorDetailsMap {
     /** The memory id does not name a live memory. */
