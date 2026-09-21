@@ -269,10 +269,10 @@ export class MemoryController extends TypertRemoteService {
     if (services === undefined) {
       throw new RemoteError('memory/unavailable', 'the bio-memory plugin is not mounted', {})
     }
+    // No path check: `resolveConfig` fills the default location in, so the
+    // resolved config the controller reads always names somewhere to put the
+    // weights. Clamping here instead would be a second owner of that rule.
     const { modelPath } = services.config.judgment.localLlm
-    if (modelPath === '') {
-      throw new RemoteError('memory/no-model-path', 'set a model file path first', {})
-    }
     try {
       await downloadJudgeModel(modelPath)
     } catch (error) {

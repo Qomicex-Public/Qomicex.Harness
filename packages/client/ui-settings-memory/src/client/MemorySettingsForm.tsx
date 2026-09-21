@@ -145,8 +145,7 @@ const FIELDS: readonly FieldSpec[] = [
   { path: ['thresholds', 'forgetHard'], id: 'memory-forget-hard', label: 'field.forgetHard.label', hint: 'field.forgetHard.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
   { path: ['judgment', 'enabled'], id: 'memory-judgment-enabled', label: 'field.judgmentEnabled.label', hint: 'field.judgmentEnabled.hint', kind: 'boolean', group: 'judgment' },
   { path: ['judgment', 'localLlm', 'enabled'], id: 'memory-local-llm-enabled', label: 'field.localLlmEnabled.label', hint: 'field.localLlmEnabled.hint', kind: 'boolean', group: 'judgment' },
-  { path: ['judgment', 'localLlm', 'modelPath'], id: 'memory-local-llm-model-path', label: 'field.localLlmModelPath.label', hint: 'field.localLlmModelPath.hint', kind: 'text', group: 'judgment' },
-  { path: ['judgment', 'localLlm', 'gpuLayers'], id: 'memory-local-llm-gpu-layers', label: 'field.localLlmGpuLayers.label', hint: 'field.localLlmGpuLayers.hint', kind: 'number', min: 0, step: 1, group: 'judgment' },
+  { path: ['judgment', 'localLlm', 'modelPath'], id: 'memory-local-llm-model-path', label: 'field.localLlmModelPath.label', hint: 'field.localLlmModelPath.hint', kind: 'text', group: 'judgment' },  { path: ['judgment', 'localLlm', 'gpuLayers'], id: 'memory-local-llm-gpu-layers', label: 'field.localLlmGpuLayers.label', hint: 'field.localLlmGpuLayers.hint', kind: 'number', min: 0, step: 1, group: 'judgment' },
   { path: ['judgment', 'localLlm', 'contextSize'], id: 'memory-local-llm-context-size', label: 'field.localLlmContextSize.label', hint: 'field.localLlmContextSize.hint', kind: 'number', min: 256, step: 256, group: 'judgment' },
   { path: ['retention', 'initialTTLDays'], id: 'memory-initial-ttl', label: 'field.initialTTLDays.label', hint: 'field.initialTTLDays.hint', kind: 'number', min: 1, step: 1, group: 'retention' },
   { path: ['retention', 'promotionThreshold'], id: 'memory-promotion-threshold', label: 'field.promotionThreshold.label', hint: 'field.promotionThreshold.hint', kind: 'number', min: 0, step: 0.5, group: 'retention' },
@@ -174,7 +173,6 @@ const FIELDS: readonly FieldSpec[] = [
   { path: ['llmDistill', 'model'], id: 'memory-distill-model', label: 'field.distillModel.label', hint: 'field.distillModel.hint', kind: 'select', source: 'models', group: 'curation' },
   { path: ['integrations', 'autoDetect'], id: 'memory-integrations-auto-detect', label: 'field.integrationsAutoDetect.label', hint: 'field.integrationsAutoDetect.hint', kind: 'boolean', group: 'integrations' },
   { path: ['integrations', 'toolkit', 'enabled'], id: 'memory-integrations-toolkit-enabled', label: 'field.integrationsToolkitEnabled.label', hint: 'field.integrationsToolkitEnabled.hint', kind: 'select', options: ENUM_OPTIONS.toolkitEnabled, group: 'integrations' },
-  { path: ['integrations', 'toolkit', 'root'], id: 'memory-integrations-toolkit-root', label: 'field.integrationsToolkitRoot.label', hint: 'field.integrationsToolkitRoot.hint', kind: 'text', group: 'integrations' },
   { path: ['integrations', 'toolkit', 'readHotPackSection'], id: 'memory-integrations-read-section', label: 'field.integrationsReadSection.label', hint: 'field.integrationsReadSection.hint', kind: 'boolean', group: 'integrations' },
   { path: ['integrations', 'toolkit', 'writeBackOnApproval'], id: 'memory-integrations-write-back', label: 'field.integrationsWriteBack.label', hint: 'field.integrationsWriteBack.hint', kind: 'boolean', group: 'integrations' },
   { path: ['capacity', 'workingMemorySlots'], id: 'memory-working-capacity', label: 'field.workingCapacity.label', hint: 'field.workingCapacity.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
@@ -231,6 +229,14 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
   const [failure, setFailure] = useState<string | undefined>(undefined)
   const [saved, setSaved] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  /**
+   * Which action the message on screen belongs to.
+   *
+   * A failed download and a failed save share one paragraph, and labelling both
+   * "保存失败" made a download error read as a settings error — which is how a
+   * missing model path first looked like a save problem.
+   */
+  const [failureOf, setFailureOf] = useState<'save' | 'download'>('save')
 
   // The scope publishes through a snapshot store, so the form subscribes rather
   // than polling: a write from anywhere else (another tab, a file edit) has to
@@ -242,6 +248,7 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
 
   const write = async (ops: Parameters<MemorySettingsFace['mutate']>[0]): Promise<void> => {
     setFailure(undefined)
+    setFailureOf('save')
     try {
       await settings.mutate(ops)
       setSaved(true)
@@ -255,6 +262,7 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
   const runDownload = async (): Promise<void> => {
     if (downloadModel === undefined) return
     setFailure(undefined)
+    setFailureOf('download')
     setDownloading(true)
     try {
       await downloadModel()
@@ -333,7 +341,11 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
           </section>
         )
       })}
-      {failure !== undefined && <p className={css.error}>{t('settingsFailed')} {failure}</p>}
+      {failure !== undefined && (
+        <p className={css.error}>
+          {failureOf === 'download' ? t('settingsDownloadFailed') : t('settingsFailed')} {failure}
+        </p>
+      )}
       {failure === undefined && saved && <p className={css.ok}>{t('settingsSaved')}</p>}
     </div>
   )

@@ -70,7 +70,7 @@ const resolved = {
   },
   integrations: {
     autoDetect: true,
-    toolkit: { enabled: 'auto', readHotPackSection: true, writeBackOnApproval: false, root: '' },
+    toolkit: { enabled: 'auto', readHotPackSection: true, writeBackOnApproval: false },
   },
 }
 
