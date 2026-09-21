@@ -239,6 +239,11 @@
           danger-full-access:
             sandbox: danger-full-access
             approval: never
+          yolo:
+            sandbox: danger-full-access
+            approval: always
+            name: YOLO
+            description: Full file access and every approval auto-approved with no prompts — unattended long-running tasks.
 
     - id: shell-env
       name: '@deepseek-ai/dsh-shell-env'
