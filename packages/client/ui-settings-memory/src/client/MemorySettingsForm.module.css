@@ -5,6 +5,29 @@
   margin-top: 4px;
 }
 
+.group {
+  display: flex;
+  flex-direction: column;
+  padding-top: 12px;
+}
+
+.group:first-child {
+  padding-top: 0;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.groupHint {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
 .row {
   display: flex;
   align-items: center;

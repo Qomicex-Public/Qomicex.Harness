@@ -39,6 +39,18 @@ type FieldKind = 'number' | 'boolean' | 'text' | 'select'
 /** Which option list a select field draws from. */
 type SelectSource = 'providers' | 'models'
 
+/** The sections the form is grouped into, in display order. */
+export type FieldGroup =
+  | 'basic'
+  | 'judgment'
+  | 'retention'
+  | 'patternExtraction'
+  | 'patternApplication'
+  | 'curation'
+  | 'integrations'
+  | 'retrieval'
+  | 'authorization'
+
 /** One editable field. */
 interface FieldSpec {
   /** Dotted path inside the memory settings section. */
@@ -56,35 +68,84 @@ interface FieldSpec {
   readonly min?: number
   readonly max?: number
   readonly step?: number
+  /** The section this field belongs to. */
+  readonly group: FieldGroup
 }
+
+/** The sections in display order, each with its heading key. */
+const GROUP_ORDER: readonly { group: FieldGroup; title: MemoryLocaleKey; hint: MemoryLocaleKey }[] = [
+  { group: 'judgment', title: 'group.judgment', hint: 'group.judgment.hint' },
+  { group: 'retention', title: 'group.retention', hint: 'group.retention.hint' },
+  { group: 'patternExtraction', title: 'group.patternExtraction', hint: 'group.patternExtraction.hint' },
+  { group: 'patternApplication', title: 'group.patternApplication', hint: 'group.patternApplication.hint' },
+  { group: 'curation', title: 'group.curation', hint: 'group.curation.hint' },
+  { group: 'integrations', title: 'group.integrations', hint: 'group.integrations.hint' },
+  { group: 'retrieval', title: 'group.retrieval', hint: 'group.retrieval.hint' },
+  { group: 'basic', title: 'group.basic', hint: 'group.basic.hint' },
+  { group: 'authorization', title: 'group.authorization', hint: 'group.authorization.hint' },
+]
 
 /**
  * The fields the page exposes.
  *
- * Deliberately not every key in the schema: `retrieval.useVector` is reserved
- * until an embedding service exists, and the authorization `policyVersion` is
- * an audit label rather than a preference. Showing a control that cannot change
- * behaviour would be worse than omitting it.
+ * Deliberately not every key in the schema. Two are withheld because showing a
+ * control that cannot change behaviour would be worse than omitting it:
+ * `retrieval.useVector` is reserved until an embedding service exists, and the
+ * authorization `policyVersion` is an audit label rather than a preference.
+ * `retention.archiveOnExpiry` is absent because archiving never deletes — it is
+ * what the pass does, not something to switch off.
  *
  * Labels and hints are dictionary keys, not literals: the page is localized,
  * and an English-only form would leave a Chinese user guessing what each knob
  * does.
+ *
+ * The sections follow the design document's layout, and the layers are ordered
+ * along the write path: what gets in, how long it stays, what repeats, what
+ * that changes, and what tidies up afterwards.
  */
 const FIELDS: readonly FieldSpec[] = [
-  { path: ['thresholds', 'excitability'], id: 'memory-excitability', label: 'field.excitability.label', hint: 'field.excitability.hint', kind: 'number', min: 0, max: 1, step: 0.05 },
-  { path: ['thresholds', 'forgetDemote'], id: 'memory-forget-demote', label: 'field.forgetDemote.label', hint: 'field.forgetDemote.hint', kind: 'number', min: 0, max: 1, step: 0.05 },
-  { path: ['thresholds', 'forgetArchive'], id: 'memory-forget-archive', label: 'field.forgetArchive.label', hint: 'field.forgetArchive.hint', kind: 'number', min: 0, max: 1, step: 0.05 },
-  { path: ['thresholds', 'forgetHard'], id: 'memory-forget-hard', label: 'field.forgetHard.label', hint: 'field.forgetHard.hint', kind: 'number', min: 0, max: 1, step: 0.05 },
-  { path: ['bounds', 'workingCapacity'], id: 'memory-working-capacity', label: 'field.workingCapacity.label', hint: 'field.workingCapacity.hint', kind: 'number', min: 1, step: 1 },
-  { path: ['bounds', 'stagingCapacity'], id: 'memory-staging-capacity', label: 'field.stagingCapacity.label', hint: 'field.stagingCapacity.hint', kind: 'number', min: 1, step: 1 },
-  { path: ['retrieval', 'topK'], id: 'memory-top-k', label: 'field.topK.label', hint: 'field.topK.hint', kind: 'number', min: 1, step: 1 },
-  { path: ['retrieval', 'similarityThreshold'], id: 'memory-similarity', label: 'field.similarityThreshold.label', hint: 'field.similarityThreshold.hint', kind: 'number', min: 0, max: 1, step: 0.05 },
-  { path: ['injection', 'hotPack'], id: 'memory-hot-pack', label: 'field.hotPack.label', hint: 'field.hotPack.hint', kind: 'boolean' },
-  { path: ['injection', 'recallMaxChars'], id: 'memory-recall-chars', label: 'field.recallMaxChars.label', hint: 'field.recallMaxChars.hint', kind: 'number', min: 1, step: 100 },
-  { path: ['authorization', 'enabled'], id: 'memory-authorization', label: 'field.authorization.label', hint: 'field.authorization.hint', kind: 'boolean' },
-  { path: ['llmDistill', 'enabled'], id: 'memory-distill', label: 'field.distill.label', hint: 'field.distill.hint', kind: 'boolean' },
-  { path: ['llmDistill', 'provider'], id: 'memory-distill-provider', label: 'field.distillProvider.label', hint: 'field.distillProvider.hint', kind: 'select', source: 'providers' },
-  { path: ['llmDistill', 'model'], id: 'memory-distill-model', label: 'field.distillModel.label', hint: 'field.distillModel.hint', kind: 'select', source: 'models' },
+  { path: ['judgment', 'enabled'], id: 'memory-judgment-enabled', label: 'field.judgmentEnabled.label', hint: 'field.judgmentEnabled.hint', kind: 'boolean', group: 'judgment' },
+  { path: ['judgment', 'localLlm', 'enabled'], id: 'memory-local-llm-enabled', label: 'field.localLlmEnabled.label', hint: 'field.localLlmEnabled.hint', kind: 'boolean', group: 'judgment' },
+  { path: ['judgment', 'localLlm', 'modelPath'], id: 'memory-local-llm-model-path', label: 'field.localLlmModelPath.label', hint: 'field.localLlmModelPath.hint', kind: 'text', group: 'judgment' },
+  { path: ['judgment', 'localLlm', 'gpuLayers'], id: 'memory-local-llm-gpu-layers', label: 'field.localLlmGpuLayers.label', hint: 'field.localLlmGpuLayers.hint', kind: 'number', min: 0, step: 1, group: 'judgment' },
+  { path: ['judgment', 'localLlm', 'contextSize'], id: 'memory-local-llm-context-size', label: 'field.localLlmContextSize.label', hint: 'field.localLlmContextSize.hint', kind: 'number', min: 256, step: 256, group: 'judgment' },
+  { path: ['retention', 'initialTTLDays'], id: 'memory-initial-ttl', label: 'field.initialTTLDays.label', hint: 'field.initialTTLDays.hint', kind: 'number', min: 1, step: 1, group: 'retention' },
+  { path: ['retention', 'promotionThreshold'], id: 'memory-promotion-threshold', label: 'field.promotionThreshold.label', hint: 'field.promotionThreshold.hint', kind: 'number', min: 0, step: 0.5, group: 'retention' },
+  { path: ['retention', 'startupGraceSessions'], id: 'memory-startup-grace', label: 'field.startupGraceSessions.label', hint: 'field.startupGraceSessions.hint', kind: 'number', min: 0, step: 1, group: 'retention' },
+  { path: ['retention', 'structuralException'], id: 'memory-structural-exception', label: 'field.structuralException.label', hint: 'field.structuralException.hint', kind: 'boolean', group: 'retention' },
+  { path: ['patternExtraction', 'enabled'], id: 'memory-pattern-enabled', label: 'field.patternEnabled.label', hint: 'field.patternEnabled.hint', kind: 'boolean', group: 'patternExtraction' },
+  { path: ['patternExtraction', 'intervalDays'], id: 'memory-pattern-interval', label: 'field.patternIntervalDays.label', hint: 'field.patternIntervalDays.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternExtraction', 'requireHumanApproval'], id: 'memory-pattern-approval', label: 'field.patternRequireApproval.label', hint: 'field.patternRequireApproval.hint', kind: 'boolean', group: 'patternExtraction' },
+  { path: ['patternExtraction', 'preferenceMinProjects'], id: 'memory-pattern-preference-projects', label: 'field.patternPreferenceProjects.label', hint: 'field.patternPreferenceProjects.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternExtraction', 'failureMinOccurrences'], id: 'memory-pattern-failure-occurrences', label: 'field.patternFailureOccurrences.label', hint: 'field.patternFailureOccurrences.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternExtraction', 'environmentMinProjects'], id: 'memory-pattern-environment-projects', label: 'field.patternEnvironmentProjects.label', hint: 'field.patternEnvironmentProjects.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternApplication', 'injectHotPack'], id: 'memory-pattern-inject-hot-pack', label: 'field.patternInjectHotPack.label', hint: 'field.patternInjectHotPack.hint', kind: 'boolean', group: 'patternApplication' },
+  { path: ['patternApplication', 'sceneMatching'], id: 'memory-pattern-scene-matching', label: 'field.patternSceneMatching.label', hint: 'field.patternSceneMatching.hint', kind: 'boolean', group: 'patternApplication' },
+  { path: ['patternApplication', 'feedbackCollection'], id: 'memory-pattern-feedback', label: 'field.patternFeedback.label', hint: 'field.patternFeedback.hint', kind: 'boolean', group: 'patternApplication' },
+  { path: ['patternApplication', 'matchThreshold'], id: 'memory-pattern-match-threshold', label: 'field.patternMatchThreshold.label', hint: 'field.patternMatchThreshold.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'patternApplication' },
+  { path: ['patternApplication', 'hotPackPatternsBudget'], id: 'memory-pattern-hot-pack-budget', label: 'field.patternHotPackBudget.label', hint: 'field.patternHotPackBudget.hint', kind: 'number', min: 1, step: 256, group: 'patternApplication' },
+  { path: ['curation', 'enabled'], id: 'memory-curation-enabled', label: 'field.curationEnabled.label', hint: 'field.curationEnabled.hint', kind: 'boolean', group: 'curation' },
+  { path: ['curation', 'provider'], id: 'memory-curation-provider', label: 'field.curationProvider.label', hint: 'field.curationProvider.hint', kind: 'select', source: 'providers', group: 'curation' },
+  { path: ['curation', 'model'], id: 'memory-curation-model', label: 'field.curationModel.label', hint: 'field.curationModel.hint', kind: 'select', source: 'models', group: 'curation' },
+  { path: ['curation', 'intervalDays'], id: 'memory-curation-interval', label: 'field.curationIntervalDays.label', hint: 'field.curationIntervalDays.hint', kind: 'number', min: 1, step: 1, group: 'curation' },
+  { path: ['integrations', 'autoDetect'], id: 'memory-integrations-auto-detect', label: 'field.integrationsAutoDetect.label', hint: 'field.integrationsAutoDetect.hint', kind: 'boolean', group: 'integrations' },
+  { path: ['integrations', 'toolkitRoot'], id: 'memory-integrations-toolkit-root', label: 'field.integrationsToolkitRoot.label', hint: 'field.integrationsToolkitRoot.hint', kind: 'text', group: 'integrations' },
+  { path: ['integrations', 'toolkitReadHotPackSection'], id: 'memory-integrations-read-section', label: 'field.integrationsReadSection.label', hint: 'field.integrationsReadSection.hint', kind: 'boolean', group: 'integrations' },
+  { path: ['integrations', 'toolkitWriteBackOnApproval'], id: 'memory-integrations-write-back', label: 'field.integrationsWriteBack.label', hint: 'field.integrationsWriteBack.hint', kind: 'boolean', group: 'integrations' },
+  { path: ['bounds', 'workingCapacity'], id: 'memory-working-capacity', label: 'field.workingCapacity.label', hint: 'field.workingCapacity.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
+  { path: ['bounds', 'stagingCapacity'], id: 'memory-staging-capacity', label: 'field.stagingCapacity.label', hint: 'field.stagingCapacity.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
+  { path: ['retrieval', 'topK'], id: 'memory-top-k', label: 'field.topK.label', hint: 'field.topK.hint', kind: 'number', min: 1, step: 1, group: 'retrieval' },
+  { path: ['retrieval', 'similarityThreshold'], id: 'memory-similarity', label: 'field.similarityThreshold.label', hint: 'field.similarityThreshold.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'retrieval' },
+  { path: ['injection', 'hotPack'], id: 'memory-hot-pack', label: 'field.hotPack.label', hint: 'field.hotPack.hint', kind: 'boolean', group: 'retrieval' },
+  { path: ['injection', 'recallMaxChars'], id: 'memory-recall-chars', label: 'field.recallMaxChars.label', hint: 'field.recallMaxChars.hint', kind: 'number', min: 1, step: 100, group: 'retrieval' },
+  { path: ['thresholds', 'excitability'], id: 'memory-excitability', label: 'field.excitability.label', hint: 'field.excitability.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
+  { path: ['thresholds', 'forgetDemote'], id: 'memory-forget-demote', label: 'field.forgetDemote.label', hint: 'field.forgetDemote.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
+  { path: ['thresholds', 'forgetArchive'], id: 'memory-forget-archive', label: 'field.forgetArchive.label', hint: 'field.forgetArchive.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
+  { path: ['thresholds', 'forgetHard'], id: 'memory-forget-hard', label: 'field.forgetHard.label', hint: 'field.forgetHard.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
+  { path: ['authorization', 'enabled'], id: 'memory-authorization', label: 'field.authorization.label', hint: 'field.authorization.hint', kind: 'boolean', group: 'authorization' },
+  { path: ['llmDistill', 'enabled'], id: 'memory-distill', label: 'field.distill.label', hint: 'field.distill.hint', kind: 'boolean', group: 'curation' },
+  { path: ['llmDistill', 'provider'], id: 'memory-distill-provider', label: 'field.distillProvider.label', hint: 'field.distillProvider.hint', kind: 'select', source: 'providers', group: 'curation' },
+  { path: ['llmDistill', 'model'], id: 'memory-distill-model', label: 'field.distillModel.label', hint: 'field.distillModel.hint', kind: 'select', source: 'models', group: 'curation' },
 ]
 
 /**
@@ -174,20 +235,30 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
 
   return (
     <div className={css.form}>
-      {FIELDS.map(field => (
-        <MemoryField
-          key={field.id}
-          field={field}
-          value={readPath(section, field.path)}
-          touched={userHasPath(user, field.path)}
-          disabled={!writable}
-          t={t}
-          options={optionsFor(field)}
-          optionLabels={labelsFor(field)}
-          onSet={value => write([{ op: 'set', path: [...field.path], value }])}
-          onClear={() => write([{ op: 'unset', path: [...field.path] }])}
-        />
-      ))}
+      {GROUP_ORDER.map(({ group, title, hint }) => {
+        const fields = FIELDS.filter(field => field.group === group)
+        if (fields.length === 0) return null
+        return (
+          <section key={group} className={css.group}>
+            <h3 className={css.groupTitle}>{t(title)}</h3>
+            <p className={css.groupHint}>{t(hint)}</p>
+            {fields.map(field => (
+              <MemoryField
+                key={field.id}
+                field={field}
+                value={readPath(section, field.path)}
+                touched={userHasPath(user, field.path)}
+                disabled={!writable}
+                t={t}
+                options={optionsFor(field)}
+                optionLabels={labelsFor(field)}
+                onSet={value => write([{ op: 'set', path: [...field.path], value }])}
+                onClear={() => write([{ op: 'unset', path: [...field.path] }])}
+              />
+            ))}
+          </section>
+        )
+      })}
       {failure !== undefined && <p className={css.error}>{t('settingsFailed')} {failure}</p>}
       {failure === undefined && saved && <p className={css.ok}>{t('settingsSaved')}</p>}
     </div>

@@ -26,6 +26,48 @@ const resolved = {
   injection: { hotPack: true, recallMaxChars: 2000 },
   authorization: { enabled: false, policyVersion: 'bio-memory-1' },
   llmDistill: { enabled: false, provider: '', model: '' },
+  judgment: {
+    enabled: true,
+    localLlm: { enabled: false, modelPath: '', gpuLayers: 0, contextSize: 2048 },
+  },
+  retention: { initialTTLDays: 7, promotionThreshold: 3, startupGraceSessions: 20, structuralException: true },
+  patternExtraction: {
+    enabled: true,
+    intervalDays: 7,
+    requireHumanApproval: true,
+    preferenceMinProjects: 3,
+    failureMinOccurrences: 2,
+    environmentMinProjects: 3,
+    pruningEnabled: true,
+    pruneMinScore: 0,
+    pruneStaleDays: 30,
+  },
+  patternApplication: {
+    injectHotPack: true,
+    sceneMatching: true,
+    feedbackCollection: false,
+    hotPackPatternsBudget: 2048,
+    matchThreshold: 0.5,
+    feedbackThreshold: 0.5,
+    feedbackWindowMs: 300000,
+  },
+  curation: {
+    enabled: true,
+    provider: '',
+    model: '',
+    intervalDays: 7,
+    modelContextSize: 262144,
+    systemReserve: 8192,
+    safetyMargin: 8192,
+    inputRatio: 0.6,
+    maxLevel: 5,
+  },
+  integrations: {
+    autoDetect: true,
+    toolkitReadHotPackSection: true,
+    toolkitWriteBackOnApproval: false,
+    toolkitRoot: '',
+  },
 }
 
 /** Build a settings face over a fixed snapshot, recording every mutate. */
@@ -78,7 +120,7 @@ describe('MemorySettingsForm', () => {
     const { settings } = face()
     render(<MemorySettingsForm settings={settings} t={t} distillTargets={noTargets} />)
 
-    expect(screen.getByLabelText('Write excitability threshold')).toHaveProperty('value', '0.45')
+    expect(screen.getByLabelText('Retention excitability score')).toHaveProperty('value', '0.45')
     expect(screen.getByLabelText('Recall top K')).toHaveProperty('value', '8')
     expect(screen.getByLabelText('Inject hot pack')).toHaveProperty('checked', true)
     expect(screen.getByLabelText('Authorization plane')).toHaveProperty('checked', false)
@@ -88,7 +130,7 @@ describe('MemorySettingsForm', () => {
     const { settings, mutate } = face()
     render(<MemorySettingsForm settings={settings} t={t} distillTargets={noTargets} />)
 
-    const input = screen.getByLabelText('Write excitability threshold')
+    const input = screen.getByLabelText('Retention excitability score')
     fireEvent.change(input, { target: { value: '0.6' } })
     fireEvent.blur(input, { target: { value: '0.6' } })
 
@@ -112,7 +154,7 @@ describe('MemorySettingsForm', () => {
     const { settings, mutate } = face()
     render(<MemorySettingsForm settings={settings} t={t} distillTargets={noTargets} />)
 
-    const input = screen.getByLabelText('Write excitability threshold')
+    const input = screen.getByLabelText('Retention excitability score')
     fireEvent.change(input, { target: { value: '2' } })
     fireEvent.blur(input, { target: { value: '2' } })
 
@@ -177,7 +219,7 @@ describe('MemorySettingsForm', () => {
     const { settings } = face({ writable: false })
     render(<MemorySettingsForm settings={settings} t={t} distillTargets={noTargets} />)
 
-    expect(screen.getByLabelText('Write excitability threshold')).toHaveProperty('disabled', true)
+    expect(screen.getByLabelText('Retention excitability score')).toHaveProperty('disabled', true)
     expect(screen.getByLabelText('Inject hot pack')).toHaveProperty('disabled', true)
   })
 
@@ -224,6 +266,46 @@ describe('MemorySettingsForm', () => {
       expect(zhDict[key].length).toBeGreaterThan(0)
       expect(en[key].length).toBeGreaterThan(0)
     }
+  })
+
+  it('groups the fields under the design document\u2019s sections', () => {
+    // The form used to be one flat list, so a layer added on the host was
+    // invisible on the page. Each section now renders its own heading.
+    const { settings } = face()
+    render(<MemorySettingsForm settings={settings} t={t} distillTargets={noTargets} />)
+
+    for (const key of Object.keys(en) as MemoryLocaleKey[]) {
+      if (!key.startsWith('group.') || key.endsWith('.hint')) continue
+      expect(screen.getByText(en[key])).toBeDefined()
+    }
+  })
+
+  it('renders a field from every layer the host exposes', () => {
+    // One field per configuration group, so a layer that stops rendering shows
+    // up here rather than only in a manual pass over the Settings page.
+    const { settings } = face()
+    render(<MemorySettingsForm settings={settings} t={t} distillTargets={noTargets} />)
+
+    const expected = [
+      'field.judgmentEnabled.label',
+      'field.initialTTLDays.label',
+      'field.patternEnabled.label',
+      'field.patternInjectHotPack.label',
+      'field.curationEnabled.label',
+      'field.integrationsAutoDetect.label',
+      'field.workingCapacity.label',
+      'field.excitability.label',
+      'field.authorization.label',
+    ] as const satisfies readonly MemoryLocaleKey[]
+    for (const key of expected) {
+      expect(screen.getByLabelText(en[key])).toBeDefined()
+    }
+  })
+
+  it('says the excitability score no longer gates the write', () => {
+    // The threshold became a retention score when the write gate was removed;
+    // the old copy promised a rejection that no longer happens.
+    expect(en['field.excitability.hint']).toContain('no longer decides whether a memory is written')
   })
 
   describe('distillation dropdowns', () => {
