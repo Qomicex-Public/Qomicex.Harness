@@ -534,10 +534,14 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
    * what makes the core independent of the integrations — unloading every one
    * of them leaves capture, judgment, retention, extraction, application, and
    * curation exactly as they were.
+   *
+   * The toolkit integration takes no root: it finds each workspace's `.memory/`
+   * from the scope a pack is built for, so one instance serves every workspace
+   * it runs in. `off` and a disabled auto-detect are the two ways it stays out.
    */
   const integrationReport = await loadIntegrations(
-    currentConfig().integrations.autoDetect && currentConfig().integrations.toolkit.root !== ''
-      ? [createToolkitIntegration({ root: currentConfig().integrations.toolkit.root })]
+    currentConfig().integrations.autoDetect && currentConfig().integrations.toolkit.enabled !== 'off'
+      ? [createToolkitIntegration()]
       : [],
   )
   const integrations = integrationReport.active

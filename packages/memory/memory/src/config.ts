@@ -19,6 +19,7 @@
 import z from '@deepseek-ai/schemastery'
 
 import type { RuleEngineMode } from './types.ts'
+import { ALL_GPU_LAYERS, DEFAULT_JUDGE_MODEL_PATH } from './algorithms/local-judge.ts'
 
 /** Write-gate and forgetting thresholds. */
 export interface MemoryThresholdsConfig {
@@ -115,13 +116,25 @@ export interface MemoryLocalLlmConfig {
   enabled: boolean
   /** Whether a missing model may be downloaded on first use. */
   autoDownload: boolean
-  /** Path or URI of the GGUF model; empty disables the model even when enabled. */
+  /**
+   * Path or URI of the GGUF model. **Empty means the default location**, which
+   * {@link resolveConfig} fills in — the design document's configuration lists
+   * no model path at all, so a user is never asked for one; this is the
+   * override for someone who keeps the weights elsewhere.
+   */
   modelPath: string
   /** Model version label, recorded so a trainer can tell weights apart. */
   modelVersion: string
   /** Prompt version label, recorded alongside each judgment row. */
   promptVersion: string
-  /** Layers offloaded to the GPU; `0` runs on CPU. */
+  /**
+   * Layers offloaded to the GPU; `0` runs on CPU. The default offloads every
+   * layer, because a judge that runs per user message on CPU is slow enough to
+   * make the machine unusable — measured 86 s for one answer on CPU against
+   * 3-5 s on a GPU. A machine with no GPU ignores the count and runs on CPU,
+   * so the default needs no detection to stay correct; `0` is how a user forces
+   * CPU on a machine that does have one.
+   */
   gpuLayers: number
   /** Context size in tokens. */
   contextSize: number
@@ -282,21 +295,21 @@ export interface MemoryIntegrationConfig {
 /** The toolkit integration's knobs. */
 export interface MemoryToolkitIntegrationConfig {
   /**
-   * `auto` enables it when the root exists, `on` forces it, `off` disables it.
-   * Three states rather than a boolean because "detect it for me" and "use it
-   * even though I know it is not there" are different requests.
+   * `auto` enables it when the toolkit is present, `on` forces it, `off`
+   * disables it. Three states rather than a boolean because "detect it for me"
+   * and "use it even though I know it is not there" are different requests.
+   *
+   * Presence is decided per workspace rather than once per machine — the
+   * `.memory/` directory lives at the root of whichever workspace the session
+   * is running in — so `auto` and `on` load the integration either way and the
+   * difference shows up per scope, where a workspace without a `.memory/`
+   * simply contributes nothing.
    */
   enabled: 'auto' | 'on' | 'off'
   /** Whether the toolkit's preferences ride in the hot pack. */
   readHotPackSection: boolean
   /** Whether an approved pattern is written back to the toolkit's file. */
   writeBackOnApproval: boolean
-  /**
-   * Root holding the toolkit's `.memory/` directory. **Kept although the
-   * design document's config omits it**: the integration cannot find the
-   * toolkit without a location, and guessing one would read a stranger's files.
-   */
-  root: string
 }
 
 /** Plugin configuration. */
@@ -382,7 +395,7 @@ export const Config: z<Config> = z.object({
       modelPath: z.string().default(''),
       modelVersion: z.string().default(''),
       promptVersion: z.string().default('v1'),
-      gpuLayers: z.number().step(1).min(0).default(0),
+      gpuLayers: z.number().step(1).min(0).default(ALL_GPU_LAYERS),
       contextSize: z.number().step(1).min(256).default(2048),
     }).default({
       enabled: false,
@@ -390,7 +403,7 @@ export const Config: z<Config> = z.object({
       modelPath: '',
       modelVersion: '',
       promptVersion: 'v1',
-      gpuLayers: 0,
+      gpuLayers: ALL_GPU_LAYERS,
       contextSize: 2048,
     }),
   }).default({
@@ -402,7 +415,7 @@ export const Config: z<Config> = z.object({
       modelPath: '',
       modelVersion: '',
       promptVersion: 'v1',
-      gpuLayers: 0,
+      gpuLayers: ALL_GPU_LAYERS,
       contextSize: 2048,
     },
   }),
@@ -528,11 +541,10 @@ export const Config: z<Config> = z.object({
       enabled: z.union(['auto', 'on', 'off'] as const).default('auto'),
       readHotPackSection: z.boolean().default(false),
       writeBackOnApproval: z.boolean().default(false),
-      root: z.string().default(''),
-    }).default({ enabled: 'auto', readHotPackSection: false, writeBackOnApproval: false, root: '' }),
+    }).default({ enabled: 'auto', readHotPackSection: false, writeBackOnApproval: false }),
   }).default({
     autoDetect: false,
-    toolkit: { enabled: 'auto', readHotPackSection: false, writeBackOnApproval: false, root: '' },
+    toolkit: { enabled: 'auto', readHotPackSection: false, writeBackOnApproval: false },
   }),
 })
 
@@ -565,7 +577,18 @@ export function resolveConfig(config: Config): ResolvedConfig {
     injection: { ...injection },
     authorization: { ...authorization },
     llmDistill: { ...llmDistill },
-    judgment: { ...judgment, ruleEngine: { ...judgment.ruleEngine }, localLlm: { ...judgment.localLlm } },
+    judgment: {
+      ...judgment,
+      ruleEngine: { ...judgment.ruleEngine },
+      // An empty path means "wherever the model belongs", and this is the one
+      // place that answer is produced: the judge, the downloader, and the
+      // Settings button all read the resolved value rather than each deciding
+      // what empty means.
+      localLlm: {
+        ...judgment.localLlm,
+        modelPath: judgment.localLlm.modelPath === '' ? DEFAULT_JUDGE_MODEL_PATH : judgment.localLlm.modelPath,
+      },
+    },
     retention: { ...retention },
     patternExtraction: {
       ...patternExtraction,

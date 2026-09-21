@@ -12,7 +12,8 @@ import { Context } from '@deepseek-ai/cordis'
 import { SettingsProvider, type SettingsNamespace } from '@deepseek-ai/dsh-settings'
 import { registerMemorySettings, MEMORY_SETTINGS_NS } from '../src/settings.ts'
 import { Config, resolveConfig } from '../src/config.ts'
-import type { Config as MemoryConfig } from '../src/config.ts'
+import type { Config as MemoryConfig, ResolvedConfig } from '../src/config.ts'
+import { DEFAULT_JUDGE_MODEL_PATH, ALL_GPU_LAYERS } from '../src/algorithms/local-judge.ts'
 
 /** In-memory provider: the smallest real subclass that persists somewhere. */
 class MemorySettings extends SettingsProvider {
@@ -33,6 +34,20 @@ class MemorySettings extends SettingsProvider {
 
   protected async persist(ns: SettingsNamespace, section: Record<string, unknown>): Promise<void> {
     this.doc[ns] = structuredClone(section)
+  }
+}
+
+/** The local-model group with one field overridden, so a test names only what it changes. */
+function localLlm(overrides: Partial<ResolvedConfig['judgment']['localLlm']> = {}): ResolvedConfig['judgment']['localLlm'] {
+  return {
+    enabled: false,
+    autoDownload: false,
+    modelPath: '',
+    modelVersion: '',
+    promptVersion: 'v1',
+    gpuLayers: 0,
+    contextSize: 2048,
+    ...overrides,
   }
 }
 
@@ -193,6 +208,48 @@ describe('memory settings section', () => {
     expect(resolved.judgment.ruleEngine.mode).toBe('relaxed')
     expect(resolved.judgment.localLlm.autoDownload).toBe(false)
     expect(resolved.judgment.localLlm.promptVersion).toBe('v1')
+  })
+
+  it('offloads every layer by default so the judge does not run on CPU', () => {
+    // A judge that runs per user message on CPU took 86 s for one answer
+    // against 3-5 s on a GPU, which is enough to make the machine unusable.
+    // The default is therefore full offload; llama.cpp ignores the count on a
+    // machine with no GPU, so this stays correct without any detection.
+    expect(resolveConfig(Config({})).judgment.localLlm.gpuLayers).toBe(ALL_GPU_LAYERS)
+  })
+
+  it('keeps an explicit zero, which is how a user forces CPU', () => {
+    const resolved = resolveConfig(Config({
+      judgment: {
+        enabled: false,
+        ruleEngine: { mode: 'relaxed' },
+        localLlm: localLlm({ gpuLayers: 0 }),
+      },
+    }))
+    expect(resolved.judgment.localLlm.gpuLayers).toBe(0)
+  })
+
+  it('fills the default model path so an empty one still names somewhere', () => {
+    // The document's configuration lists no model path at all, so the resolved
+    // config has to name the default location itself. An empty path reaching
+    // the downloader is what made the button fail with "set a model file path
+    // first" on a fresh deployment.
+    const resolved = resolveConfig(Config({
+      judgment: { enabled: false, ruleEngine: { mode: 'relaxed' }, localLlm: localLlm({ modelPath: '' }) },
+    }))
+    expect(resolved.judgment.localLlm.modelPath).toBe(DEFAULT_JUDGE_MODEL_PATH)
+    expect(resolved.judgment.localLlm.modelPath).not.toBe('')
+  })
+
+  it('keeps an explicit model path', () => {
+    const resolved = resolveConfig(Config({
+      judgment: {
+        enabled: false,
+        ruleEngine: { mode: 'relaxed' },
+        localLlm: localLlm({ modelPath: 'D:/weights/judge.gguf' }),
+      },
+    }))
+    expect(resolved.judgment.localLlm.modelPath).toBe('D:/weights/judge.gguf')
   })
 
   it('resolves the toolkit integration as a tri-state', () => {

@@ -27,7 +27,8 @@
 import { Readable } from 'node:stream'
 import { createWriteStream } from 'node:fs'
 import { mkdir, rename, stat } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { dirname, join } from 'node:path'
+import { dshHomePath } from '@deepseek-ai/dsh-home-paths'
 
 import type { JudgmentInput, JudgmentResult, LocalJudge } from './judgment.ts'
 import type { JudgmentVerdict } from '../types.ts'
@@ -54,6 +55,14 @@ export const JUDGE_MODEL_FILE = 'functiongemma-270m-it-q8_0.gguf'
 export const JUDGE_MODEL_URL = `https://huggingface.co/${JUDGE_MODEL_REPO}/resolve/${JUDGE_MODEL_REVISION}/${JUDGE_MODEL_FILE}`
 /** The version label stamped on judgment rows when the config leaves it empty. */
 export const JUDGE_MODEL_VERSION = `${JUDGE_MODEL_FILE}@${JUDGE_MODEL_REVISION.slice(0, 8)}`
+/**
+ * Where the model lands when the config names no path.
+ *
+ * The harness home rather than the workspace: the weights are a machine-wide
+ * asset, and putting them in one project would download 292 MB again for every
+ * other workspace that enables the judge.
+ */
+export const DEFAULT_JUDGE_MODEL_PATH = join(dshHomePath('models'), JUDGE_MODEL_FILE)
 
 /** The instruction block, matching the design document's judgment prompt. */
 export const JUDGE_SYSTEM_PROMPT = [
@@ -169,6 +178,16 @@ export interface LocalJudgeOptions {
 
 /** Default context size; enough for the prompt plus a short JSON answer. */
 export const DEFAULT_JUDGE_CONTEXT_SIZE = 2048
+
+/**
+ * Layers offloaded by default.
+ *
+ * Every layer, because the model is 272 MiB and even a laptop GPU holds it
+ * whole; a partial offload would split the compute graph for no gain. Measured
+ * safe on a machine with no GPU: llama.cpp silently ignores the request and
+ * runs on CPU, so this needs no detection to stay correct.
+ */
+export const ALL_GPU_LAYERS = 99
 
 /**
  * The node-llama-cpp loader.

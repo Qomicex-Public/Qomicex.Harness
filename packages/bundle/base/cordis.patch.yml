@@ -443,7 +443,6 @@
             enabled: false
             autoDownload: false
             modelPath: ''
-            gpuLayers: 0
             contextSize: 2048
         retention:
           initialTTLDays: 7
@@ -464,6 +463,10 @@
           model: ''
         integrations:
           autoDetect: true
+          toolkit:
+            enabled: auto
+            readHotPackSection: false
+            writeBackOnApproval: false
         capacity:
           workingMemorySlots: 64
           stagingPoolCapacity: 128
