@@ -450,12 +450,12 @@
           archiveOnExpiry: true
           structuralException: true
         patternExtraction:
-          enabled: false
+          enabled: true
           requireHumanApproval: true
         patternApplication:
-          injectHotPack: false
-          sceneMatching: false
-          feedbackCollection: false
+          injectHotPack: true
+          sceneMatching: true
+          feedbackCollection: true
         curation:
           enabled: false
           provider: ''
@@ -464,11 +464,11 @@
           autoDetect: true
           toolkit:
             enabled: auto
-            readHotPackSection: false
-            writeBackOnApproval: false
+            readHotPackSection: true
+            writeBackOnApproval: true
         capacity:
           workingMemorySlots: 64
-          stagingPoolCapacity: 128
+          stagingPoolCapacity: 500
         retrieval:
           useVector: false
         injection:

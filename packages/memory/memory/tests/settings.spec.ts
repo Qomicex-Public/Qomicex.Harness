@@ -151,10 +151,12 @@ describe('memory settings section', () => {
     expect(resolveConfig(Config({})).capacity.stagingPoolCapacity).toBe(500)
   })
 
-  it('ships pattern application off, so nothing is injected until asked', () => {
-    // Both the hot-pack patterns section and the scene matcher are off by
-    // default. Enabling pattern extraction alone must not put unreviewed
-    // regularities in front of the model.
+  it('ships the offline pattern layers on, gated by human approval', () => {
+    // Extraction and application both default on. An unreviewed regularity
+    // still never reaches the model: the hot-pack section and the scene
+    // matcher read `state === 'active'` (index.ts:672), and a pattern only
+    // becomes active through approval, which is why `requireHumanApproval`
+    // stays true rather than defaulting off with the layers.
     const resolved = resolveConfig(Config({
       patternExtraction: {
         enabled: true,
@@ -169,15 +171,15 @@ describe('memory settings section', () => {
         pruning: { enabled: true, minScore: 0, staleDays: 30 },
       },
     }))
-    expect(resolved.patternApplication.injectHotPack).toBe(false)
-    expect(resolved.patternApplication.sceneMatching).toBe(false)
-    expect(resolved.patternApplication.feedbackCollection).toBe(false)
+    expect(resolved.patternApplication.injectHotPack).toBe(true)
+    expect(resolved.patternApplication.sceneMatching).toBe(true)
+    expect(resolved.patternApplication.feedbackCollection).toBe(true)
     expect(resolved.patternApplication.matchThreshold).toBeGreaterThan(0)
   })
 
   it('resolves the pattern-extraction defaults the extractor reads', () => {
     const resolved = resolveConfig(Config({}))
-    expect(resolved.patternExtraction.enabled).toBe(false)
+    expect(resolved.patternExtraction.enabled).toBe(true)
     expect(resolved.patternExtraction.requireHumanApproval).toBe(true)
     expect(resolved.patternExtraction.schedule).toBe('weekly')
     expect(resolved.patternExtraction.thresholds.preferenceMinProjects).toBe(3)

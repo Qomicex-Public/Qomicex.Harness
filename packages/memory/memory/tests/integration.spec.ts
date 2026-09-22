@@ -241,12 +241,14 @@ describe('the core is independent of the integrations', () => {
     expect(resolved.integrations.toolkit.enabled).toBe('auto')
   })
 
-  it('defaults both integration directions off', async () => {
-    // Reading in and writing back are separately gated, and neither is on by
-    // default: an integration must be opted into twice, once per direction.
+  it('defaults both integration directions on', async () => {
+    // Reading in and writing back are separately gated, and both are on by
+    // default: `enabled: 'auto'` already decides presence per workspace, so a
+    // second opt-in would only turn an integration that is already mounted
+    // into a no-op.
     const resolved = resolveConfig(Config({}))
-    expect(resolved.integrations.toolkit.readHotPackSection).toBe(false)
-    expect(resolved.integrations.toolkit.writeBackOnApproval).toBe(false)
+    expect(resolved.integrations.toolkit.readHotPackSection).toBe(true)
+    expect(resolved.integrations.toolkit.writeBackOnApproval).toBe(true)
   })
 
   it('keeps a disabled integration out of the candidate list entirely', async () => {

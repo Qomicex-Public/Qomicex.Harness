@@ -1,11 +1,14 @@
 /**
  * Plugin configuration. Schemastery owns this surface (Cordis validates it at
  * load); the record schemas inside `src/domain.ts` are zod instead, matching
- * the storage-domain split. Every default is deliberately conservative: the
- * plugin ships disabled in the bundle patch, authorization is off, and every
- * offline layer (extraction, application, curation, integrations) is off, so
- * enabling the plugin never changes harness behavior beyond the memory tools
- * and prompt section it declares.
+ * the storage-domain split. Every default that spends money or crosses a
+ * trust boundary is deliberately conservative: the plugin ships disabled in
+ * the bundle patch, authorization is off, and the cloud-backed layers
+ * (distillation, curation) are off, so enabling the plugin never changes
+ * harness behavior beyond the memory tools and prompt section it declares.
+ * The offline layers that only touch this plugin's own store (pattern
+ * extraction and application, the toolkit integration) are on, because a
+ * pattern pass nobody runs cannot reach the approval it still requires.
  *
  * The shape follows the design document's configuration section. A few groups
  * the document does not list are kept because the code needs them and dropping
@@ -435,7 +438,7 @@ export const Config: z<Config> = z.object({
     enableMention: true,
   }),
   patternExtraction: z.object({
-    enabled: z.boolean().default(false),
+    enabled: z.boolean().default(true),
     schedule: z.union(['daily', 'weekly', 'monthly'] as const).default('weekly'),
     requireHumanApproval: z.boolean().default(true),
     thresholds: z.object({
@@ -455,7 +458,7 @@ export const Config: z<Config> = z.object({
       staleDays: z.number().step(1).min(1).default(30),
     }).default({ enabled: true, minScore: 0, staleDays: 30 }),
   }).default({
-    enabled: false,
+    enabled: true,
     schedule: 'weekly',
     requireHumanApproval: true,
     thresholds: {
@@ -467,17 +470,17 @@ export const Config: z<Config> = z.object({
     pruning: { enabled: true, minScore: 0, staleDays: 30 },
   }),
   patternApplication: z.object({
-    injectHotPack: z.boolean().default(false),
-    sceneMatching: z.boolean().default(false),
-    feedbackCollection: z.boolean().default(false),
+    injectHotPack: z.boolean().default(true),
+    sceneMatching: z.boolean().default(true),
+    feedbackCollection: z.boolean().default(true),
     hotPackPatternsBudget: z.number().step(1).min(1).default(2048),
     matchThreshold: z.number().min(0).max(1).default(0.5),
     feedbackThreshold: z.number().min(0).max(1).default(0.5),
     feedbackWindowMs: z.number().step(1).min(1).default(300_000),
   }).default({
-    injectHotPack: false,
-    sceneMatching: false,
-    feedbackCollection: false,
+    injectHotPack: true,
+    sceneMatching: true,
+    feedbackCollection: true,
     hotPackPatternsBudget: 2048,
     matchThreshold: 0.5,
     feedbackThreshold: 0.5,
@@ -535,12 +538,12 @@ export const Config: z<Config> = z.object({
     autoDetect: z.boolean().default(false),
     toolkit: z.object({
       enabled: z.union(['auto', 'on', 'off'] as const).default('auto'),
-      readHotPackSection: z.boolean().default(false),
-      writeBackOnApproval: z.boolean().default(false),
-    }).default({ enabled: 'auto', readHotPackSection: false, writeBackOnApproval: false }),
+      readHotPackSection: z.boolean().default(true),
+      writeBackOnApproval: z.boolean().default(true),
+    }).default({ enabled: 'auto', readHotPackSection: true, writeBackOnApproval: true }),
   }).default({
     autoDetect: false,
-    toolkit: { enabled: 'auto', readHotPackSection: false, writeBackOnApproval: false },
+    toolkit: { enabled: 'auto', readHotPackSection: true, writeBackOnApproval: true },
   }),
 })
 
