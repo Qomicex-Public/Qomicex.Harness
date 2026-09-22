@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import SessionStore, { SessionId } from '@deepseek-ai/dsh-session'
+import SessionStore, { SESSION_FORMAT_VERSION, SessionId } from '@deepseek-ai/dsh-session'
+import type { SessionHeader } from '@deepseek-ai/dsh-session'
+import { SessionPersistenceRevision } from '@deepseek-ai/dsh-session-persistence'
+import type { SessionPersistenceSnapshot } from '@deepseek-ai/dsh-session-persistence'
 import Storage from '@deepseek-ai/dsh-storage'
 import { DomainFacility } from '@deepseek-ai/dsh-storage-domain'
 import { RemoteError } from '@deepseek-ai/dsh-typert-protocol'
@@ -52,7 +55,11 @@ async function harness() {
   const storageDomain = new DomainFacility(ctx, { backend: 'memory', routes: {} })
   ctx.storage.mount('domain', storageDomain)
   ctx.provide('storageDomain', storageDomain)
-  ctx.provide('sessionPersistence', { list: () => Promise.resolve([]) } as never)
+  const sessionPersistence = {
+    list: vi.fn((): Promise<SessionPersistenceSnapshot[]> => Promise.resolve([])),
+    delete: vi.fn(async () => {}),
+  }
+  ctx.provide('sessionPersistence', sessionPersistence as never)
   await ctx.plugin(WorkspaceRegistry)
   const dispose = (): void => {}
   ctx.provide('typert', {
@@ -60,7 +67,7 @@ async function harness() {
     contexts: { configureHost: () => dispose },
   } as never)
   const controller = new WorkspaceController(ctx)
-  return { controller, ctx, root, storageDomain }
+  return { controller, ctx, root, storageDomain, sessionPersistence }
 }
 
 function stageDir(root: string, name: string): string {
@@ -231,6 +238,35 @@ describe('WorkspaceController commands', () => {
     // Unarchive is idempotent: an id that is not archived is not an error.
     await expect(controller.unarchiveSession({ sessionId: session.id }))
       .resolves.toEqual({ archivedSessionIds: [] })
+  })
+
+  it('permanently erases one stored Session and maps its refusals to stable failures', async () => {
+    const { controller, ctx, root, sessionPersistence } = await harness()
+    const dir = stageDir(root, 'deleted-home')
+    const stored: SessionHeader = {
+      version: SESSION_FORMAT_VERSION,
+      id: SessionId('stored'),
+      createdAt: 100,
+      isSeeded: false,
+      cwd: dir,
+    }
+    sessionPersistence.list.mockResolvedValue([
+      { header: stored, revision: SessionPersistenceRevision('rev-stored') },
+    ])
+
+    await expect(controller.deleteSession({ sessionId: SessionId('absent') }))
+      .rejects.toMatchObject({ code: 'session/not-found' })
+    expect(sessionPersistence.delete).not.toHaveBeenCalled()
+
+    // A live session owns the write handle over the log being erased.
+    const live = ctx.sessions.create(SessionId('live'), { meta: { cwd: dir } })
+    await expect(controller.deleteSession({ sessionId: live.id }))
+      .rejects.toMatchObject({ code: 'session/live', details: { sessionId: live.id } })
+    expect(sessionPersistence.delete).not.toHaveBeenCalled()
+
+    await expect(controller.deleteSession({ sessionId: stored.id }))
+      .resolves.toEqual({ deleted: true })
+    expect(sessionPersistence.delete).toHaveBeenCalledWith(stored.id)
   })
 })
 

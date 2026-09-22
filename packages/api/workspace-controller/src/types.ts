@@ -38,6 +38,10 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
       readonly sessionId: SessionId
       readonly beforeSessionId?: SessionId
     }
+    /** The Session is live in the Host process and cannot be erased. */
+    'session/live': { readonly sessionId: SessionId }
+    /** The Session is neither live nor in session persistence. */
+    'session/not-found': { readonly sessionId: SessionId }
     /** The verb needs an interaction the composed backend does not serve. */
     'directory-picker/unavailable': { readonly capability: string }
     /** The target is not fully qualified, or the backend cannot list it. */
@@ -107,6 +111,16 @@ export interface WorkspaceArchiveSessionRequest {
 /** Session requested for restoration from the archived Session list. */
 export interface WorkspaceUnarchiveSessionRequest {
   readonly sessionId: SessionId
+}
+
+/** Session requested for permanent deletion together with its durable log. */
+export interface WorkspaceDeleteSessionRequest {
+  readonly sessionId: SessionId
+}
+
+/** Confirmation that one Session and its durable log are permanently erased. */
+export interface WorkspaceDeleteSessionValue {
+  readonly deleted: true
 }
 
 /** Complete archived Session set after a mutation. */
