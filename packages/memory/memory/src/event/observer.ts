@@ -89,8 +89,6 @@ export interface ObserverOptions {
    * decides, which is the Phase 1 behaviour.
    */
   judge?: LocalJudge
-  /** Whether the local judgment layer is enabled at capture time. */
-  judgmentEnabled?: () => boolean
   /**
    * How eagerly the rule engine stages, read fresh per message so a Settings
    * change applies without a restart. Absent means `relaxed`.
@@ -363,10 +361,6 @@ export class EventObserver {
     }
     if (signal === undefined) {
       this.start(event)
-      return
-    }
-    if (!(this.options.judgmentEnabled?.() ?? false)) {
-      this.start(event, signal, root)
       return
     }
     const pending = this.judgeAndRecord(session, state, event, signal, root, { current: text, context, hints })

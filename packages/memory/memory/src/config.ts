@@ -92,8 +92,6 @@ export interface MemoryLlmDistillConfig {
 
 /** Judgment-layer knobs. */
 export interface MemoryJudgmentConfig {
-  /** Whether the local judgment layer participates at capture time. */
-  enabled: boolean
   /** Rule-engine knobs. */
   ruleEngine: MemoryRuleEngineConfig
   /** Local-model knobs. */
@@ -385,7 +383,6 @@ export const Config: z<Config> = z.object({
     model: z.string().default(''),
   }).default({ enabled: false, provider: '', model: '' }),
   judgment: z.object({
-    enabled: z.boolean().default(false),
     ruleEngine: z.object({
       mode: z.union(['relaxed', 'strict'] as const).default('relaxed'),
     }).default({ mode: 'relaxed' }),
@@ -407,7 +404,6 @@ export const Config: z<Config> = z.object({
       contextSize: 2048,
     }),
   }).default({
-    enabled: false,
     ruleEngine: { mode: 'relaxed' },
     localLlm: {
       enabled: false,

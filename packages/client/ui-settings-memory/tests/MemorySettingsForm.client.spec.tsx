@@ -291,7 +291,7 @@ describe('MemorySettingsForm', () => {
     render(<MemorySettingsForm settings={settings} t={t} distillTargets={noTargets} />)
 
     const expected = [
-      'field.judgmentEnabled.label',
+      'field.enabled.label',      'field.ruleEngineMode.label',
       'field.initialTTLDays.label',
       'field.patternEnabled.label',
       'field.patternInjectHotPack.label',

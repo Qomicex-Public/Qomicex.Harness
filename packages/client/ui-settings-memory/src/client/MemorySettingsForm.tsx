@@ -109,6 +109,7 @@ const ENUM_LABELS: Record<string, MemoryLocaleKey> = {
 
 /** The sections the form is grouped into, in display order. */
 export type FieldGroup =
+  | 'master'
   | 'basic'
   | 'judgment'
   | 'retention'
@@ -144,6 +145,7 @@ interface FieldSpec {
 
 /** The sections in display order, each with its heading key. */
 const GROUP_ORDER: readonly { group: FieldGroup; title: MemoryLocaleKey; hint: MemoryLocaleKey }[] = [
+  { group: 'master', title: 'group.master', hint: 'group.master.hint' },
   { group: 'judgment', title: 'group.judgment', hint: 'group.judgment.hint' },
   { group: 'retention', title: 'group.retention', hint: 'group.retention.hint' },
   { group: 'patternExtraction', title: 'group.patternExtraction', hint: 'group.patternExtraction.hint' },
@@ -174,13 +176,12 @@ const GROUP_ORDER: readonly { group: FieldGroup; title: MemoryLocaleKey; hint: M
  * that changes, and what tidies up afterwards.
  */
 const FIELDS: readonly FieldSpec[] = [
-  { path: ['enabled'], id: 'memory-enabled', label: 'field.enabled.label', hint: 'field.enabled.hint', kind: 'boolean', group: 'basic' },
+  { path: ['enabled'], id: 'memory-enabled', label: 'field.enabled.label', hint: 'field.enabled.hint', kind: 'boolean', group: 'master' },
   { path: ['judgment', 'ruleEngine', 'mode'], id: 'memory-rule-engine-mode', label: 'field.ruleEngineMode.label', hint: 'field.ruleEngineMode.hint', kind: 'select', options: ENUM_OPTIONS.ruleEngineMode, group: 'basic' },
   { path: ['thresholds', 'excitability'], id: 'memory-excitability', label: 'field.excitability.label', hint: 'field.excitability.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
   { path: ['thresholds', 'forgetDemote'], id: 'memory-forget-demote', label: 'field.forgetDemote.label', hint: 'field.forgetDemote.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
   { path: ['thresholds', 'forgetArchive'], id: 'memory-forget-archive', label: 'field.forgetArchive.label', hint: 'field.forgetArchive.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
   { path: ['thresholds', 'forgetHard'], id: 'memory-forget-hard', label: 'field.forgetHard.label', hint: 'field.forgetHard.hint', kind: 'number', min: 0, max: 1, step: 0.05, group: 'basic' },
-  { path: ['judgment', 'enabled'], id: 'memory-judgment-enabled', label: 'field.judgmentEnabled.label', hint: 'field.judgmentEnabled.hint', kind: 'boolean', group: 'judgment' },
   { path: ['judgment', 'localLlm', 'enabled'], id: 'memory-local-llm-enabled', label: 'field.localLlmEnabled.label', hint: 'field.localLlmEnabled.hint', kind: 'boolean', group: 'judgment' },
   { path: ['judgment', 'localLlm', 'modelPath'], id: 'memory-local-llm-model-path', label: 'field.localLlmModelPath.label', hint: 'field.localLlmModelPath.hint', kind: 'text', group: 'judgment' },  { path: ['judgment', 'localLlm', 'gpuLayers'], id: 'memory-local-llm-gpu-layers', label: 'field.localLlmGpuLayers.label', hint: 'field.localLlmGpuLayers.hint', kind: 'number', min: 0, step: 1, group: 'judgment' },
   { path: ['judgment', 'localLlm', 'contextSize'], id: 'memory-local-llm-context-size', label: 'field.localLlmContextSize.label', hint: 'field.localLlmContextSize.hint', kind: 'number', min: 256, step: 256, group: 'judgment' },

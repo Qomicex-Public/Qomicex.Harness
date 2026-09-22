@@ -245,7 +245,7 @@ describe('LlamaCppJudge', () => {
 
 describe('the local judge inside the observer', () => {
   /** Boot the loop with an observer wired to a fixed model answer. */
-  async function harness(answer: string, enabled = true) {
+  async function harness(answer: string | undefined) {
     const ctx = new Context()
     const adapter = new MockAdapter([textResponse('ok'), textResponse('ok')])
     await ctx.plugin(LlmRuntime)
@@ -266,8 +266,9 @@ describe('the local judge inside the observer', () => {
     const observer = new EventObserver(ctx, {
       sink,
       clock: () => 1_000,
-      judgmentEnabled: () => enabled,
-      judge: new LlamaCppJudge({ modelPath: 'model.gguf', loader: fakeLoader(answer) }),
+      ...(answer === undefined
+        ? {}
+        : { judge: new LlamaCppJudge({ modelPath: 'model.gguf', loader: fakeLoader(answer) }) }),
     })
     observer.attach()
     roots.push(ctx)
@@ -314,13 +315,17 @@ describe('the local judge inside the observer', () => {
   })
 
   it('records the rule engine as the source when no model is wired', async () => {
-    const h = await harness('<start_function_call>call:judge_statement{shouldRemember:false,rationale:<escape>一次性请求<escape>}<end_function_call>', false)
+    const h = await harness(undefined)
     const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
     send(agent, '这个项目的构建命令是 pnpm run build')
     await waitForIdle(h.ctx, agent)
     await h.observer.settle()
 
-    expect(h.sink.judgments).toHaveLength(0)
+    // The judgment layer is always on now: with no model wired it still records
+    // a row, stamped as the rule path's answer rather than skipping the layer.
+    expect(h.sink.judgments).toHaveLength(1)
+    expect(h.sink.judgments[0]?.source).toBe('rule-engine')
+    expect(h.sink.judgments[0]?.localJudgment).toBe('remember')
     expect(h.sink.signals).toHaveLength(1)
   })
 

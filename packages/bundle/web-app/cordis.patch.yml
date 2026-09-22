@@ -34,7 +34,6 @@
       forgetArchive: 0.65
       forgetHard: 0.85
     judgment:
-      enabled: false
       ruleEngine:
         mode: relaxed
       localLlm:

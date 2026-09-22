@@ -61,7 +61,7 @@ class RecordingSink implements ObservationSink {
  */
 async function harness(
   script: ConstructorParameters<typeof MockAdapter>[0],
-  options: { judge?: LocalJudge; judgmentEnabled?: boolean } = {},
+  options: { judge?: LocalJudge } = {},
 ) {
   const ctx = new Context()
   const adapter = new MockAdapter(script)
@@ -84,7 +84,6 @@ async function harness(
     sink,
     clock: () => 1_000,
     ...(options.judge === undefined ? {} : { judge: options.judge }),
-    judgmentEnabled: () => options.judgmentEnabled ?? false,
   })
   observer.attach()
   roots.push(ctx)
@@ -245,7 +244,7 @@ describe('EventObserver against a live loop', () => {
   it('judges a generic statement and writes its judgment log', async () => {
     const h = await harness(
       [textResponse('ok'), textResponse('ok')],
-      { judgmentEnabled: true },
+      {},
     )
     const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
     send(agent, '这个项目的构建命令是 pnpm run build')
@@ -262,7 +261,7 @@ describe('EventObserver against a live loop', () => {
     const forget: LocalJudge = { async judge() { return { verdict: 'forget', confidence: 0.9, source: 'local-llm' } } }
     const h = await harness(
       [textResponse('ok'), textResponse('ok')],
-      { judge: forget, judgmentEnabled: true },
+      { judge: forget },
     )
     const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
     send(agent, '这个项目的构建命令是 pnpm run build')
@@ -279,7 +278,7 @@ describe('EventObserver against a live loop', () => {
     // and the statement still goes through the same decision.
     const h = await harness(
       [textResponse('ok')],
-      { judgmentEnabled: true },
+      {},
     )
     const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
     send(agent, '我更喜欢 pnpm')

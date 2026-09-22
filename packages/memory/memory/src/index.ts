@@ -558,7 +558,6 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const observer = new EventObserver(ctx, {
     sink: core,
     userId: () => userId,
-    judgmentEnabled: () => currentConfig().judgment.enabled,
     ruleMode: () => currentConfig().judgment.ruleEngine.mode,
     judgeVersions: () => ({
       // The config label wins when it is set; the pinned download fills in the

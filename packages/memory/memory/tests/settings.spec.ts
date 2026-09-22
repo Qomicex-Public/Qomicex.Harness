@@ -221,7 +221,6 @@ describe('memory settings section', () => {
   it('keeps an explicit zero, which is how a user forces CPU', () => {
     const resolved = resolveConfig(Config({
       judgment: {
-        enabled: false,
         ruleEngine: { mode: 'relaxed' },
         localLlm: localLlm({ gpuLayers: 0 }),
       },
@@ -235,7 +234,7 @@ describe('memory settings section', () => {
     // the downloader is what made the button fail with "set a model file path
     // first" on a fresh deployment.
     const resolved = resolveConfig(Config({
-      judgment: { enabled: false, ruleEngine: { mode: 'relaxed' }, localLlm: localLlm({ modelPath: '' }) },
+      judgment: { ruleEngine: { mode: 'relaxed' }, localLlm: localLlm({ modelPath: '' }) },
     }))
     expect(resolved.judgment.localLlm.modelPath).toBe(DEFAULT_JUDGE_MODEL_PATH)
     expect(resolved.judgment.localLlm.modelPath).not.toBe('')
@@ -244,7 +243,6 @@ describe('memory settings section', () => {
   it('keeps an explicit model path', () => {
     const resolved = resolveConfig(Config({
       judgment: {
-        enabled: false,
         ruleEngine: { mode: 'relaxed' },
         localLlm: localLlm({ modelPath: 'D:/weights/judge.gguf' }),
       },
