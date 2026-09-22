@@ -20,6 +20,7 @@ import {
   applyGovernanceAction,
   applyLifecycleAction,
   downloadJudgeModel,
+  runExtraction,
 } from '@deepseek-ai/dsh-memory'
 import type { Memory } from '@deepseek-ai/dsh-memory'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
@@ -32,8 +33,10 @@ import type {
   MemoryForgetValue,
   MemoryGraphValue,
   MemoryNodeView,
+  MemoryPatternView,
   MemoryScopeCountView,
   MemoryStatusValue,
+  MemoryExtractionValue,
 } from './types.ts'
 
 export type * from './types.ts'
@@ -364,6 +367,66 @@ export class MemoryController extends TypertRemoteService {
       return { ok: true, detail: path }
     } catch (error) {
       return { ok: false, detail: String(error instanceof Error ? error.message : error) }
+    }
+  }
+
+  /**
+   * List the extracted patterns, for the Settings panel.
+   *
+   * Every state is returned, candidates included: the panel's whole job is to
+   * show what is waiting for a human, and hiding candidates would leave
+   * nothing to approve.
+   * @returns The patterns, newest first.
+   * @throws RemoteError `memory/unavailable` when the plugin is not mounted.
+   */
+  @Remote
+  async patterns(): Promise<readonly MemoryPatternView[]> {
+    const services = memoryServices(this.ctx)
+    if (services === undefined) {
+      throw new RemoteError('memory/unavailable', 'the bio-memory plugin is not mounted', {})
+    }
+    const rows = await services.repository.allPatterns()
+    return rows
+      .map(row => ({
+        id: row.id,
+        kind: row.kind,
+        content: row.content,
+        confidence: row.confidence,
+        state: row.state,
+        occurrenceCount: row.occurrenceCount,
+        projectCount: row.projectCount,
+        lastSeenAt: row.lastSeenAt,
+      }))
+      .sort((left, right) => right.lastSeenAt - left.lastSeenAt)
+  }
+
+  /**
+   * Run one pattern-extraction pass now.
+   *
+   * The scheduled pass is offline batch work; this is the same work on demand,
+   * for a user who just finished a stretch of sessions and does not want to
+   * wait for the weekly run. It is deliberately not gated on the schedule —
+   * asking for it *is* the trigger.
+   * @returns How many patterns the run produced.
+   * @throws RemoteError `memory/unavailable` when the plugin is not mounted.
+   */
+  @Remote
+  async extractPatternsNow(): Promise<MemoryExtractionValue> {
+    const services = memoryServices(this.ctx)
+    if (services === undefined) {
+      throw new RemoteError('memory/unavailable', 'the bio-memory plugin is not mounted', {})
+    }
+    const thresholds = services.config.patternExtraction.thresholds
+    const report = await runExtraction(services.repository, {
+      preferenceMinProjects: thresholds.preferenceMinProjects,
+      failureMinOccurrences: thresholds.failureMinOccurrences,
+      environmentMinProjects: thresholds.environmentMinProjects,
+      workflowMinOccurrences: thresholds.workflowMinOccurrences,
+    }, Date.now())
+    return {
+      ok: true,
+      detail: `提炼完成，发现 ${report.found} 条，新建 ${report.created} 条。`,
+      produced: report.created,
     }
   }
 }

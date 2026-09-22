@@ -103,6 +103,16 @@ export function apply(ctx: ClientContext): void {
       if (response.ok) return { kind: 'ok', value: response.value }
       return { kind: 'failed', code: response.error.code, message: response.error.message }
     },
+    patterns: async () => {
+      const response = await ctx.remote.memory.patterns()
+      if (response.ok) return { kind: 'ok', value: response.value }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
+    extractPatternsNow: async () => {
+      const response = await ctx.remote.memory.extractPatternsNow()
+      if (response.ok) return { kind: 'ok', value: response.value }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
     settings: scope === undefined
       ? undefined
       : {

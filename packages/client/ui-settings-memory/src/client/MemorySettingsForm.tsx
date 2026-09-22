@@ -74,6 +74,42 @@ export interface MemorySettingsFormProps {
   readonly modelDownloadStatus?: (() => Promise<unknown>) | undefined
   /** Reveal the model file in the platform's file manager. */
   readonly revealModelFile?: (() => Promise<unknown>) | undefined
+  /** List the extracted patterns, for the Settings panel. */
+  readonly patterns?: (() => Promise<unknown>) | undefined
+  /** Run one pattern-extraction pass now. */
+  readonly extractPatternsNow?: (() => Promise<unknown>) | undefined
+}
+
+/** One pattern row as the panel shows it. */
+interface PatternRow {
+  readonly id: string
+  readonly kind: string
+  readonly content: string
+  readonly confidence: number
+  readonly state: string
+  readonly occurrenceCount: number
+  readonly projectCount: number
+}
+
+/** Read the pattern list out of whatever the Remote returned. */
+function patternRowsOf(value: unknown): PatternRow[] {
+  if (!Array.isArray(value)) return []
+  const rows: PatternRow[] = []
+  for (const entry of value) {
+    if (typeof entry !== 'object' || entry === null) continue
+    const record = entry as Record<string, unknown>
+    if (typeof record.id !== 'string' || typeof record.content !== 'string') continue
+    rows.push({
+      id: record.id,
+      kind: typeof record.kind === 'string' ? record.kind : '',
+      content: record.content,
+      confidence: typeof record.confidence === 'number' ? record.confidence : 0,
+      state: typeof record.state === 'string' ? record.state : '',
+      occurrenceCount: typeof record.occurrenceCount === 'number' ? record.occurrenceCount : 0,
+      projectCount: typeof record.projectCount === 'number' ? record.projectCount : 0,
+    })
+  }
+  return rows
 }
 
 /** How a field renders and what shape it writes. */
@@ -141,6 +177,8 @@ interface FieldSpec {
   readonly step?: number
   /** The section this field belongs to. */
   readonly group: FieldGroup
+  /** Rendered as an action row rather than an editable field. */
+  readonly hidden?: boolean
 }
 
 /** The sections in display order, each with its heading key. */
@@ -197,6 +235,7 @@ const FIELDS: readonly FieldSpec[] = [
   { path: ['patternExtraction', 'thresholds', 'failureMinOccurrences'], id: 'memory-pattern-failure-occurrences', label: 'field.patternFailureOccurrences.label', hint: 'field.patternFailureOccurrences.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
   { path: ['patternExtraction', 'thresholds', 'environmentMinProjects'], id: 'memory-pattern-environment-projects', label: 'field.patternEnvironmentProjects.label', hint: 'field.patternEnvironmentProjects.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
   { path: ['patternExtraction', 'thresholds', 'workflowMinOccurrences'], id: 'memory-pattern-workflow-occurrences', label: 'field.patternWorkflowOccurrences.label', hint: 'field.patternWorkflowOccurrences.hint', kind: 'number', min: 1, step: 1, group: 'patternExtraction' },
+  { path: ['patternExtraction', '__actions'], id: 'memory-pattern-actions', label: 'field.patternActions.label', hint: 'field.patternActions.hint', kind: 'boolean', group: 'patternExtraction', hidden: true },
   { path: ['patternApplication', 'injectHotPack'], id: 'memory-pattern-inject-hot-pack', label: 'field.patternInjectHotPack.label', hint: 'field.patternInjectHotPack.hint', kind: 'boolean', group: 'patternApplication' },
   { path: ['patternApplication', 'sceneMatching'], id: 'memory-pattern-scene-matching', label: 'field.patternSceneMatching.label', hint: 'field.patternSceneMatching.hint', kind: 'boolean', group: 'patternApplication' },
   { path: ['patternApplication', 'feedbackCollection'], id: 'memory-pattern-feedback', label: 'field.patternFeedback.label', hint: 'field.patternFeedback.hint', kind: 'boolean', group: 'patternApplication' },
@@ -262,11 +301,14 @@ export function userHasPath(user: unknown, path: readonly string[]): boolean {
  * @returns the form element tree.
  */
 export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
-  const { settings, t, distillTargets, downloadModel, modelDownloadStatus, revealModelFile } = props
+  const { settings, t, distillTargets, downloadModel, modelDownloadStatus, revealModelFile, patterns, extractPatternsNow } = props
   const [snapshot, setSnapshot] = useState<SettingsSnapshotView>(() => settings.snapshot())
   const [failure, setFailure] = useState<string | undefined>(undefined)
   const [saved, setSaved] = useState(false)
   const [download, setDownload] = useState<DownloadView | undefined>(undefined)
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [patternRows, setPatternRows] = useState<PatternRow[]>([])
+  const [extracting, setExtracting] = useState(false)
   /**
    * Which action the message on screen belongs to.
    *
@@ -359,6 +401,36 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
     }
   }
 
+  const runExtract = async (): Promise<void> => {
+    if (extractPatternsNow === undefined) return
+    setFailure(undefined)
+    setExtracting(true)
+    try {
+      await extractPatternsNow()
+      // Re-read the list so the panel shows what the run just produced.
+      if (patterns !== undefined) {
+        const rows = patternRowsOf(await patterns())
+        setPatternRows(rows)
+        setPanelOpen(true)
+      }
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : String(error))
+    } finally {
+      setExtracting(false)
+    }
+  }
+
+  const openPanel = async (): Promise<void> => {
+    if (patterns === undefined) return
+    setFailure(undefined)
+    try {
+      setPatternRows(patternRowsOf(await patterns()))
+      setPanelOpen(open => !open)
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : String(error))
+    }
+  }
+
   if (snapshot.status === 'unavailable') {
     return <p className={css.muted}>{t('settingsUnavailable')}</p>
   }
@@ -394,22 +466,59 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
         if (fields.length === 0) return null
         return (
           <section key={group} className={css.group}>
-            <h3 className={css.groupTitle}>{t(title)}</h3>
-            <p className={css.groupHint}>{t(hint)}</p>
-            {fields.map(field => (
-              <MemoryField
-                key={field.id}
-                field={field}
-                value={readPath(section, field.path)}
-                touched={userHasPath(user, field.path)}
-                disabled={!writable}
-                t={t}
-                options={optionsFor(field)}
-                optionLabels={labelsFor(field)}
-                onSet={value => write([{ op: 'set', path: [...field.path], value }])}
-                onClear={() => write([{ op: 'unset', path: [...field.path] }])}
-              />
-            ))}
+            <h3 className={css.groupTitle}>{t(title)}</h3>            <p className={css.groupHint}>{t(hint)}</p>
+            {fields.map(field => (field.hidden === true
+              ? null
+              : (
+                <MemoryField
+                  key={field.id}
+                  field={field}
+                  value={readPath(section, field.path)}
+                  touched={userHasPath(user, field.path)}
+                  disabled={!writable}
+                  t={t}
+                  options={optionsFor(field)}
+                  optionLabels={labelsFor(field)}
+                  onSet={value => write([{ op: 'set', path: [...field.path], value }])}
+                  onClear={() => write([{ op: 'unset', path: [...field.path] }])}
+                />
+              )))}
+            {group === 'patternExtraction' && (patterns !== undefined || extractPatternsNow !== undefined) && (
+              <div className={css.row}>
+                <div className={css.rowText}>
+                  <span className={css.label}>{t('field.patternActions.label')}</span>
+                  <span className={css.hint}>{t('field.patternActions.hint')}</span>
+                </div>
+                <div className={css.rowControl}>
+                  <Button onClick={() => { void openPanel() }} disabled={patterns === undefined}>
+                    {t('field.patternPanel.open')}
+                  </Button>
+                  <Button
+                    onClick={() => { void runExtract() }}
+                    disabled={extractPatternsNow === undefined || extracting}
+                  >
+                    {extracting ? t('field.patternPanel.running') : t('field.patternPanel.extract')}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {group === 'patternExtraction' && panelOpen && (
+              <div className={css.panel}>
+                {patternRows.length === 0
+                  ? <p className={css.muted}>{t('field.patternPanel.empty')}</p>
+                  : patternRows.map(row => (
+                    <div key={row.id} className={css.patternRow}>
+                      <div className={css.patternBody}>
+                        <span className={css.patternContent}>{row.content}</span>
+                        <span className={css.patternMeta}>
+                          {`${row.kind} · ${row.state} · 置信度 ${row.confidence.toFixed(2)} · `
+                            + `出现 ${row.occurrenceCount} 次 · 跨 ${row.projectCount} 个项目`}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
             {group === 'judgment' && downloadModel !== undefined && (
               <div className={css.row}>
                 <div className={css.rowText}>

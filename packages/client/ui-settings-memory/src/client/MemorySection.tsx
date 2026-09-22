@@ -75,6 +75,10 @@ export interface MemorySectionInjected {
   readonly modelDownloadStatus?: () => Promise<LoadOutcome<unknown>>
   /** Reveal the model file in the platform's file manager. */
   readonly revealModelFile?: () => Promise<LoadOutcome<unknown>>
+  /** List the extracted patterns, for the Settings panel. */
+  readonly patterns?: () => Promise<LoadOutcome<unknown>>
+  /** Run one pattern-extraction pass now. */
+  readonly extractPatternsNow?: () => Promise<LoadOutcome<unknown>>
 }
 
 /** One provider and the model ids it declares, for the distillation dropdowns. */
@@ -121,7 +125,11 @@ function toGraph(graph: MemoryGraphValue): { nodes: GraphNode[]; edges: GraphEdg
  * @returns the settings page element tree.
  */
 export function MemorySection(props: MemorySectionProps): ReactNode {
-  const { t, loadGraph, loadStatus, loadDistillTargets, downloadModel, modelDownloadStatus, revealModelFile, settings } = props
+  const {
+    t, loadGraph, loadStatus, loadDistillTargets,
+    downloadModel, modelDownloadStatus, revealModelFile,
+    patterns, extractPatternsNow, settings,
+  } = props
   const [graph, setGraph] = useState<MemoryGraphValue | undefined>(undefined)
   const [mounted, setMounted] = useState<boolean | undefined>(undefined)
   const [failure, setFailure] = useState<string | undefined>(undefined)
@@ -254,6 +262,20 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
               ? undefined
               : async () => {
                 const outcome = await revealModelFile()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
+            patterns={patterns === undefined
+              ? undefined
+              : async () => {
+                const outcome = await patterns()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
+            extractPatternsNow={extractPatternsNow === undefined
+              ? undefined
+              : async () => {
+                const outcome = await extractPatternsNow()
                 if (outcome.kind === 'failed') throw new Error(outcome.message)
                 return outcome.value
               }}

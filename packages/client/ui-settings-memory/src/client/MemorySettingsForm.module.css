@@ -1,14 +1,21 @@
+/* Memory settings form.
+ *
+ * Visual language follows the General section's 'Setting-Cell' contract
+ * (packages/client/locale/.../LanguageRow.module.css is the reference row):
+ * rows are `gap 8 / padding 16px 0 / 0.5px hairline`, titles are 14px/400, and
+ * controls are 36px rounded pills. The memory page used to carry its own
+ * tighter metrics, which made it read as a different product from the Settings
+ * page it sits inside. */
+
 .form {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-top: 4px;
 }
 
 .group {
   display: flex;
   flex-direction: column;
-  padding-top: 12px;
+  padding-top: 20px;
 }
 
 .group:first-child {
@@ -17,24 +24,25 @@
 
 .groupTitle {
   margin: 0;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 22px;
   color: var(--dsw-alias-label-primary);
 }
 
 .groupHint {
   margin: 0 0 4px;
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 20px;
   color: var(--dsw-alias-label-tertiary);
 }
 
 .row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--dsw-alias-border-l1);
+  gap: 8px;
+  padding: 16px 0;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l2);
 }
 
 .row:last-child {
@@ -42,19 +50,24 @@
 }
 
 .rowText {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  min-width: 0;
+  gap: 4px;
+  padding-right: 48px;
 }
 
 .label {
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
   color: var(--dsw-alias-label-primary);
 }
 
 .hint {
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 20px;
   color: var(--dsw-alias-label-tertiary);
 }
 
@@ -65,15 +78,18 @@
   flex-shrink: 0;
 }
 
+/* Selector pill: the same 36px / r18 fill the General rows use. */
 .input {
-  width: 120px;
-  height: 32px;
-  padding: 0 12px;
-  border: 0.5px solid var(--dsw-alias-border-l2);
-  border-radius: 8px;
-  background: var(--dsw-alias-bg-base);
+  width: 132px;
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 18px;
+  background: var(--dsw-alias-bg-module-platform);
   color: var(--dsw-alias-label-primary);
   font: inherit;
+  font-size: 14px;
+  line-height: 22px;
 }
 
 .input::placeholder {
@@ -82,6 +98,11 @@
 
 .input:disabled {
   color: var(--dsw-alias-label-dimmed);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: 1px;
 }
 
 .checkbox {
@@ -97,13 +118,13 @@
 }
 
 .error {
-  margin: 4px 0 0;
+  margin: 8px 0 0;
   font-size: 12px;
   color: var(--dsw-alias-label-error);
 }
 
 .ok {
-  margin: 4px 0 0;
+  margin: 8px 0 0;
   font-size: 12px;
   color: var(--dsw-alias-state-success-primary);
 }
@@ -111,5 +132,43 @@
 .progress {
   width: 160px;
   height: 6px;
-  accent-color: var(--dsh-accent, #4c8dff);
+  accent-color: var(--dsw-alias-brand-primary);
+}
+
+/* The pattern panel: a list of rows, one per extracted pattern. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.patternRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-module-platform);
+}
+
+.patternBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.patternContent {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
+  overflow-wrap: anywhere;
+}
+
+.patternMeta {
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
 }

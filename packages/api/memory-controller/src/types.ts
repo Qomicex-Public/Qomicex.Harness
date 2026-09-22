@@ -105,6 +105,26 @@ export interface MemoryDownloadValue {
   readonly detail: string
 }
 
+/** One extracted pattern, projected for the Settings panel. */
+export interface MemoryPatternView {
+  readonly id: string
+  readonly kind: string
+  readonly content: string
+  readonly confidence: number
+  readonly state: string
+  readonly occurrenceCount: number
+  readonly projectCount: number
+  readonly lastSeenAt: number
+}
+
+/** Outcome of one pattern-extraction run. */
+export interface MemoryExtractionValue {
+  readonly ok: boolean
+  readonly detail: string
+  /** Patterns produced by the run, new candidates included. */
+  readonly produced: number
+}
+
 /**
  * Where a judge-model download stands.
  *
