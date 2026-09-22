@@ -346,10 +346,13 @@ export class MemoryController extends TypertRemoteService {
    * Reveal the model file in the platform's file manager.
    *
    * Selects the file rather than opening the directory, because "which of these
-   * files is it" is the question the button answers. A failure is reported
-   * rather than thrown: the file is already downloaded, so a manager that will
-   * not open is an annoyance, not a broken state.
-   * @returns Whether the file manager was launched.
+   * files is it" is the question the button answers — except on a platform whose
+   * manager offers no selection, where opening the containing folder is the
+   * closest honest answer. A failure is reported rather than thrown: the file is
+   * already downloaded, so a manager that will not open is an annoyance, not a
+   * broken state.
+   * @returns Whether a manager was launched, and the path it was pointed at or
+   *   the reason it could not be.
    * @throws RemoteError `memory/unavailable` when the plugin is not mounted.
    */
   @Remote
@@ -360,7 +363,7 @@ export class MemoryController extends TypertRemoteService {
     }
     const path = services.config.judgment.localLlm.modelPath
     if (!(await fileExists(path))) {
-      return { ok: false, detail: `模型文件不存在：${path}` }
+      return { ok: false, detail: `model file not found: ${path}` }
     }
     try {
       const { spawn } = await import('node:child_process')
@@ -434,7 +437,7 @@ export class MemoryController extends TypertRemoteService {
     }, Date.now())
     return {
       ok: true,
-      detail: `提炼完成，发现 ${report.found} 条，新建 ${report.created} 条。`,
+      detail: `extraction found ${report.found}, created ${report.created}.`,
       produced: report.created,
     }
   }

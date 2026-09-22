@@ -87,10 +87,13 @@ Read-only apart from `forget`, which routes through the same governance and life
  * Reveal the model file in the platform's file manager.
  *
  * Selects the file rather than opening the directory, because "which of these
- * files is it" is the question the button answers. A failure is reported
- * rather than thrown: the file is already downloaded, so a manager that will
- * not open is an annoyance, not a broken state.
- * @returns Whether the file manager was launched.
+ * files is it" is the question the button answers — except on a platform whose
+ * manager offers no selection, where opening the containing folder is the
+ * closest honest answer. A failure is reported rather than thrown: the file is
+ * already downloaded, so a manager that will not open is an annoyance, not a
+ * broken state.
+ * @returns Whether a manager was launched, and the path it was pointed at or
+ *   the reason it could not be.
  * @throws RemoteError `memory/unavailable` when the plugin is not mounted.
  */
 @Remote async revealModelFile(): Promise<{ ok: boolean; detail: string }>
