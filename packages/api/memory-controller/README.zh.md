@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## Use this package
 
-把 `@deepseek-ai/dsh-api-memory-controller` 挂载到可能同时挂载 `@deepseek-ai/dsh-memory` 的 Host 组合中，并在客户端 Remote 装配中注册它的 Remote 贡献。命名空间随后响应 `ctx.remote.memory.graph()`、`.status()`、`.forget()`。
+把 `@deepseek-ai/dsh-api-memory-controller` 挂载到可能同时挂载 `@deepseek-ai/dsh-memory` 的 Host 组合中，并在客户端 Remote 装配中注册它的 Remote 贡献。命名空间随后响应 `ctx.remote.memory.graph()`、`.status()`、`.forget()`，以及三个判断模型动词与三个模式动词。
 
 ### 读取关系图
 
@@ -38,6 +38,16 @@ kind: "package-reference"
 `status()` 报告插件是否已挂载，若已挂载则给出总数与最新观测时间。页面据此在图与其「未启用」状态之间选择。
 
 `forget()` 接收记忆 id 与模式。`delete` 属于治理：不可逆，并记录 tombstone，同一事实因此无法再从同一来源返回。`suppress` 与 `deprecate` 属于生命周期：可逆地隐藏记忆、标记其过时。这一划分与面向 agent 的 `memory_forget` 工具一致，两个入口都经同一套治理与生命周期辅助函数，审计轨迹无法分辨是谁发起的。
+
+### 判断模型
+
+判断层运行一个本地 GGUF 模型，其分发由本命名空间负责。`downloadModel()` 从固定 release 发起抓取并立即返回，因此 278 MB 的传输不会阻塞一次 Remote 调用；`modelDownloadStatus()` 报告它进行到哪一步，而 `idle` 同时意味着"检查过，不在"，于是页面在后续运行中可以显示完成态，而不必提供第二次抓取。`revealModelFile()` 在平台文件管理器中选中模型文件，在管理器不提供选中的平台上则打开其所在文件夹。失败不是错误码：下载失败会以 `status: 'failed'` 连同 `error` 落在被轮询的那个状态里——页面正是用户修复它的界面，而一个抛出的 RemoteError 会把那个界面一起拖垮。
+
+### 模式
+
+`patterns()` 列出全部已提炼模式及其状态，页面据此展示候选、已激活，以及被人停放的那些。`extractPatternsNow()` 越权运行一次离线提炼——这个按钮正是面板在排定运行之前就有用的原因——并报告它产出了多少模式。`decidePattern()` 是审批写操作：`approve` 让候选成为激活，`reject` 归档它，`disable` 停放一个已激活模式使其无法被再次提炼复活，`enable` 重新激活一个被停放的。
+
+未经审核的模式无论经由此表面还是任何其他途径都到不了模型面前：每个读取方都按 `state === 'active'` 过滤，而模式只能通过 `decidePattern()` 成为 active。
 
 -----
 
@@ -59,13 +69,13 @@ kind: "package-reference"
 
 ### 线缆形状
 
-`src/types.ts` 是浏览器安全的：它声明节点、边、作用域计数、统计、状态与遗忘视图，以及 `memory/unavailable` 与 `memory/not-found` 的 `RemoteErrorDetailsMap` 条目。浏览器导入的 Remote 客户端面由同一批装饰器生成，因此页面读到的是 Host 所回应的那份声明。
+`src/types.ts` 是浏览器安全的：它声明节点、边、作用域计数、统计、状态与遗忘视图，判断模型的下载状态，以及模式视图、决策请求与结果，并以 `memory/unavailable`、`memory/not-found` 的 `RemoteErrorDetailsMap` 条目收尾。下载不设错误条目，因为下载失败是一种状态而非错误。浏览器导入的 Remote 客户端面由同一批装饰器生成，因此页面读到的是 Host 所回应的那份声明。
 
 ### Source map
 
 | File | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | `MemoryController`：三个 Remote 动词与图的投影 |
+| [`src/index.ts`](src/index.ts) | `MemoryController`：九个 Remote 动词与图的投影 |
 | [`src/types.ts`](src/types.ts) | 浏览器安全的线缆词汇与 Remote 错误详情 |
 
 </details>

@@ -287,7 +287,13 @@ export interface MemoryCurationBudgetConfig {
 
 /** Integration-module knobs. */
 export interface MemoryIntegrationConfig {
-  /** Whether integrations are probed at all. */
+  /**
+   * Whether integrations are probed at all. Probing is best-effort and
+   * contained per integration, so it can neither fail the mount nor cost
+   * anything when no integration is present; leaving it off is what makes
+   * `toolkit.enabled: 'auto'` self-contradictory, because `auto` decides by
+   * presence and presence is only learned by probing.
+   */
   autoDetect: boolean
   /** The toolkit integration. */
   toolkit: MemoryToolkitIntegrationConfig
@@ -535,14 +541,14 @@ export const Config: z<Config> = z.object({
     budget: { maxTokensPerRun: 2_000_000, maxRunsPerMonth: 8 },
   }),
   integrations: z.object({
-    autoDetect: z.boolean().default(false),
+    autoDetect: z.boolean().default(true),
     toolkit: z.object({
       enabled: z.union(['auto', 'on', 'off'] as const).default('auto'),
       readHotPackSection: z.boolean().default(true),
       writeBackOnApproval: z.boolean().default(true),
     }).default({ enabled: 'auto', readHotPackSection: true, writeBackOnApproval: true }),
   }).default({
-    autoDetect: false,
+    autoDetect: true,
     toolkit: { enabled: 'auto', readHotPackSection: true, writeBackOnApproval: true },
   }),
 })
