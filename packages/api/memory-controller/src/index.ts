@@ -22,7 +22,7 @@ import {
   downloadJudgeModel,
   runExtraction,
 } from '@deepseek-ai/dsh-memory'
-import type { Memory } from '@deepseek-ai/dsh-memory'
+import type { Memory, Pattern } from '@deepseek-ai/dsh-memory'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { dirname } from 'node:path'
 import type {
@@ -37,6 +37,8 @@ import type {
   MemoryScopeCountView,
   MemoryStatusValue,
   MemoryExtractionValue,
+  MemoryPatternDecisionRequest,
+  MemoryPatternDecisionValue,
 } from './types.ts'
 
 export type * from './types.ts'
@@ -428,6 +430,43 @@ export class MemoryController extends TypertRemoteService {
       detail: `提炼完成，发现 ${report.found} 条，新建 ${report.created} 条。`,
       produced: report.created,
     }
+  }
+
+  /**
+   * Approve, reject, disable, or re-enable one pattern.
+   *
+   * The review gate is what keeps pattern extraction auditable: a candidate
+   * never reaches the hot pack on its own, so a human decision has to be
+   * reachable from somewhere. This is that somewhere, and it performs the same
+   * state write the agent's `memory_patterns` tool performs — one rule, two
+   * surfaces, so a decision cannot differ depending on who made it.
+   * @param request - The pattern id and the decision.
+   * @returns The pattern's state after the decision.
+   * @throws RemoteError `memory/unavailable`, or `memory/not-found` for an unknown id.
+   */
+  @Remote
+  async decidePattern(request: MemoryPatternDecisionRequest): Promise<MemoryPatternDecisionValue> {
+    const services = memoryServices(this.ctx)
+    if (services === undefined) {
+      throw new RemoteError('memory/unavailable', 'the bio-memory plugin is not mounted', {})
+    }
+    const next: Record<MemoryPatternDecisionRequest['action'], string> = {
+      approve: 'active',
+      reject: 'archived',
+      disable: 'user-disabled',
+      enable: 'active',
+    }
+    const existing = await services.repository.getPattern(request.patternId)
+    if (existing === undefined) {
+      throw new RemoteError('memory/not-found', `no pattern ${request.patternId}`, {
+        memoryId: request.patternId,
+      })
+    }
+    await services.repository.updatePattern(request.patternId, pattern => ({
+      ...pattern,
+      state: next[request.action] as Pattern['state'],
+    }))
+    return { ok: true, detail: `${request.action} ${request.patternId}`, state: next[request.action] }
   }
 }
 

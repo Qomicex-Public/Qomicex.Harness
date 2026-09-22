@@ -113,6 +113,11 @@ export function apply(ctx: ClientContext): void {
       if (response.ok) return { kind: 'ok', value: response.value }
       return { kind: 'failed', code: response.error.code, message: response.error.message }
     },
+    decidePattern: async (patternId, action) => {
+      const response = await ctx.remote.memory.decidePattern({ patternId, action })
+      if (response.ok) return { kind: 'ok', value: response.value }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
     settings: scope === undefined
       ? undefined
       : {

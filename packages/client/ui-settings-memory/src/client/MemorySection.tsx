@@ -79,6 +79,11 @@ export interface MemorySectionInjected {
   readonly patterns?: () => Promise<LoadOutcome<unknown>>
   /** Run one pattern-extraction pass now. */
   readonly extractPatternsNow?: () => Promise<LoadOutcome<unknown>>
+  /** Approve, reject, disable, or re-enable one pattern. */
+  readonly decidePattern?: (
+    patternId: string,
+    action: 'approve' | 'reject' | 'disable' | 'enable',
+  ) => Promise<LoadOutcome<unknown>>
 }
 
 /** One provider and the model ids it declares, for the distillation dropdowns. */
@@ -128,7 +133,7 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
   const {
     t, loadGraph, loadStatus, loadDistillTargets,
     downloadModel, modelDownloadStatus, revealModelFile,
-    patterns, extractPatternsNow, settings,
+    patterns, extractPatternsNow, decidePattern, settings,
   } = props
   const [graph, setGraph] = useState<MemoryGraphValue | undefined>(undefined)
   const [mounted, setMounted] = useState<boolean | undefined>(undefined)
@@ -276,6 +281,13 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
               ? undefined
               : async () => {
                 const outcome = await extractPatternsNow()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
+            decidePattern={decidePattern === undefined
+              ? undefined
+              : async (patternId, action) => {
+                const outcome = await decidePattern(patternId, action)
                 if (outcome.kind === 'failed') throw new Error(outcome.message)
                 return outcome.value
               }}

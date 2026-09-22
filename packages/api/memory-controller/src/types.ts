@@ -125,6 +125,26 @@ export interface MemoryExtractionValue {
   readonly produced: number
 }
 
+/** One pattern state change requested from the Settings panel. */
+export interface MemoryPatternDecisionRequest {
+  readonly patternId: string
+  /**
+   * `approve` makes a candidate active; `reject` archives it; `disable` parks
+   * an active pattern so re-extraction cannot revive it; `enable` re-activates
+   * a disabled one. Mirrors the agent tool's `memory_patterns` vocabulary
+   * rather than inventing a second one.
+   */
+  readonly action: 'approve' | 'reject' | 'disable' | 'enable'
+}
+
+/** Outcome of one pattern decision. */
+export interface MemoryPatternDecisionValue {
+  readonly ok: boolean
+  readonly detail: string
+  /** The pattern's state after the decision. */
+  readonly state: string
+}
+
 /**
  * Where a judge-model download stands.
  *

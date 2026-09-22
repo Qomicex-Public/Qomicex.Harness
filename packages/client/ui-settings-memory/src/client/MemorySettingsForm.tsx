@@ -78,6 +78,11 @@ export interface MemorySettingsFormProps {
   readonly patterns?: (() => Promise<unknown>) | undefined
   /** Run one pattern-extraction pass now. */
   readonly extractPatternsNow?: (() => Promise<unknown>) | undefined
+  /** Approve, reject, disable, or re-enable one pattern. */
+  readonly decidePattern?: ((
+    patternId: string,
+    action: 'approve' | 'reject' | 'disable' | 'enable',
+  ) => Promise<unknown>) | undefined
 }
 
 /** One pattern row as the panel shows it. */
@@ -301,7 +306,10 @@ export function userHasPath(user: unknown, path: readonly string[]): boolean {
  * @returns the form element tree.
  */
 export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
-  const { settings, t, distillTargets, downloadModel, modelDownloadStatus, revealModelFile, patterns, extractPatternsNow } = props
+  const {
+    settings, t, distillTargets, downloadModel, modelDownloadStatus, revealModelFile,
+    patterns, extractPatternsNow, decidePattern,
+  } = props
   const [snapshot, setSnapshot] = useState<SettingsSnapshotView>(() => settings.snapshot())
   const [failure, setFailure] = useState<string | undefined>(undefined)
   const [saved, setSaved] = useState(false)
@@ -309,6 +317,7 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
   const [panelOpen, setPanelOpen] = useState(false)
   const [patternRows, setPatternRows] = useState<PatternRow[]>([])
   const [extracting, setExtracting] = useState(false)
+  const [deciding, setDeciding] = useState<string | undefined>(undefined)
   /**
    * Which action the message on screen belongs to.
    *
@@ -431,6 +440,25 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
     }
   }
 
+  const runDecide = async (
+    patternId: string,
+    action: 'approve' | 'reject' | 'disable' | 'enable',
+  ): Promise<void> => {
+    if (decidePattern === undefined) return
+    setFailure(undefined)
+    setDeciding(patternId)
+    try {
+      await decidePattern(patternId, action)
+      // Re-read so the row shows its new state rather than a stale one; a
+      // decision the panel does not reflect looks like it did not land.
+      if (patterns !== undefined) setPatternRows(patternRowsOf(await patterns()))
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : String(error))
+    } finally {
+      setDeciding(undefined)
+    }
+  }
+
   if (snapshot.status === 'unavailable') {
     return <p className={css.muted}>{t('settingsUnavailable')}</p>
   }
@@ -466,7 +494,8 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
         if (fields.length === 0) return null
         return (
           <section key={group} className={css.group}>
-            <h3 className={css.groupTitle}>{t(title)}</h3>            <p className={css.groupHint}>{t(hint)}</p>
+            <h3 className={css.groupTitle}>{t(title)}</h3>
+            <p className={css.groupHint}>{t(hint)}</p>
             {fields.map(field => (field.hidden === true
               ? null
               : (
@@ -515,6 +544,34 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
                             + `出现 ${row.occurrenceCount} 次 · 跨 ${row.projectCount} 个项目`}
                         </span>
                       </div>
+                      {decidePattern !== undefined && (
+                        <div className={css.rowControl}>
+                          {(row.state === 'candidate' || row.state === 'user-disabled') && (
+                            <Button
+                              onClick={() => { void runDecide(row.id, 'approve') }}
+                              disabled={deciding !== undefined}
+                            >
+                              {t('field.patternPanel.approve')}
+                            </Button>
+                          )}
+                          {row.state === 'candidate' && (
+                            <Button
+                              onClick={() => { void runDecide(row.id, 'reject') }}
+                              disabled={deciding !== undefined}
+                            >
+                              {t('field.patternPanel.reject')}
+                            </Button>
+                          )}
+                          {row.state === 'active' && (
+                            <Button
+                              onClick={() => { void runDecide(row.id, 'disable') }}
+                              disabled={deciding !== undefined}
+                            >
+                              {t('field.patternPanel.disable')}
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
               </div>
