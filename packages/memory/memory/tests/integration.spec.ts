@@ -234,10 +234,11 @@ describe('the hot pack carries integrations apart from the core', () => {
 describe('the core is independent of the integrations', () => {
   it('still mounts and captures with no integration configured', async () => {
     // The invariant the whole separation exists for: with every integration
-    // absent, the core is unchanged. Config defaults to autoDetect off, so
-    // this is the out-of-the-box shape.
+    // absent, the core is unchanged. Probing is on by default and returns an
+    // empty candidate list outside a toolkit workspace, so this is the
+    // out-of-the-box shape and it is also what a disabled toolkit produces.
     const resolved = resolveConfig(Config({}))
-    expect(resolved.integrations.autoDetect).toBe(false)
+    expect(resolved.integrations.autoDetect).toBe(true)
     expect(resolved.integrations.toolkit.enabled).toBe('auto')
   })
 

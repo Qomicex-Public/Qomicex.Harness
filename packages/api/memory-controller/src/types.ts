@@ -99,12 +99,6 @@ export interface MemoryForgetValue {
   readonly detail: string
 }
 
-/** Outcome of one judge-model download. */
-export interface MemoryDownloadValue {
-  readonly ok: boolean
-  readonly detail: string
-}
-
 /** One extracted pattern, projected for the Settings panel. */
 export interface MemoryPatternView {
   readonly id: string

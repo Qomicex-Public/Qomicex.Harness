@@ -5,7 +5,9 @@
 #   dsh --profile web --patch ./memory.cordis.yml
 #
 # Every value below is the plugin's own default, spelled out so a reader can
-# see the whole configuration surface in one place.
+# see the whole configuration surface in one place. A key is spelled out only
+# while its default is what a deployment wants: overriding one means naming it,
+# and a key left out resolves to the same default through `resolveConfig`.
 - id: bio-memory
   disabled: false
   config:
@@ -16,24 +18,28 @@
       forgetDemote: 0.45
       forgetArchive: 0.65
       forgetHard: 0.85
-    bounds:
-      workingCapacity: 64
-      stagingCapacity: 128
-    retrieval:
-      topK: 5
+    capacity:
+      # Working-memory slot count.
+      workingMemorySlots: 64
+      # Staging candidates retained per session.
+      stagingPoolCapacity: 500
+      # Maximum hits returned by one recall.
+      recallTopK: 5
+      # Minimum relevance for a hit to survive.
       similarityThreshold: 0.35
+      # Cap on one injected recall block.
+      recallBlockMaxChars: 4000
+    retrieval:
       # The vector route is reserved: no embedding service ships with dsh, so
       # this stays false and retrieval is lexical (character-bigram BM25).
       useVector: false
     injection:
       # Inject a hot pack at the first step of each turn.
-      hotPack: true
-      # Cap on one injected recall block.
-      recallMaxChars: 4000
+      injectHotPack: true
     authorization:
       # The six-tuple policy plane. Off by default: enabling it lets memory
       # gate tool calls, which is a deployment decision, not a memory default.
-      enabled: false
+      usePolicyPlane: false
       policyVersion: bio-memory-1
     llmDistill:
       # Optional model-assisted rephrasing during consolidation. Off by
@@ -42,3 +48,34 @@
       enabled: false
       provider: ''
       model: ''
+    judgment:
+      ruleEngine:
+        # `relaxed` admits any message the noise blacklist lets through;
+        # `strict` admits only keyword-confirmed rules.
+        mode: relaxed
+    retention:
+      # Days before a fresh memory's first TTL evaluation.
+      initialTTLDays: 7
+      # Reinforcement total at which a memory becomes long-term.
+      promotionThreshold: 3
+      # Sessions before expiry archiving starts.
+      startupGraceSessions: 20
+    patternExtraction:
+      # Offline pattern pass. Runs by default, and a pattern is only ever a
+      # candidate until a person approves it.
+      enabled: true
+      requireHumanApproval: true
+    patternApplication:
+      # Approved patterns ride in the hot pack; an unreviewed candidate never
+      # does, because every reader filters on `state === 'active'`.
+      injectHotPack: true
+      sceneMatching: true
+      feedbackCollection: true
+    integrations:
+      # Probing is best-effort and cannot fail the mount; `auto` then decides
+      # per workspace by whether a `.memory/` exists.
+      autoDetect: true
+      toolkit:
+        enabled: auto
+        readHotPackSection: true
+        writeBackOnApproval: true
