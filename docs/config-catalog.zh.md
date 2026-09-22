@@ -1685,11 +1685,13 @@ export interface ReconnectConfig {
 ```ts config-catalog
 /** Plugin configuration. */
 export interface Config {
+  /** Whether the plugin records at all; off disables capture and recall. */
+  enabled?: boolean
   /** Write-gate and forgetting thresholds. */
   thresholds?: MemoryThresholdsConfig
-  /** Working-memory and staging bounds. */
-  bounds?: MemoryBoundsConfig
-  /** Recall pipeline knobs. */
+  /** Capacity limits. */
+  capacity?: MemoryCapacityConfig
+  /** Retrieval knobs. */
   retrieval?: MemoryRetrievalConfig
   /** Injection knobs. */
   injection?: MemoryInjectionConfig
@@ -1699,11 +1701,25 @@ export interface Config {
   llmDistill?: MemoryLlmDistillConfig
   /** Local judgment layer. */
   judgment?: MemoryJudgmentConfig
+  /** Retention layer. */
+  retention?: MemoryRetentionConfig
+  /** Pattern-extraction layer. */
+  patternExtraction?: MemoryPatternConfig
+  /** Pattern-application layer. */
+  patternApplication?: MemoryPatternApplicationConfig
+  /** Curation layer. */
+  curation?: MemoryCurationConfig
+  /** Integration modules. */
+  integrations?: MemoryIntegrationConfig
 }
 
 /** Write-gate and forgetting thresholds. */
 export interface MemoryThresholdsConfig {
-  /** Minimum excitability for a candidate to be written. */
+  /**
+   * Retention score recorded at write time. **Kept although the design
+   * document's config omits it**: the score is still computed and stored for
+   * recall weighting and TTL promotion; it simply no longer blocks a write.
+   */
   excitability: number
   /** Forget score above which a memory is demoted. */
   forgetDemote: number
@@ -1713,37 +1729,46 @@ export interface MemoryThresholdsConfig {
   forgetHard: number
 }
 
-/** Working-memory and staging-pool bounds. */
-export interface MemoryBoundsConfig {
+/** Capacity limits: working memory, staging, recall, and injection size. */
+export interface MemoryCapacityConfig {
   /** Working-memory slot count. */
-  workingCapacity: number
+  workingMemorySlots: number
   /** Staging candidates retained per session. */
-  stagingCapacity: number
-}
-
-/** Recall pipeline knobs. */
-export interface MemoryRetrievalConfig {
+  stagingPoolCapacity: number
   /** Maximum hits returned by one recall. */
-  topK: number
+  recallTopK: number
   /** Minimum relevance for a hit to survive. */
   similarityThreshold: number
+  /** Maximum characters of one recall block. */
+  recallBlockMaxChars: number
+}
+
+/**
+ * Retrieval knobs the design document's config does not list.
+ * **Kept because the code reads them**: `useVector` is a reserved parameter
+ * that a future embedding service turns on, and hiding it would make enabling
+ * that service a code change instead of a config change.
+ */
+export interface MemoryRetrievalConfig {
   /** Whether the vector route participates; reserved until an embedding service exists. */
   useVector: boolean
 }
 
-/** Injection knobs for the hot pack and per-step recall. */
+/** Injection knobs. */
 export interface MemoryInjectionConfig {
   /** Whether a hot pack is injected at the first step of a turn. */
-  hotPack: boolean
-  /** Maximum characters of one recall block. */
-  recallMaxChars: number
+  injectHotPack: boolean
 }
 
 /** Authorization-plane knobs. */
 export interface MemoryAuthorizationConfig {
   /** Whether the six-tuple policy plane gates tool calls. Off by default. */
-  enabled: boolean
-  /** Policy version stamped into audit entries. */
+  usePolicyPlane: boolean
+  /**
+   * Policy version stamped into audit entries. **Kept although the design
+   * document's config omits it**: it is an audit label, not a preference, and
+   * the audit trail needs a version to stamp.
+   */
   policyVersion: string
 }
 
@@ -1759,12 +1784,242 @@ export interface MemoryLlmDistillConfig {
 
 /** Judgment-layer knobs. */
 export interface MemoryJudgmentConfig {
-  /** Whether the local judgment layer participates at capture time. */
-  enabled: boolean
+  /** Rule-engine knobs. */
+  ruleEngine: MemoryRuleEngineConfig
+  /** Local-model knobs. */
+  localLlm: MemoryLocalLlmConfig
 }
+
+/** Retention-layer knobs. */
+export interface MemoryRetentionConfig {
+  /** Days a fresh memory is granted before its first TTL evaluation. */
+  initialTTLDays: number
+  /** Reinforcement total at or above which a memory becomes long-term. */
+  promotionThreshold: number
+  /** Sessions before the system starts archiving on expiry. */
+  startupGraceSessions: number
+  /**
+   * Whether an expired memory is archived (`true`) or deleted with a tombstone
+   * (`false`). Archiving is the default because a memory that never resurfaced
+   * is more likely to be under-recalled than worthless.
+   */
+  archiveOnExpiry: boolean
+  /** Whether structural facts are exempt from TTL. */
+  structuralException: boolean
+  /** Similarity at or above which a memory counts as adjacent to the turn. */
+  adjacencyThreshold: number
+  /** Whether the adjacency signal is tracked. */
+  enableAdjacency: boolean
+  /** Whether the mention signal is tracked. */
+  enableMention: boolean
+}
+
+/** Pattern-extraction knobs. */
+export interface MemoryPatternConfig {
+  /** Whether the offline extraction pass runs at all. */
+  enabled: boolean
+  /** How often automatic extraction runs. */
+  schedule: 'daily' | 'weekly' | 'monthly'
+  /** Whether a human must approve before a pattern becomes active. */
+  requireHumanApproval: boolean
+  /** What counts as a pattern. */
+  thresholds: MemoryPatternThresholdConfig
+  /** When a pattern is retired. */
+  pruning: MemoryPatternPruningConfig
+}
+
+/** Pattern-application knobs. */
+export interface MemoryPatternApplicationConfig {
+  /** Whether approved patterns ride in the hot pack. */
+  injectHotPack: boolean
+  /** Whether per-step scene matching injects pattern hints. */
+  sceneMatching: boolean
+  /** Whether application outcomes feed the pattern feedback tallies. */
+  feedbackCollection: boolean
+  /** Byte budget of the hot pack's patterns section. */
+  hotPackPatternsBudget: number
+  /**
+   * Similarity at or above which a query matches a pattern. **Kept although
+   * the design document's config omits it**: the matcher is literal, and a
+   * threshold is the only thing separating a match from a coincidence.
+   */
+  matchThreshold: number
+  /** Similarity at or above which an output counts as following a pattern. */
+  feedbackThreshold: number
+  /** How long after an application its feedback window stays open. */
+  feedbackWindowMs: number
+}
+
+/** Curation-layer knobs. */
+export interface MemoryCurationConfig {
+  /** Whether the offline curation pass runs at all. */
+  enabled: boolean
+  /** Provider route for the summarizing model; empty uses the rule path. */
+  provider: string
+  /** Model id for the summarizing model; empty uses the rule path. */
+  model: string
+  /** How often automatic curation runs. */
+  schedule: 'daily' | 'weekly' | 'monthly'
+  /** How a corpus is split into model-sized batches. */
+  batchPolicy: MemoryBatchPolicyConfig
+  /** When the summary tree grows another layer. */
+  nextLayer: MemoryNextLayerConfig
+  /** Periodic full rebuild of the summary tree. */
+  fullRebuild: MemoryFullRebuildConfig
+  /** Spend limits for one curation run and one month. */
+  budget: MemoryCurationBudgetConfig
+}
+
+/** Integration-module knobs. */
+export interface MemoryIntegrationConfig {
+  /**
+   * Whether integrations are probed at all. Probing is best-effort and
+   * contained per integration, so it can neither fail the mount nor cost
+   * anything when no integration is present; leaving it off is what makes
+   * `toolkit.enabled: 'auto'` self-contradictory, because `auto` decides by
+   * presence and presence is only learned by probing.
+   */
+  autoDetect: boolean
+  /** The toolkit integration. */
+  toolkit: MemoryToolkitIntegrationConfig
+}
+
+/** Rule-engine knobs. */
+export interface MemoryRuleEngineConfig {
+  /**
+   * `relaxed` admits any message the noise blacklist lets through; `strict`
+   * admits only the keyword-confirmed rules. The default is relaxed because
+   * requiring a keyword is what starved the store in the first place.
+   */
+  mode: RuleEngineMode
+}
+
+/** Local judgment model knobs. */
+export interface MemoryLocalLlmConfig {
+  /** Whether the local model judges instead of only the rule fallback. */
+  enabled: boolean
+  /** Whether a missing model may be downloaded on first use. */
+  autoDownload: boolean
+  /**
+   * Path or URI of the GGUF model. **Empty means the default location**, which
+   * {@link resolveConfig} fills in — the design document's configuration lists
+   * no model path at all, so a user is never asked for one; this is the
+   * override for someone who keeps the weights elsewhere.
+   */
+  modelPath: string
+  /** Model version label, recorded so a trainer can tell weights apart. */
+  modelVersion: string
+  /** Prompt version label, recorded alongside each judgment row. */
+  promptVersion: string
+  /**
+   * Layers offloaded to the GPU; `0` runs on CPU. The default offloads every
+   * layer, because a judge that runs per user message on CPU is slow enough to
+   * make the machine unusable — measured 86 s for one answer on CPU against
+   * 3-5 s on a GPU. A machine with no GPU ignores the count and runs on CPU,
+   * so the default needs no detection to stay correct; `0` is how a user forces
+   * CPU on a machine that does have one.
+   */
+  gpuLayers: number
+  /** Context size in tokens. */
+  contextSize: number
+}
+
+/** Pattern-extraction thresholds. */
+export interface MemoryPatternThresholdConfig {
+  /** Distinct projects a fact key must span to count as a preference. */
+  preferenceMinProjects: number
+  /** Occurrences an error feature needs to count as a failure pattern. */
+  failureMinOccurrences: number
+  /** Distinct projects an environment constraint must span. */
+  environmentMinProjects: number
+  /** Repeats a tool-call sequence needs to count as a workflow pattern. */
+  workflowMinOccurrences: number
+}
+
+/** Pattern-pruning knobs. */
+export interface MemoryPatternPruningConfig {
+  /** Whether negative-feedback patterns are pruned. */
+  enabled: boolean
+  /** Score below which an active pattern may be pruned. */
+  minScore: number
+  /** Days without application after which a pattern may be pruned. */
+  staleDays: number
+}
+
+/** Batching policy, derived from the model's context window. */
+export interface MemoryBatchPolicyConfig {
+  /** Total context window in tokens. */
+  modelContextSize: number
+  /** Tokens reserved for the system prompt. */
+  systemReserve: number
+  /** Tokens held back as safety margin. */
+  safetyMargin: number
+  /** Share of the remaining budget given to input. */
+  inputRatio: number
+  /** Share reserved for output. Recorded so a run can size its batch to fit. */
+  outputRatio: number
+}
+
+/** When the summary tree should grow another layer. */
+export interface MemoryNextLayerConfig {
+  /** Total tokens across a layer at or above which the next layer is due. */
+  minTokensForNextLayer: number
+  /** Summary count at or above which the next layer is due. */
+  minCountForNextLayer: number
+  /** Deepest layer the tree may grow to. */
+  maxLevel: number
+}
+
+/** Periodic full rebuild of the summary tree. */
+export interface MemoryFullRebuildConfig {
+  /** Whether a full rebuild runs after enough incremental passes. */
+  enabled: boolean
+  /** Incremental passes between full rebuilds. */
+  everyNIncrementalRuns: number
+  /** Upper bound on memories one rebuild may cover. */
+  maxMemoriesPerRebuild: number
+}
+
+/** Curation spend limits. */
+export interface MemoryCurationBudgetConfig {
+  /** Tokens one run may spend. */
+  maxTokensPerRun: number
+  /** Runs one month may spend. */
+  maxRunsPerMonth: number
+}
+
+/** The toolkit integration's knobs. */
+export interface MemoryToolkitIntegrationConfig {
+  /**
+   * `auto` enables it when the toolkit is present, `on` forces it, `off`
+   * disables it. Three states rather than a boolean because "detect it for me"
+   * and "use it even though I know it is not there" are different requests.
+   *
+   * Presence is decided per workspace rather than once per machine — the
+   * `.memory/` directory lives at the root of whichever workspace the session
+   * is running in — so `auto` and `on` load the integration either way and the
+   * difference shows up per scope, where a workspace without a `.memory/`
+   * simply contributes nothing.
+   */
+  enabled: 'auto' | 'on' | 'off'
+  /** Whether the toolkit's preferences ride in the hot pack. */
+  readHotPackSection: boolean
+  /** Whether an approved pattern is written back to the toolkit's file. */
+  writeBackOnApproval: boolean
+}
+
+/**
+ * How much the rule engine is willing to stage.
+ *
+ * `relaxed` stages any message the noise blacklist lets through; `strict` stages
+ * only the keyword-confirmed rules. The distinction lives here rather than in
+ * the detector so the config, the detector, and the settings page all name it
+ * once.
+ */
+export type RuleEngineMode = 'relaxed' | 'strict'
 ```
 
-来源：[`packages/memory/memory/src/config.ts:76`](../packages/memory/memory/src/config.ts)
+来源：[`packages/memory/memory/src/config.ts:323`](../packages/memory/memory/src/config.ts)
 
 <a id="deepseek-aidsh-message-feedback"></a>
 

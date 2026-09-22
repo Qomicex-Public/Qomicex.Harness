@@ -902,6 +902,7 @@ flowchart TD
   pkg_memory --> pkg_agent
   pkg_memory --> pkg_anonymous_user_id
   pkg_memory --> pkg_goal
+  pkg_memory --> pkg_home_paths
   pkg_memory --> pkg_llm
   pkg_memory --> pkg_session
   pkg_memory --> pkg_settings
@@ -1558,7 +1559,7 @@ flowchart TD
 | [`tool-tool-search`](../packages/junsi/tool-search) | `junsi` | [`tools`](../packages/core/tools) |
 | [`tool-lsp`](../packages/lsp/tool-lsp) | `lsp` | [`llm`](../packages/llm/llm), [`lsp`](../packages/lsp/lsp), [`system-prompt`](../packages/core/system-prompt), [`timeout`](../packages/util/timeout), [`tools`](../packages/core/tools) |
 | [`mcp-resources`](../packages/mcp/mcp-resources) | `mcp` | [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools) |
-| [`memory`](../packages/memory/memory) | `memory` | [`agent`](../packages/core/agent), [`anonymous-user-id`](../packages/identity/anonymous-user-id), [`goal`](../packages/goal/goal), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`settings`](../packages/settings/settings), [`storage`](../packages/storage/storage), [`storage-domain`](../packages/storage/storage-domain), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools), [`user-approval`](../packages/interaction/user-approval), [`workspace`](../packages/workspace/workspace) |
+| [`memory`](../packages/memory/memory) | `memory` | [`agent`](../packages/core/agent), [`anonymous-user-id`](../packages/identity/anonymous-user-id), [`goal`](../packages/goal/goal), [`home-paths`](../packages/util/home-paths), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`settings`](../packages/settings/settings), [`storage`](../packages/storage/storage), [`storage-domain`](../packages/storage/storage-domain), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools), [`user-approval`](../packages/interaction/user-approval), [`workspace`](../packages/workspace/workspace) |
 | [`agent-presets`](../packages/preset/agent-presets) | `preset` | [`agent`](../packages/core/agent), [`atomic-write`](../packages/util/atomic-write), [`home-paths`](../packages/util/home-paths), [`invariants`](../packages/runtime-diagnostics/invariants), [`scope`](../packages/core/scope), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`settings`](../packages/settings/settings), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools), [`typert-protocol`](../packages/typert/protocol) |
 | [`schedule`](../packages/schedule/schedule) | `schedule` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence), [`session-projection`](../packages/session/session-projection), [`tools`](../packages/core/tools) |
 | [`tool-wsl-pentest`](../packages/security/wsl-pentest) | `security` | [`agent`](../packages/core/agent), [`tools`](../packages/core/tools) |

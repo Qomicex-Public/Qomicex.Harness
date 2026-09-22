@@ -130,6 +130,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   workspaceFiles: 'workspace.md',
   terminalController: 'workspace.md',
   directoryPickerController: 'workspace.md',
+  memoryController: 'memory.md',
 }
 
 /**
@@ -800,6 +801,15 @@ export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   TerminalAttachmentId: 'Browser terminal input ownership is owned by packages/api/terminal-controller/README.md',
   TerminalFrame: 'Browser terminal stream frames are owned by packages/api/terminal-controller/README.md',
   WebTerminalId: 'Browser terminal identity is owned by packages/api/terminal-controller/README.md',
+  MemoryGraphValue: 'memory graph projection is owned by packages/api/memory-controller/README.md',
+  MemoryStatusValue: 'memory mount status is owned by packages/api/memory-controller/README.md',
+  MemoryForgetRequest: 'memory forget request contract is owned by packages/api/memory-controller/README.md',
+  MemoryForgetValue: 'memory forget outcome is owned by packages/api/memory-controller/README.md',
+  MemoryDownloadState: 'judge-model download progress is owned by packages/api/memory-controller/README.md',
+  MemoryPatternView: 'extracted pattern projection is owned by packages/api/memory-controller/README.md',
+  MemoryExtractionValue: 'pattern-extraction run outcome is owned by packages/api/memory-controller/README.md',
+  MemoryPatternDecisionRequest: 'pattern decision request contract is owned by packages/api/memory-controller/README.md',
+  MemoryPatternDecisionValue: 'pattern decision outcome is owned by packages/api/memory-controller/README.md',
 }
 
 /** Repository data policy consumed by the Cordis catalog projector. */

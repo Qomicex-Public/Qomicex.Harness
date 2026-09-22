@@ -77,6 +77,28 @@ export interface IntegrationLoadReport {
 }
 
 /**
+ * Whether a configuration asks for the toolkit integration to be a load
+ * candidate.
+ *
+ * The three states differ on one axis — who decides. `auto` defers to
+ * `autoDetect`, because "decide for me" is a different request from "I already
+ * decided". `on` decides, and so it ignores auto-detect: a deployment that
+ * knows the toolkit is there must not be overruled by a probe it just switched
+ * off. `off` is the only state that keeps the integration out.
+ * @param integrations - The resolved integration configuration.
+ * @returns Whether the toolkit integration should be offered to the loader.
+ */
+export function toolkitIntegrationRequested(integrations: {
+  readonly autoDetect: boolean
+  readonly toolkit: { readonly enabled: 'auto' | 'on' | 'off' }
+}): boolean {
+  const { enabled } = integrations.toolkit
+  if (enabled === 'on') return true
+  if (enabled === 'off') return false
+  return integrations.autoDetect
+}
+
+/**
  * Load every integration that detects successfully.
  *
  * A candidate that throws is recorded and skipped rather than propagated: the

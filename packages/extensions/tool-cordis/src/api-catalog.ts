@@ -1310,6 +1310,75 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'memoryController',
+    summary: 'Host service backing the generated `ctx.remote.memory` namespace.',
+    description: 'Host service backing the generated `ctx.remote.memory` namespace.\n\nRead-only apart from `forget`, which routes through the same governance and lifecycle helpers the agent tool uses: a deletion from the Settings page must leave exactly the audit trail and tombstone the agent\'s own delete does, or the two paths would disagree about what "deleted" means.',
+    methods: [
+      {
+        signature: '@Remote async graph(): Promise<MemoryGraphValue>',
+        description: 'Read the whole memory graph.',
+        parameters: [],
+        returns: 'Every live memory, its links, per-scope counts, and aggregates.',
+        throws: ['RemoteError `memory/unavailable` when the plugin is not mounted.'],
+      },
+      {
+        signature: '@Remote async status(): Promise<MemoryStatusValue>',
+        description: 'Report whether the plugin is mounted.',
+        parameters: [],
+        returns: 'Mount state, plus the total and newest observation time when mounted.',
+      },
+      {
+        signature: '@Remote async forget(request: MemoryForgetRequest): Promise<MemoryForgetValue>',
+        description: 'Forget one memory.\n\n`delete` is governance (irreversible, records a tombstone); `suppress` and `deprecate` are lifecycle (reversible). The split matches the agent tool, so the audit trail cannot tell which surface asked.',
+        parameters: [{ name: 'request', description: 'Memory id, mode, and optional reason.' }],
+        returns: 'Whether the action applied and a human-readable detail.',
+        throws: ['RemoteError `memory/unavailable` when the plugin is not mounted, `memory/not-found` when the id names no memory.'],
+      },
+      {
+        signature: '@Remote downloadModel(): Promise<MemoryDownloadState>',
+        description: 'Download the local judge model into the configured path.\n\nThe one remote thing in the memory system, which is why it lives behind a click rather than inside a judgment: the download is a user action, and a plugin that fetches weights while deciding what to remember would make the rule path depend on the network. Nothing about the download is automatic here — `localLlm.autoDownload` covers the case where the user already agreed in configuration.\n\nThe transfer runs in the background, so this answers with the state it starts in rather than the outcome: a 278 MB fetch over a mirror takes minutes, and holding the Remote call open that long would invite a timeout. Failure is recorded in the state rather than thrown, because the caller is a button that stays on screen to say so.',
+        parameters: [],
+        returns: 'The download state as it starts, always `downloading`. Poll `modelDownloadStatus()` for progress, failure, and completion.',
+        throws: ['RemoteError `memory/unavailable` when the plugin is not mounted.'],
+      },
+      {
+        signature: '@Remote async modelDownloadStatus(): Promise<MemoryDownloadState>',
+        description: 'Report the model download, or its absence.\n\nDoubles as the "is it already here" check: when no download has run this session, the target path is stat-ed so a machine that downloaded on an earlier run still shows the finished state rather than offering a second 278 MB fetch.',
+        parameters: [],
+        returns: 'The download state.',
+        throws: ['RemoteError `memory/unavailable` when the plugin is not mounted.'],
+      },
+      {
+        signature: '@Remote async revealModelFile(): Promise<{ ok: boolean; detail: string }>',
+        description: 'Reveal the model file in the platform\'s file manager.\n\nSelects the file rather than opening the directory, because "which of these files is it" is the question the button answers — except on a platform whose manager offers no selection, where opening the containing folder is the closest honest answer. A failure is reported rather than thrown: the file is already downloaded, so a manager that will not open is an annoyance, not a broken state.',
+        parameters: [],
+        returns: 'Whether a manager was launched, and the path it was pointed at or the reason it could not be.',
+        throws: ['RemoteError `memory/unavailable` when the plugin is not mounted.'],
+      },
+      {
+        signature: '@Remote async patterns(): Promise<readonly MemoryPatternView[]>',
+        description: 'List the extracted patterns, for the Settings panel.\n\nEvery state is returned, candidates included: the panel\'s whole job is to show what is waiting for a human, and hiding candidates would leave nothing to approve.',
+        parameters: [],
+        returns: 'The patterns, newest first.',
+        throws: ['RemoteError `memory/unavailable` when the plugin is not mounted.'],
+      },
+      {
+        signature: '@Remote async extractPatternsNow(): Promise<MemoryExtractionValue>',
+        description: 'Run one pattern-extraction pass now.\n\nThe scheduled pass is offline batch work; this is the same work on demand, for a user who just finished a stretch of sessions and does not want to wait for the weekly run. It is deliberately not gated on the schedule — asking for it *is* the trigger.',
+        parameters: [],
+        returns: 'How many patterns the run produced.',
+        throws: ['RemoteError `memory/unavailable` when the plugin is not mounted.'],
+      },
+      {
+        signature: '@Remote async decidePattern(request: MemoryPatternDecisionRequest): Promise<MemoryPatternDecisionValue>',
+        description: 'Approve, reject, disable, or re-enable one pattern.\n\nThe review gate is what keeps pattern extraction auditable: a candidate never reaches the hot pack on its own, so a human decision has to be reachable from somewhere. This is that somewhere, and it performs the same state write the agent\'s `memory_patterns` tool performs — one rule, two surfaces, so a decision cannot differ depending on who made it.',
+        parameters: [{ name: 'request', description: 'The pattern id and the decision.' }],
+        returns: 'The pattern\'s state after the decision.',
+        throws: ['RemoteError `memory/unavailable`, or `memory/not-found` for an unknown id.'],
+      },
+    ],
+  },
+  {
     key: 'messageFeedback',
     summary: 'Session-log service; cold operations never construct a Session or Agent.',
     description: 'Session-log service; cold operations never construct a Session or Agent.',
@@ -3808,7 +3877,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'ApprovalPolicy',
-    declaration: 'export type ApprovalPolicy = \'ask\' | \'never\';',
+    declaration: 'export type ApprovalPolicy = \'ask\' | \'never\' | \'always\';',
   },
   {
     name: 'ApprovalRequest',
@@ -3899,10 +3968,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AuthorizationFlow {\n    readonly key: CredentialKey;\n    readonly label: string;\n    readonly methods: readonly [\n        AuthorizationMethod,\n        ...AuthorizationMethod[]\n    ];\n    run(session: AuthorizationSession): Promise<void>;\n}',
   },
   {
-    name: 'AuthorizationInteraction',
-    declaration: 'export interface AuthorizationInteraction {\n    notify(notice: AuthorizationNotice): void;\n    prompt(prompt: AuthorizationPrompt): Promise<string>;\n}',
-  },
-  {
     name: 'AuthorizationMethod',
     declaration: 'export interface AuthorizationMethod {\n    id: string;\n    label: string;\n}',
   },
@@ -3921,10 +3986,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AuthorizationPromptOption',
     declaration: 'export interface AuthorizationPromptOption {\n    id: string;\n    label: string;\n    description?: string;\n}',
-  },
-  {
-    name: 'AuthorizationRequest',
-    declaration: 'export interface AuthorizationRequest {\n    key: CredentialKey;\n    method?: string;\n    interaction: AuthorizationInteraction;\n    signal?: AbortSignal;\n}',
   },
   {
     name: 'AuthorizationSession',
@@ -4211,10 +4272,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type DeepSeekLlmApiJson = null | boolean | number | string | DeepSeekLlmApiJson[] | {\n    [key: string]: DeepSeekLlmApiJson;\n};',
   },
   {
-    name: 'DiffCallView',
-    declaration: 'export interface DiffCallView {\n    card: \'diff\';\n    title: string;\n    diffs: FileDiff[];\n    locations?: FileLocation[];\n}',
-  },
-  {
     name: 'DiffResultView',
     declaration: 'export interface DiffResultView {\n    card: \'diff\';\n    title?: string;\n    diffs: FileDiff[];\n}',
   },
@@ -4355,10 +4412,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface FileDiff {\n    path: string;\n    oldText: string | null;\n    newText: string;\n}',
   },
   {
-    name: 'FileLocation',
-    declaration: 'export interface FileLocation {\n    path: string;\n    line?: number;\n}',
-  },
-  {
     name: 'FileReferenceCandidate',
     declaration: 'export interface FileReferenceCandidate {\n    path: string;\n    kind: \'file\' | \'directory\';\n}',
   },
@@ -4425,10 +4478,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'GenerateOptions',
     declaration: 'export interface GenerateOptions {\n    provider: string;\n    model: string;\n    reasoningEffort?: ReasoningEffortId;\n    messages: Message[];\n    system?: string;\n    tools?: ToolSchema[];\n    temperature?: number;\n    maxTokens?: number;\n    stop?: string[];\n    signal?: AbortSignal;\n    sessionId?: Branded<\'SessionId\'>;\n    purpose?: \'compaction\' | \'session-title\';\n}',
-  },
-  {
-    name: 'GenericCallView',
-    declaration: 'export interface GenericCallView {\n    card: \'generic\';\n    title: string;\n    kind?: ToolCallKind;\n    rawInput?: unknown;\n    content?: ContentBlock[];\n    locations?: FileLocation[];\n}',
   },
   {
     name: 'GenericResultView',
@@ -4607,10 +4656,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type JsonSchemaType = \'object\' | \'array\' | \'string\' | \'number\' | \'integer\' | \'boolean\' | \'null\';',
   },
   {
-    name: 'JsonValue',
-    declaration: 'export type JsonValue = null | boolean | number | string | JsonValue[] | {\n    [key: string]: JsonValue;\n};',
-  },
-  {
     name: 'KvFacet',
     declaration: 'export interface KvFacet {\n    open(descriptor: KvUnitDescriptor): Promise<KvUnit>;\n}',
   },
@@ -4745,6 +4790,66 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'McpResourceRequest',
     declaration: 'export type McpResourceRequest = {\n    method: \'resources/list\' | \'resources/templates/list\';\n    cursor?: string;\n} | {\n    method: \'resources/read\';\n    uri: string;\n};',
+  },
+  {
+    name: 'MemoryDownloadState',
+    declaration: 'export interface MemoryDownloadState {\n    readonly status: \'idle\' | \'downloading\' | \'done\' | \'failed\';\n    readonly receivedBytes: number;\n    readonly totalBytes: number;\n    readonly path: string;\n    readonly error?: string;\n}',
+  },
+  {
+    name: 'MemoryEdgeKind',
+    declaration: 'export type MemoryEdgeKind = \'same-fact\' | \'same-scope\';',
+  },
+  {
+    name: 'MemoryEdgeView',
+    declaration: 'export interface MemoryEdgeView {\n    readonly from: string;\n    readonly to: string;\n    readonly kind: MemoryEdgeKind;\n}',
+  },
+  {
+    name: 'MemoryExtractionValue',
+    declaration: 'export interface MemoryExtractionValue {\n    readonly ok: boolean;\n    readonly detail: string;\n    readonly produced: number;\n}',
+  },
+  {
+    name: 'MemoryForgetRequest',
+    declaration: 'export interface MemoryForgetRequest {\n    readonly memoryId: string;\n    readonly mode: \'suppress\' | \'delete\' | \'deprecate\';\n    readonly reason?: string;\n}',
+  },
+  {
+    name: 'MemoryForgetValue',
+    declaration: 'export interface MemoryForgetValue {\n    readonly ok: boolean;\n    readonly detail: string;\n}',
+  },
+  {
+    name: 'MemoryGraphValue',
+    declaration: 'export interface MemoryGraphValue {\n    readonly nodes: readonly MemoryNodeView[];\n    readonly edges: readonly MemoryEdgeView[];\n    readonly scopes: readonly MemoryScopeCountView[];\n    readonly stats: MemoryStatsView;\n}',
+  },
+  {
+    name: 'MemoryLifecycleView',
+    declaration: 'export type MemoryLifecycleView = \'staging\' | \'active\' | \'consolidated\' | \'disputed\' | \'archived\' | \'tombstoned\' | \'deleted\';',
+  },
+  {
+    name: 'MemoryNodeView',
+    declaration: 'export interface MemoryNodeView {\n    readonly id: string;\n    readonly raw: string;\n    readonly kind: string;\n    readonly scope: string;\n    readonly lifecycle: MemoryLifecycleView;\n    readonly confidence: number;\n    readonly importance: number;\n    readonly usageCount: number;\n    readonly observedAt: number;\n    readonly lastAccessAt: number;\n    readonly forgetScore: number;\n    readonly semanticKey: string | null;\n    readonly pinned: boolean;\n    readonly userMarked: boolean;\n}',
+  },
+  {
+    name: 'MemoryPatternDecisionRequest',
+    declaration: 'export interface MemoryPatternDecisionRequest {\n    readonly patternId: string;\n    readonly action: \'approve\' | \'reject\' | \'disable\' | \'enable\';\n}',
+  },
+  {
+    name: 'MemoryPatternDecisionValue',
+    declaration: 'export interface MemoryPatternDecisionValue {\n    readonly ok: boolean;\n    readonly detail: string;\n    readonly state: string;\n}',
+  },
+  {
+    name: 'MemoryPatternView',
+    declaration: 'export interface MemoryPatternView {\n    readonly id: string;\n    readonly kind: string;\n    readonly content: string;\n    readonly confidence: number;\n    readonly state: string;\n    readonly occurrenceCount: number;\n    readonly projectCount: number;\n    readonly lastSeenAt: number;\n}',
+  },
+  {
+    name: 'MemoryScopeCountView',
+    declaration: 'export interface MemoryScopeCountView {\n    readonly scope: string;\n    readonly count: number;\n}',
+  },
+  {
+    name: 'MemoryStatsView',
+    declaration: 'export interface MemoryStatsView {\n    readonly total: number;\n    readonly byLifecycle: Readonly<Record<string, number>>;\n    readonly byKind: Readonly<Record<string, number>>;\n    readonly linked: number;\n}',
+  },
+  {
+    name: 'MemoryStatusValue',
+    declaration: 'export type MemoryStatusValue = {\n    readonly mounted: false;\n} | {\n    readonly mounted: true;\n    readonly total: number;\n    readonly updatedAt: number;\n};',
   },
   {
     name: 'Message',
@@ -6135,10 +6240,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface TerminalBackendSpawnSpec extends TerminalSpawnRequest {\n    sessionId: TerminalSessionIdValue;\n    owner: Agent;\n    signal?: AbortSignal;\n}',
   },
   {
-    name: 'TerminalCallView',
-    declaration: 'export interface TerminalCallView {\n    card: \'terminal\';\n    title: string;\n    description?: string;\n    cwd?: string;\n}',
-  },
-  {
     name: 'TerminalCreateRequest',
     declaration: 'export interface TerminalCreateRequest {\n    readonly shellPath?: string;\n    readonly id: WebTerminalId;\n    readonly cols: number;\n    readonly rows: number;\n}',
   },
@@ -6233,14 +6334,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'TokenUsage',
     declaration: 'export interface TokenUsage {\n    inputTokens: number;\n    outputTokens: number;\n    totalTokens?: number;\n    cacheReadTokens?: number;\n    cacheWriteTokens?: number;\n    reasoningTokens?: number;\n}',
-  },
-  {
-    name: 'ToolCallKind',
-    declaration: 'export type ToolCallKind = \'read\' | \'edit\' | \'delete\' | \'move\' | \'search\' | \'execute\' | \'fetch\' | \'other\';',
-  },
-  {
-    name: 'ToolCallView',
-    declaration: 'export type ToolCallView = GenericCallView | TerminalCallView | DiffCallView;',
   },
   {
     name: 'ToolDefinition',

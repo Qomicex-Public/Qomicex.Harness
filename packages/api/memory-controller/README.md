@@ -25,7 +25,7 @@ The **memory controller** owns the Host-side `memory` Remote namespace. The bio-
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount `@deepseek-ai/dsh-api-memory-controller` in a Host composition that may also mount `@deepseek-ai/dsh-memory`, and register its Remote contribution in the client Remote assembly. The namespace then answers `ctx.remote.memory.graph()`, `.status()`, and `.forget()`.
+Mount `@deepseek-ai/dsh-api-memory-controller` in a Host composition that may also mount `@deepseek-ai/dsh-memory`, and register its Remote contribution in the client Remote assembly. The namespace then answers `ctx.remote.memory.graph()`, `.status()`, `.forget()`, the three judge-model verbs, and the three pattern verbs.
 
 ### Reading the graph
 
@@ -38,6 +38,16 @@ Two independent relations produce the edges, because either alone leaves a misle
 `status()` reports whether the plugin is mounted, and when it is, the total and the newest observation time. The page uses it to choose between the graph and its "not enabled" state.
 
 `forget()` takes a memory id and a mode. `delete` is governance: it is irreversible and records a tombstone, so the same fact cannot return from the same source. `suppress` and `deprecate` are lifecycle: they hide the memory reversibly and mark it stale. The split matches the agent-facing `memory_forget` tool, and both surfaces route through the same governance and lifecycle helpers, so the audit trail cannot tell which one asked.
+
+### The judge model
+
+The judgement layer runs a local GGUF model, and this namespace owns its delivery. `downloadModel()` starts a fetch from the pinned release and returns immediately, so a 278 MB transfer never blocks a Remote call; `modelDownloadStatus()` reports where it stands, and `idle` also means "checked and not there" so the page can show the finished state on a later run without offering a second fetch. `revealModelFile()` selects the model file in the platform's file manager, or opens the folder containing it where a manager offers no selection. Failure is not an error code: a failed download lands in the polled state as `status: 'failed'` with `error` set, because the page is the surface a user repairs it from and a thrown RemoteError would take that surface down with it.
+
+### Patterns
+
+`patterns()` lists every extracted pattern with its state, so the page can show candidates, active ones, and ones a person parked. `extractPatternsNow()` runs the offline extraction pass out of band — the button is what makes the panel useful before the scheduled run — and reports how many patterns it produced. `decidePattern()` is the approval write: `approve` makes a candidate active, `reject` archives it, `disable` parks an active one so re-extraction cannot revive it, and `enable` re-activates a parked one.
+
+An unreviewed pattern never reaches the model through this surface or any other: every reader filters on `state === 'active'`, and a pattern becomes active only through `decidePattern()`.
 
 -----
 
@@ -59,13 +69,13 @@ Every verb reads through `memoryServices(ctx)`, the typed accessor the memory pl
 
 ### Wire shape
 
-`src/types.ts` is browser-safe: it declares the node, edge, scope-count, stats, status, and forget views, and the `RemoteErrorDetailsMap` entries for `memory/unavailable` and `memory/not-found`. The Remote client face the browser imports is generated from the same decorators, so the page reads the very declaration the Host answers.
+`src/types.ts` is browser-safe: it declares the node, edge, scope-count, stats, status, and forget views, the judge-model download state, and the pattern view, decision request, and outcome, plus the `RemoteErrorDetailsMap` entries for `memory/unavailable` and `memory/not-found`. The download carries no error entry, because a failed download is a state rather than an error. The Remote client face the browser imports is generated from the same decorators, so the page reads the very declaration the Host answers.
 
 ### Source map
 
 | File | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | `MemoryController`: the three Remote verbs and the graph projection |
+| [`src/index.ts`](src/index.ts) | `MemoryController`: the nine Remote verbs and the graph projection |
 | [`src/types.ts`](src/types.ts) | Browser-safe wire vocabulary and the Remote error details |
 
 </details>
