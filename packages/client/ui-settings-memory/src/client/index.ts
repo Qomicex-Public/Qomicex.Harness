@@ -88,6 +88,36 @@ export function apply(ctx: ClientContext): void {
         })),
       }
     },
+    downloadModel: async () => {
+      const response = await ctx.remote.memory.downloadModel()
+      if (response.ok) return { kind: 'ok', value: response.value }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
+    modelDownloadStatus: async () => {
+      const response = await ctx.remote.memory.modelDownloadStatus()
+      if (response.ok) return { kind: 'ok', value: response.value }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
+    revealModelFile: async () => {
+      const response = await ctx.remote.memory.revealModelFile()
+      if (response.ok) return { kind: 'ok', value: response.value }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
+    patterns: async () => {
+      const response = await ctx.remote.memory.patterns()
+      if (response.ok) return { kind: 'ok', value: response.value }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
+    extractPatternsNow: async () => {
+      const response = await ctx.remote.memory.extractPatternsNow()
+      if (response.ok) return { kind: 'ok', value: response.value }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
+    decidePattern: async (patternId, action) => {
+      const response = await ctx.remote.memory.decidePattern({ patternId, action })
+      if (response.ok) return { kind: 'ok', value: response.value }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
     settings: scope === undefined
       ? undefined
       : {

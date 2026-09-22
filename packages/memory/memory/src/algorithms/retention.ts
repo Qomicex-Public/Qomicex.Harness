@@ -23,9 +23,11 @@
  */
 
 import { DAY_MS } from './fsrs.ts'
+import { tokenize } from './bm25.ts'
+import { deleteMemory } from '../security/governance.ts'
 import type { MemoryRepository } from '../repository.ts'
 import type { MemoryTiers } from '../memory/tiers.ts'
-import type { ReinforcementKind, RetentionRecord, TtlReport } from '../types.ts'
+import type { Memory, ReinforcementKind, RetentionRecord, TtlReport } from '../types.ts'
 import { REINFORCEMENT_STRENGTH, isStructuralFact } from '../types.ts'
 
 /** Retention knobs, read fresh per cycle so a Settings edit applies. */
@@ -36,6 +38,11 @@ export interface RetentionConfig {
   promotionThreshold: number
   /** Sessions before the system starts archiving on expiry. */
   startupGraceSessions: number
+  /**
+   * Whether an expired, unreinforced memory is archived (`true`) or deleted
+   * with a tombstone (`false`). Archiving is the default.
+   */
+  archiveOnExpiry: boolean
   /** Whether structural facts are exempt from TTL. */
   structuralException: boolean
 }
@@ -45,7 +52,7 @@ export type { TtlReport }
 
 /** An empty report. */
 export function emptyTtlReport(): TtlReport {
-  return { promoted: 0, extended: 0, archived: 0, skipped: 0 }
+  return { promoted: 0, extended: 0, archived: 0, deleted: 0, skipped: 0 }
 }
 
 /**
@@ -93,11 +100,20 @@ export function reinforcementTotal(record: RetentionRecord): number {
  *    renewed by the initial window, giving the signals time to accumulate.
  * 3. **archive** — nothing fired. The memory is archived, which hides it from
  *    recall without deleting it: only the governance path deletes, and only
- *    it writes a tombstone.
+ *    it writes a tombstone. `archiveOnExpiry: false` asks for that governance
+ *    deletion instead, because a store that never lets an unreinforced fact go
+ *    is the failure mode the flag exists to trade away.
+ *
+ * The startup grace period is the one thing that overrides the flag. Retiring
+ * a fact in the first sessions would judge the reinforcement tally before it
+ * has had a chance to grow — the design's own reason for the grace window — so
+ * during grace even `archiveOnExpiry: false` archives, and deletion begins
+ * once the tally is meaningful.
  * @param repository - The repository.
  * @param tiers - The two memory tiers.
  * @param config - Retention knobs.
  * @param now - Current time (ms).
+ * @param inGrace - Whether the system is still inside its startup grace period.
  * @returns The pass report.
  */
 export async function evaluateTTL(
@@ -105,6 +121,7 @@ export async function evaluateTTL(
   tiers: MemoryTiers,
   config: RetentionConfig,
   now: number,
+  inGrace = false,
 ): Promise<TtlReport> {
   const report = emptyTtlReport()
   const windowMs = config.initialTTLDays * DAY_MS
@@ -141,6 +158,11 @@ export async function evaluateTTL(
         temporal: { ...current.temporal, expiresAt: current.temporal.expiresAt === null ? null : now + windowMs },
       }))
       report.extended += 1
+    } else if (!config.archiveOnExpiry && !inGrace) {
+      // The user opted out of keeping unreinforced facts: a lapsed TTL with no
+      // signal behind it retires the memory for good rather than hiding it.
+      await deleteMemory(repository, memory.identity.id, 'user_delete', now)
+      report.deleted += 1
     } else {
       await archive(tier, memory.identity.id)
       report.archived += 1
@@ -176,6 +198,23 @@ export async function sessionCount(repository: MemoryRepository): Promise<number
 /** Whether the system is still inside its startup grace period. */
 export function inStartupGrace(sessions: number, config: RetentionConfig): boolean {
   return sessions < config.startupGraceSessions
+}
+
+/**
+ * Whether a message restates a memory's fact.
+ *
+ * The test is the memory's normalized object appearing as a token in the
+ * message. Deliberately narrower than relevance: a mention is the user
+ * repeating the fact, which is the clearest statement that it still matters,
+ * and a fact whose object the user never says again should not earn it.
+ * @param memory - The memory.
+ * @param message - The user's message.
+ * @returns `true` when the message names the fact's object.
+ */
+export function mentionsFact(memory: Memory, message: string): boolean {
+  const object = memory.identity.semanticKey?.normalizedObject
+  if (object === undefined || object === null || object === '') return false
+  return tokenize(message).includes(object.toLowerCase())
 }
 
 /** Whether a memory's retention record shows it was ever used. */

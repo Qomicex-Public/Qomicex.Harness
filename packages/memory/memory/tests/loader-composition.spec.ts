@@ -111,14 +111,14 @@ describe('memory plugin real Loader composition through cordis.yml', () => {
 
   it('loads with the config the file carries', async () => {
     const ctx = await boot([
-      '    retrieval:',
-      '      topK: 3',
+      '    capacity:',
+      '      recallTopK: 3',
       '    authorization:',
-      '      enabled: true',
+      '      usePolicyPlane: true',
       '      policyVersion: custom-1',
     ])
-    expect(memoryServices(ctx)?.config.retrieval.topK).toBe(3)
-    expect(memoryServices(ctx)?.config.authorization.enabled).toBe(true)
+    expect(memoryServices(ctx)?.config.capacity.recallTopK).toBe(3)
+    expect(memoryServices(ctx)?.config.authorization.usePolicyPlane).toBe(true)
     expect(memoryServices(ctx)?.config.authorization.policyVersion).toBe('custom-1')
   }, 30_000)
 
@@ -132,7 +132,7 @@ describe('memory plugin real Loader composition through cordis.yml', () => {
   it('fails loading on a malformed config value', async () => {
     // Schemastery validates the plugin Config, so a bad type fails at load
     // rather than at first use.
-    await expect(boot(['    retrieval:', '      topK: "many"'])).rejects.toThrow(/retrieval\.topK|expected number/)
+    await expect(boot(['    capacity:', '      recallTopK: "many"'])).rejects.toThrow(/capacity\.recallTopK|expected number/)
   }, 30_000)
 
   it('detaches every contribution when the plugin entry disposes', async () => {

@@ -18,7 +18,10 @@ import { EventObserver } from '../src/event/observer.ts'
 import type { ObservationSink, ObservedSignal } from '../src/event/observer.ts'
 import {
   JUDGE_PROMPT_VERSION,
-  JUDGE_SYSTEM_PROMPT,
+  JUDGE_DEVELOPER_PROMPT,
+  FUNCTION_CALL_CLOSE,
+  JUDGE_MODEL_PROXIES,
+  judgeModelSources,
   LlamaCppJudge,
   buildJudgePrompt,
   parseJudgeVerdict,
@@ -93,75 +96,83 @@ const input = {
 }
 
 describe('judge prompt', () => {
-  it('prefixes hints as a tag and lists the context', () => {
-    const prompt = buildJudgePrompt(input)
-    expect(prompt).toContain('[规则 hint: project_fact]')
-    expect(prompt).toContain('- 上一个问题里我们用了 webpack')
-    expect(prompt).toContain('[内容]\n这个项目的构建命令是 pnpm run build')
-  })
-
-  it('omits both sections when there is nothing to show', () => {
-    const prompt = buildJudgePrompt({ current: '一句话', context: [], hints: [] })
-    expect(prompt).not.toContain('规则 hint')
-    expect(prompt).not.toContain('[上下文]')
-    expect(prompt).toBe('[内容]\n一句话')
+  it('renders the FunctionGemma conversation the fine-tune was trained on', () => {
+    const prompt = buildJudgePrompt(input.current)
+    // 原生声明语法，不是 JSON 工具 schema。
+    expect(prompt).toContain('<start_function_declaration>declaration:judge_statement{')
+    expect(prompt).toContain('shouldRemember:{type:<escape>BOOLEAN<escape>')
+    expect(prompt).toContain('<end_function_declaration>')
+    // developer 角色 + turn 定界符，缺一个模型就不认为这是函数调用场景。
+    expect(prompt).toContain('<start_of_turn>developer\n')
+    expect(prompt).toContain(JUDGE_DEVELOPER_PROMPT)
+    expect(prompt).toContain('<start_of_turn>user\n这个项目的构建命令是 pnpm run build\n<end_of_turn>')
+    expect(prompt.endsWith('<start_of_turn>model\n')).toBe(true)
+    expect(prompt.startsWith('<bos>')).toBe(true)
   })
 
   it('stamps a prompt version so a trainer can tell which prompt produced a row', () => {
     expect(JUDGE_PROMPT_VERSION).toBe('v1')
-    expect(JUDGE_SYSTEM_PROMPT).toContain('只返回 JSON')
+  })
+})
+
+describe('judge model sources', () => {
+  it('offers the direct URL first, then every mirror', () => {
+    const sources = judgeModelSources('https://example.test/model.gguf')
+    expect(sources[0]).toBe('https://example.test/model.gguf')
+    expect(sources).toHaveLength(1 + JUDGE_MODEL_PROXIES.length)
+    for (const proxy of JUDGE_MODEL_PROXIES) {
+      expect(sources).toContain(`${proxy}https://example.test/model.gguf`)
+    }
+  })
+
+  it('has no source duplicated, so timing cannot rank the same host twice', () => {
+    const sources = judgeModelSources()
+    expect(new Set(sources).size).toBe(sources.length)
   })
 })
 
 describe('judge verdict parsing', () => {
-  it('reads a clean JSON answer', () => {
-    expect(parseJudgeVerdict('{"shouldRemember": true, "confidence": 0.9}')).toEqual({
+  const call = (body: string): string => `<start_function_call>call:judge_statement{${body}}${FUNCTION_CALL_CLOSE}`
+
+  it('reads a clean function call', () => {
+    expect(parseJudgeVerdict(call('shouldRemember:true,rationale:<escape>项目构建约定<escape>'))).toEqual({
       verdict: 'remember',
-      confidence: 0.9,
+      confidence: 0.5,
       source: 'local-llm',
     })
   })
 
   it('reads a forget answer', () => {
-    expect(parseJudgeVerdict('{"shouldRemember": false, "confidence": 0.8}')?.verdict).toBe('forget')
+    expect(parseJudgeVerdict(call('shouldRemember:false,rationale:<escape>闲聊<escape>'))?.verdict).toBe('forget')
   })
 
-  it('finds the object inside prose and fences', () => {
-    // Models wrap JSON even when told not to, so the parser looks for the
-    // first balanced object rather than trusting the whole string.
-    const answer = '当然，以下是判断：\n```json\n{"shouldRemember": true, "confidence": 0.7}\n```\n希望有帮助'
+  it('reads the call out of surrounding noise', () => {
+    // 模型常在调用前复读 developer 段，解析必须能从里面挑出调用。
+    const answer = `${JUDGE_DEVELOPER_PROMPT}\n${call('shouldRemember:true,rationale:<escape>偏好<escape>')}`
     expect(parseJudgeVerdict(answer)?.verdict).toBe('remember')
-    expect(parseJudgeVerdict(answer)?.confidence).toBe(0.7)
   })
 
-  it('returns undefined for an answer with no object', () => {
+  it('rejects a JSON object, which is what the old parser expected', () => {
+    // 回归护栏：FunctionGemma 不用 JSON，未加引号的键不是合法 JSON。
+    // 旧实现正是因此把每次判断都静默降级成规则路径。
+    expect(parseJudgeVerdict('{"shouldRemember": true, "confidence": 0.9}')).toBeUndefined()
+  })
+
+  it('returns undefined for an answer with no call', () => {
     expect(parseJudgeVerdict('我觉得可以记住')).toBeUndefined()
   })
 
   it('returns undefined when the boolean is missing', () => {
-    expect(parseJudgeVerdict('{"confidence": 0.9}')).toBeUndefined()
+    expect(parseJudgeVerdict(call('rationale:<escape>没有布尔<escape>'))).toBeUndefined()
   })
 
-  it('returns undefined for malformed JSON', () => {
-    expect(parseJudgeVerdict('{"shouldRemember": true,')).toBeUndefined()
+  it('returns undefined for a truncated call', () => {
+    expect(parseJudgeVerdict('<start_function_call>call:judge_statement{shouldRemember:true')).toBeDefined()
+    expect(parseJudgeVerdict('<start_function_call>call:judge_statement{rationale')).toBeUndefined()
   })
 
-  it('clamps an out-of-range confidence instead of trusting it', () => {
-    expect(parseJudgeVerdict('{"shouldRemember": true, "confidence": 1.4}')?.confidence).toBe(1)
-    expect(parseJudgeVerdict('{"shouldRemember": true, "confidence": -3}')?.confidence).toBe(0)
-  })
-
-  it('defaults a missing confidence rather than dropping the verdict', () => {
-    expect(parseJudgeVerdict('{"shouldRemember": false}')?.confidence).toBe(0.5)
-  })
-
-  it('keeps braces inside strings from ending the object early', () => {
-    const answer = '{"shouldRemember": true, "confidence": 0.8}'
-    expect(parseJudgeVerdict(`前置 "}" 噪声 ${answer} 后置`)).toEqual({
-      verdict: 'remember',
-      confidence: 0.8,
-      source: 'local-llm',
-    })
+  it('defaults the confidence rather than dropping the verdict', () => {
+    expect(parseJudgeVerdict(call('shouldRemember:false'))?.confidence).toBe(0.5)
   })
 })
 
@@ -169,10 +180,10 @@ describe('LlamaCppJudge', () => {
   it('judges through the loaded model', async () => {
     const judge = new LlamaCppJudge({
       modelPath: 'model.gguf',
-      loader: fakeLoader('{"shouldRemember": false, "confidence": 0.9}'),
+      loader: fakeLoader('<start_function_call>call:judge_statement{shouldRemember:false,rationale:<escape>不需要跨会话保留<escape>}<end_function_call>'),
     })
     const result = await judge.judge(input)
-    expect(result).toEqual({ verdict: 'forget', confidence: 0.9, source: 'local-llm' })
+    expect(result).toEqual({ verdict: 'forget', confidence: 0.5, source: 'local-llm' })
   })
 
   it('falls back to the rule path when the answer is unusable', async () => {
@@ -191,7 +202,7 @@ describe('LlamaCppJudge', () => {
   it('loads once and reuses the model across statements', async () => {
     // Loading is the expensive part; re-loading per message would put seconds
     // of latency on the capture path.
-    const counted = countingLoader('{"shouldRemember": true, "confidence": 0.8}')
+    const counted = countingLoader('<start_function_call>call:judge_statement{shouldRemember:true,rationale:<escape>项目构建约定<escape>}<end_function_call>')
     const judge = new LlamaCppJudge({ modelPath: 'model.gguf', loader: counted.loader })
     await judge.judge(input)
     await judge.judge({ ...input, current: '另一句话' })
@@ -199,7 +210,7 @@ describe('LlamaCppJudge', () => {
   })
 
   it('stops retrying after a load failure', async () => {
-    const counted = countingLoader('{"shouldRemember": true}')
+    const counted = countingLoader('<start_function_call>call:judge_statement{shouldRemember:true,rationale:<escape>用户偏好<escape>}<end_function_call>')
     const judge = new LlamaCppJudge({
       modelPath: 'missing.gguf',
       loader: () => {
@@ -214,7 +225,7 @@ describe('LlamaCppJudge', () => {
   })
 
   it('becomes unavailable after the model throws mid-judgment', async () => {
-    const counted = countingLoader('{"shouldRemember": true}')
+    const counted = countingLoader('<start_function_call>call:judge_statement{shouldRemember:true,rationale:<escape>用户偏好<escape>}<end_function_call>')
     const judge = new LlamaCppJudge({
       modelPath: 'model.gguf',
       loader: () => {
@@ -234,7 +245,7 @@ describe('LlamaCppJudge', () => {
 
 describe('the local judge inside the observer', () => {
   /** Boot the loop with an observer wired to a fixed model answer. */
-  async function harness(answer: string, enabled = true) {
+  async function harness(answer: string | undefined) {
     const ctx = new Context()
     const adapter = new MockAdapter([textResponse('ok'), textResponse('ok')])
     await ctx.plugin(LlmRuntime)
@@ -255,8 +266,9 @@ describe('the local judge inside the observer', () => {
     const observer = new EventObserver(ctx, {
       sink,
       clock: () => 1_000,
-      judgmentEnabled: () => enabled,
-      judge: new LlamaCppJudge({ modelPath: 'model.gguf', loader: fakeLoader(answer) }),
+      ...(answer === undefined
+        ? {}
+        : { judge: new LlamaCppJudge({ modelPath: 'model.gguf', loader: fakeLoader(answer) }) }),
     })
     observer.attach()
     roots.push(ctx)
@@ -279,7 +291,7 @@ describe('the local judge inside the observer', () => {
   }
 
   it('stages nothing when the local model forgets the statement', async () => {
-    const h = await harness('{"shouldRemember": false, "confidence": 0.9}')
+    const h = await harness('<start_function_call>call:judge_statement{shouldRemember:false,rationale:<escape>不需要跨会话保留<escape>}<end_function_call>')
     const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
     send(agent, '这个项目的构建命令是 pnpm run build')
     await waitForIdle(h.ctx, agent)
@@ -291,32 +303,36 @@ describe('the local judge inside the observer', () => {
   })
 
   it('stages when the local model remembers it, and records the model as the source', async () => {
-    const h = await harness('{"shouldRemember": true, "confidence": 0.88}')
+    const h = await harness('<start_function_call>call:judge_statement{shouldRemember:true,rationale:<escape>环境配置路径<escape>}<end_function_call>')
     const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
     send(agent, '这个项目的构建命令是 pnpm run build')
     await waitForIdle(h.ctx, agent)
     await h.observer.settle()
 
     expect(h.sink.judgments[0]?.source).toBe('local-llm')
-    expect(h.sink.judgments[0]?.confidence).toBe(0.88)
+    expect(h.sink.judgments[0]?.confidence).toBe(0.5)
     expect(h.sink.signals).toHaveLength(1)
   })
 
   it('records the rule engine as the source when no model is wired', async () => {
-    const h = await harness('{"shouldRemember": false}', false)
+    const h = await harness(undefined)
     const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
     send(agent, '这个项目的构建命令是 pnpm run build')
     await waitForIdle(h.ctx, agent)
     await h.observer.settle()
 
-    expect(h.sink.judgments).toHaveLength(0)
+    // The judgment layer is always on now: with no model wired it still records
+    // a row, stamped as the rule path's answer rather than skipping the layer.
+    expect(h.sink.judgments).toHaveLength(1)
+    expect(h.sink.judgments[0]?.source).toBe('rule-engine')
+    expect(h.sink.judgments[0]?.localJudgment).toBe('remember')
     expect(h.sink.signals).toHaveLength(1)
   })
 
   it('leaves the signal type alone whatever the model decides', async () => {
     // The model returns a verdict, never a re-reading of what was said: the
     // source class, epistemic status, and tier stay with the rule path.
-    const h = await harness('{"shouldRemember": true, "confidence": 0.9}')
+    const h = await harness('<start_function_call>call:judge_statement{shouldRemember:true,rationale:<escape>用户明确偏好<escape>}<end_function_call>')
     const agent = await h.ctx.agentLoop.create(SessionId('a1'), { provider: 'mock', model: 'mock' })
     send(agent, '我更喜欢 pnpm')
     await waitForIdle(h.ctx, agent)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractFromToolResult } from '../src/event/signal-detect.ts'
+import { detectUserStatement, extractFromToolResult } from '../src/event/signal-detect.ts'
 
 describe('extractFromToolResult', () => {
   it('extracts a package manager from a manifest read', () => {
@@ -29,5 +29,26 @@ describe('extractFromToolResult', () => {
   it('leaves unrelated tool results as observations only', () => {
     const signals = extractFromToolResult({ name: 'bash', arguments: {} }, 'ls output')
     expect(signals).toHaveLength(0)
+  })
+})
+
+describe('detectUserStatement', () => {
+  it('stages an unconfirmed statement in relaxed mode', () => {
+    // No keyword rule fires here: what survives is the noise blacklist, and
+    // relaxed mode is what turns "not procedural noise" into a candidate.
+    expect(detectUserStatement('这个仓库的发布窗口是每周四晚上')?.type).toBe('user_statement')
+  })
+
+  it('drops an unconfirmed statement in strict mode', () => {
+    expect(detectUserStatement('这个仓库的发布窗口是每周四晚上', 'strict')).toBeNull()
+  })
+
+  it('still stages a keyword-confirmed statement in strict mode', () => {
+    expect(detectUserStatement('以后都用 pnpm', 'strict')?.type).toBe('user_statement')
+  })
+
+  it('drops procedural noise in both modes', () => {
+    expect(detectUserStatement('ls', 'strict')).toBeNull()
+    expect(detectUserStatement('ls')).toBeNull()
   })
 })

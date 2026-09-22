@@ -578,7 +578,7 @@ export class MemoryRepository {
       decayed: 0,
       forgotten: 0,
       blockedByTombstone: 0,
-      ttl: { promoted: 0, extended: 0, archived: 0, skipped: 0 },
+      ttl: { promoted: 0, extended: 0, archived: 0, deleted: 0, skipped: 0 },
     }
   }
 

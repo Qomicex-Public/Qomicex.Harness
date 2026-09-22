@@ -167,6 +167,44 @@ export async function applyGovernanceAction(
 }
 
 /**
+ * Delete exactly one memory: tombstone it, then mark it deleted.
+ *
+ * The narrow counterpart to {@link applyGovernanceAction}. That one deletes a
+ * *fact* and sweeps the siblings that express it, which is what a user asking
+ * the system to forget something means. Retention expiry is not that: it
+ * retires one aging row, and a sibling that was reinforced yesterday must
+ * survive its neighbour's lapsed TTL. Same steps, one target.
+ * @param repository - The shared repository.
+ * @param memoryId - The memory to delete.
+ * @param action - The governance action whose reason the tombstone carries.
+ * @param now - Application time (ms).
+ * @returns The tombstone, or `undefined` when the memory no longer exists.
+ */
+export async function deleteMemory(
+  repository: MemoryRepository,
+  memoryId: string,
+  action: GovernanceAction,
+  now: number,
+): Promise<Tombstone | undefined> {
+  const found = await repository.findMemory(memoryId)
+  if (found === undefined) return undefined
+  const tombstoneId = await repository.nextId('tomb')
+  const tombstone = buildTombstone(found.memory, tombstoneId, action, now)
+  await repository.putTombstone(tombstone)
+  await repository.updateMemory(found.table, memoryId, current => ({
+    ...current,
+    lifecycle: { ...current.lifecycle, state: 'deleted' },
+    governance: {
+      ...current.governance,
+      tombstones: current.governance.tombstones.includes(tombstoneId)
+        ? current.governance.tombstones
+        : [...current.governance.tombstones, tombstoneId],
+    },
+  }))
+  return tombstone
+}
+
+/**
  * Every memory one deletion must remove: the named one plus its live siblings
  * in the same fact group and scope.
  * @param repository - The shared repository.

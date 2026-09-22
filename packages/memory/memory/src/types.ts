@@ -403,6 +403,16 @@ export type JudgmentVerdict = 'remember' | 'forget'
 /** Who produced a judgment: the local model or the rule-engine fallback. */
 export type JudgmentSource = 'local-llm' | 'rule-engine'
 
+/**
+ * How much the rule engine is willing to stage.
+ *
+ * `relaxed` stages any message the noise blacklist lets through; `strict` stages
+ * only the keyword-confirmed rules. The distinction lives here rather than in
+ * the detector so the config, the detector, and the settings page all name it
+ * once.
+ */
+export type RuleEngineMode = 'relaxed' | 'strict'
+
 /** One persisted judgment, kept as training data for the local judge. */
 export interface JudgmentLog {
   /** Stable judgment id. */
@@ -415,6 +425,13 @@ export interface JudgmentLog {
   localJudgment: JudgmentVerdict
   /** Which path produced `localJudgment`. */
   source: JudgmentSource
+  /**
+   * Weights label of the model that judged; empty when the rule path decided.
+   * Recorded per row so a trainer can tell which weights produced a verdict.
+   */
+  modelVersion: string
+  /** Prompt label the judgment was produced under. */
+  promptVersion: string
   /** Judgment confidence in `[0, 1]`. */
   confidence: number
   /**
@@ -514,11 +531,11 @@ const STRUCTURAL_PREDICATES: ReadonlySet<string> = new Set([
 /**
  * The kinds of pattern the extraction layer recognizes.
  *
- * `workflow` is deliberately absent: detecting a repeated tool-call sequence
- * needs the observation stream segmented by task, which is a different kind of
- * analysis from the three cross-project statistics below.
+ * `workflow` is the one kind that reads the *observation* stream rather than
+ * the memory store: a repeated tool-call sequence is a property of how work
+ * gets done, not of any single fact that was written down.
  */
-export type PatternKind = 'preference' | 'failure' | 'environment'
+export type PatternKind = 'preference' | 'failure' | 'environment' | 'workflow'
 
 /** Lifecycle of one pattern; only a human moves it out of `candidate`. */
 export type PatternState = 'candidate' | 'active' | 'archived' | 'user-disabled'
@@ -719,6 +736,8 @@ export interface TtlReport {
   extended: number
   /** Memories archived, not deleted. */
   archived: number
+  /** Memories deleted with a tombstone because `archiveOnExpiry` is off. */
+  deleted: number
   /** Live memories skipped because they carry no lapsed TTL. */
   skipped: number
 }
@@ -922,4 +941,9 @@ export interface MemorySystemMeta {
   lastPatternExtractionAt: number | null
   /** Last curation time (ms), `null` before the first pass. */
   lastCurationAt: number | null
+  /**
+   * Incremental curation runs since the last full rebuild. Drives
+   * `curation.fullRebuild.everyNIncrementalRuns`; `null` before the first run.
+   */
+  lastCurationRunCount: number | null
 }

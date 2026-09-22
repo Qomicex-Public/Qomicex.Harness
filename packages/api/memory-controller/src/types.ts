@@ -99,11 +99,78 @@ export interface MemoryForgetValue {
   readonly detail: string
 }
 
+/** Outcome of one judge-model download. */
+export interface MemoryDownloadValue {
+  readonly ok: boolean
+  readonly detail: string
+}
+
+/** One extracted pattern, projected for the Settings panel. */
+export interface MemoryPatternView {
+  readonly id: string
+  readonly kind: string
+  readonly content: string
+  readonly confidence: number
+  readonly state: string
+  readonly occurrenceCount: number
+  readonly projectCount: number
+  readonly lastSeenAt: number
+}
+
+/** Outcome of one pattern-extraction run. */
+export interface MemoryExtractionValue {
+  readonly ok: boolean
+  readonly detail: string
+  /** Patterns produced by the run, new candidates included. */
+  readonly produced: number
+}
+
+/** One pattern state change requested from the Settings panel. */
+export interface MemoryPatternDecisionRequest {
+  readonly patternId: string
+  /**
+   * `approve` makes a candidate active; `reject` archives it; `disable` parks
+   * an active pattern so re-extraction cannot revive it; `enable` re-activates
+   * a disabled one. Mirrors the agent tool's `memory_patterns` vocabulary
+   * rather than inventing a second one.
+   */
+  readonly action: 'approve' | 'reject' | 'disable' | 'enable'
+}
+
+/** Outcome of one pattern decision. */
+export interface MemoryPatternDecisionValue {
+  readonly ok: boolean
+  readonly detail: string
+  /** The pattern's state after the decision. */
+  readonly state: string
+}
+
+/**
+ * Where a judge-model download stands.
+ *
+ * `idle` also means "checked and not there", which is what a machine that has
+ * never downloaded reports — so the Settings page can show the finished state
+ * on a later run without offering a second 278 MB fetch.
+ */
+export interface MemoryDownloadState {
+  readonly status: 'idle' | 'downloading' | 'done' | 'failed'
+  /** Bytes written so far; `0` unless a download is running. */
+  readonly receivedBytes: number
+  /** Total size when known; `0` when the server did not declare one. */
+  readonly totalBytes: number
+  /** Where the model belongs. */
+  readonly path: string
+  /** Why it failed, when it did. */
+  readonly error?: string
+}
+
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface RemoteErrorDetailsMap {
     /** The memory id does not name a live memory. */
     'memory/not-found': { readonly memoryId: string }
     /** The plugin is not mounted, so there is nothing to inspect. */
     'memory/unavailable': Record<string, never>
+    /** The download failed. */
+    'memory/download-failed': { readonly message: string }
   }
 }

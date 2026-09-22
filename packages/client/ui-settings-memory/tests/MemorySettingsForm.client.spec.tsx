@@ -20,27 +20,34 @@ const noTargets = { providers: [] }
 
 /** A resolved section with the defaults the schema would produce. */
 const resolved = {
+  enabled: true,
   thresholds: { excitability: 0.45, forgetDemote: 0.45, forgetArchive: 0.65, forgetHard: 0.85 },
-  bounds: { workingCapacity: 7, stagingCapacity: 32 },
-  retrieval: { topK: 8, similarityThreshold: 0.3, useVector: false },
-  injection: { hotPack: true, recallMaxChars: 2000 },
-  authorization: { enabled: false, policyVersion: 'bio-memory-1' },
+  capacity: { workingMemorySlots: 7, stagingPoolCapacity: 32, recallTopK: 8, similarityThreshold: 0.3, recallBlockMaxChars: 2000 },
+  retrieval: { useVector: false },
+  injection: { injectHotPack: true },
+  authorization: { usePolicyPlane: false, policyVersion: 'bio-memory-1' },
   llmDistill: { enabled: false, provider: '', model: '' },
   judgment: {
     enabled: true,
-    localLlm: { enabled: false, modelPath: '', gpuLayers: 0, contextSize: 2048 },
+    ruleEngine: { mode: 'relaxed' },
+    localLlm: { enabled: false, autoDownload: false, modelPath: '', modelVersion: '', promptVersion: 'v1', gpuLayers: 0, contextSize: 2048 },
   },
-  retention: { initialTTLDays: 7, promotionThreshold: 3, startupGraceSessions: 20, structuralException: true },
+  retention: {
+    initialTTLDays: 7,
+    promotionThreshold: 3,
+    startupGraceSessions: 20,
+    archiveOnExpiry: true,
+    structuralException: true,
+    adjacencyThreshold: 0.5,
+    enableAdjacency: true,
+    enableMention: true,
+  },
   patternExtraction: {
     enabled: true,
-    intervalDays: 7,
+    schedule: 'weekly',
     requireHumanApproval: true,
-    preferenceMinProjects: 3,
-    failureMinOccurrences: 2,
-    environmentMinProjects: 3,
-    pruningEnabled: true,
-    pruneMinScore: 0,
-    pruneStaleDays: 30,
+    thresholds: { preferenceMinProjects: 3, failureMinOccurrences: 2, environmentMinProjects: 3, workflowMinOccurrences: 5 },
+    pruning: { enabled: true, minScore: 0, staleDays: 30 },
   },
   patternApplication: {
     injectHotPack: true,
@@ -55,18 +62,15 @@ const resolved = {
     enabled: true,
     provider: '',
     model: '',
-    intervalDays: 7,
-    modelContextSize: 262144,
-    systemReserve: 8192,
-    safetyMargin: 8192,
-    inputRatio: 0.6,
-    maxLevel: 5,
+    schedule: 'weekly',
+    batchPolicy: { modelContextSize: 262144, systemReserve: 8192, safetyMargin: 8192, inputRatio: 0.6, outputRatio: 0.4 },
+    nextLayer: { minTokensForNextLayer: 100000, minCountForNextLayer: 5, maxLevel: 5 },
+    fullRebuild: { enabled: true, everyNIncrementalRuns: 10, maxMemoriesPerRebuild: 5000 },
+    budget: { maxTokensPerRun: 2000000, maxRunsPerMonth: 8 },
   },
   integrations: {
     autoDetect: true,
-    toolkitReadHotPackSection: true,
-    toolkitWriteBackOnApproval: false,
-    toolkitRoot: '',
+    toolkit: { enabled: 'auto', readHotPackSection: true, writeBackOnApproval: false },
   },
 }
 
@@ -146,7 +150,7 @@ describe('MemorySettingsForm', () => {
     fireEvent.click(screen.getByLabelText('Inject hot pack'))
 
     await waitFor(() => {
-      expect(mutate).toHaveBeenCalledWith([{ op: 'set', path: ['injection', 'hotPack'], value: false }])
+      expect(mutate).toHaveBeenCalledWith([{ op: 'set', path: ['injection', 'injectHotPack'], value: false }])
     })
   })
 
@@ -176,7 +180,7 @@ describe('MemorySettingsForm', () => {
     // an emptied control is the only "no value" gesture it can produce, and it
     // means the same as reset: revert to the composition layer.
     await waitFor(() => {
-      expect(mutate).toHaveBeenCalledWith([{ op: 'unset', path: ['retrieval', 'topK'] }])
+      expect(mutate).toHaveBeenCalledWith([{ op: 'unset', path: ['capacity', 'recallTopK'] }])
     })
   })
 
@@ -287,7 +291,7 @@ describe('MemorySettingsForm', () => {
     render(<MemorySettingsForm settings={settings} t={t} distillTargets={noTargets} />)
 
     const expected = [
-      'field.judgmentEnabled.label',
+      'field.enabled.label',      'field.ruleEngineMode.label',
       'field.initialTTLDays.label',
       'field.patternEnabled.label',
       'field.patternInjectHotPack.label',

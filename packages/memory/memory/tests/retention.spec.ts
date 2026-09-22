@@ -12,6 +12,7 @@ import { MemoryCore } from '../src/memory/core.ts'
 import {
   evaluateTTL,
   emptyTtlReport,
+  mentionsFact,
   reinforce,
   reinforcementTotal,
   sessionCount,
@@ -30,6 +31,7 @@ function config(overrides: Partial<RetentionConfig> = {}): RetentionConfig {
     initialTTLDays: 7,
     promotionThreshold: 3,
     startupGraceSessions: 20,
+    archiveOnExpiry: true,
     structuralException: true,
     ...overrides,
   }
@@ -172,6 +174,41 @@ describe('TTL evaluation', () => {
     expect(await repository.allTombstones()).toHaveLength(0)
   })
 
+  it('deletes with a tombstone when archiving on expiry is turned off', async () => {
+    const { repository, tiers } = await harness()
+    await repository.putRetention(emptyRetention('mem_1', 0.5, 1))
+    await tiers.episodic.put(memory('mem_1', { expiresAt: 500 }))
+    const report = await evaluateTTL(
+      repository,
+      tiers,
+      config({ archiveOnExpiry: false }),
+      1_000,
+    )
+    expect(report.deleted).toBe(1)
+    expect(report.archived).toBe(0)
+    // Deleting is the governance path: state moves and a tombstone is written,
+    // so the lineage cannot resurrect the fact it just retired.
+    const stored = await repository.getMemory('episodic', 'mem_1')
+    expect(stored?.lifecycle.state).toBe('deleted')
+    expect(await repository.allTombstones()).toHaveLength(1)
+  })
+
+  it('still archives during startup grace even when deletion is configured', async () => {
+    const { repository, tiers } = await harness()
+    await repository.putRetention(emptyRetention('mem_1', 0.5, 1))
+    await tiers.episodic.put(memory('mem_1', { expiresAt: 500 }))
+    const report = await evaluateTTL(
+      repository,
+      tiers,
+      config({ archiveOnExpiry: false }),
+      1_000,
+      true,
+    )
+    expect(report.deleted).toBe(0)
+    expect(report.archived).toBe(1)
+    expect(await repository.allTombstones()).toHaveLength(0)
+  })
+
   it('leaves a live memory with no lapsed TTL alone', async () => {
     const { repository, tiers } = await harness()
     await repository.putRetention(emptyRetention('mem_1', 0.5, 1))
@@ -263,6 +300,8 @@ describe('consolidation with retention', () => {
       context: [],
       localJudgment: 'remember',
       source: 'rule-engine',
+      modelVersion: '',
+      promptVersion: '',
       confidence: 0.5,
       usageSignal: 0,
       cloudVerdict: null,
@@ -298,6 +337,8 @@ describe('consolidation with retention', () => {
       context: [],
       localJudgment: 'remember',
       source: 'rule-engine',
+      modelVersion: '',
+      promptVersion: '',
       confidence: 0.5,
       usageSignal: 0,
       cloudVerdict: null,
@@ -352,5 +393,19 @@ describe('consolidation with retention', () => {
     expect(record).toBeDefined()
     expect(record?.excitabilityScore).toBeGreaterThanOrEqual(0)
     expect(record?.excitabilityScore).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('mention detection', () => {
+  it('matches the fact object the user restates', () => {
+    expect(mentionsFact(memory('mem_1', { semanticKey: packageKey }), 'we use pnpm here')).toBe(true)
+  })
+
+  it('ignores a message that names something else', () => {
+    expect(mentionsFact(memory('mem_1', { semanticKey: packageKey }), 'we use npm here')).toBe(false)
+  })
+
+  it('ignores a keyless memory, which has no object to restate', () => {
+    expect(mentionsFact(memory('mem_1'), 'pnpm')).toBe(false)
   })
 })

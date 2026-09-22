@@ -64,6 +64,26 @@ export interface MemorySectionInjected {
    * Empty when the deployment exposes no provider directory.
    */
   readonly loadDistillTargets: () => Promise<DistillTargets>
+  /**
+   * Download the local judge model into the configured path. Absent when the
+   * memory Remote namespace is not reachable, which is the same deployment that
+   * leaves the graph empty. Resolves once the download has been started; watch
+   * {@link modelDownloadStatus} for progress.
+   */
+  readonly downloadModel?: () => Promise<LoadOutcome<unknown>>
+  /** Poll the download's progress, or its absence. */
+  readonly modelDownloadStatus?: () => Promise<LoadOutcome<unknown>>
+  /** Reveal the model file in the platform's file manager. */
+  readonly revealModelFile?: () => Promise<LoadOutcome<unknown>>
+  /** List the extracted patterns, for the Settings panel. */
+  readonly patterns?: () => Promise<LoadOutcome<unknown>>
+  /** Run one pattern-extraction pass now. */
+  readonly extractPatternsNow?: () => Promise<LoadOutcome<unknown>>
+  /** Approve, reject, disable, or re-enable one pattern. */
+  readonly decidePattern?: (
+    patternId: string,
+    action: 'approve' | 'reject' | 'disable' | 'enable',
+  ) => Promise<LoadOutcome<unknown>>
 }
 
 /** One provider and the model ids it declares, for the distillation dropdowns. */
@@ -110,7 +130,11 @@ function toGraph(graph: MemoryGraphValue): { nodes: GraphNode[]; edges: GraphEdg
  * @returns the settings page element tree.
  */
 export function MemorySection(props: MemorySectionProps): ReactNode {
-  const { t, loadGraph, loadStatus, loadDistillTargets, settings } = props
+  const {
+    t, loadGraph, loadStatus, loadDistillTargets,
+    downloadModel, modelDownloadStatus, revealModelFile,
+    patterns, extractPatternsNow, decidePattern, settings,
+  } = props
   const [graph, setGraph] = useState<MemoryGraphValue | undefined>(undefined)
   const [mounted, setMounted] = useState<boolean | undefined>(undefined)
   const [failure, setFailure] = useState<string | undefined>(undefined)
@@ -221,7 +245,53 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
       {settings === undefined
         ? <p className={css.muted}>{t('settingsUnavailable')}</p>
         : (
-          <MemorySettingsForm settings={settings} t={t} distillTargets={distillTargets} />
+          <MemorySettingsForm
+            settings={settings}
+            t={t}
+            distillTargets={distillTargets}
+            downloadModel={downloadModel === undefined
+              ? undefined
+              : async () => {
+                const outcome = await downloadModel()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
+            modelDownloadStatus={modelDownloadStatus === undefined
+              ? undefined
+              : async () => {
+                const outcome = await modelDownloadStatus()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
+            revealModelFile={revealModelFile === undefined
+              ? undefined
+              : async () => {
+                const outcome = await revealModelFile()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
+            patterns={patterns === undefined
+              ? undefined
+              : async () => {
+                const outcome = await patterns()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
+            extractPatternsNow={extractPatternsNow === undefined
+              ? undefined
+              : async () => {
+                const outcome = await extractPatternsNow()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
+            decidePattern={decidePattern === undefined
+              ? undefined
+              : async (patternId, action) => {
+                const outcome = await decidePattern(patternId, action)
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
+          />
         )}
     </section>
   )

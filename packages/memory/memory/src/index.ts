@@ -24,24 +24,28 @@ import { MemoryRepository } from './repository.ts'
 import { MemoryCore } from './memory/core.ts'
 import { MemoryTiers } from './memory/tiers.ts'
 import { GatePipeline } from './security/gates.ts'
+import { isRetrievable } from './security/governance.ts'
 import { AuditLog } from './security/audit.ts'
 import { PolicyPlane } from './authorization/policy-plane.ts'
 import { ScopePromotionGate } from './authorization/scope-promotion.ts'
 import { ConsolidationDaemon } from './algorithms/consolidation.ts'
-import { reinforce } from './algorithms/retention.ts'
+import { reinforce, mentionsFact } from './algorithms/retention.ts'
 import { runExtraction, matchPatterns, recordApplication, feedbackFor, recordFeedback } from './algorithms/patterns.ts'
-import { LlamaCppJudge, loadLlamaCppModel } from './algorithms/local-judge.ts'
+import { LazyJudge, LlamaCppJudge, loadLlamaCppModel, ensureJudgeModel, JUDGE_MODEL_VERSION } from './algorithms/local-judge.ts'
 import { runCuration } from './algorithms/curation.ts'
 import { collectIntegrationSections, loadIntegrations } from './integration.ts'
 import { createToolkitIntegration } from './integrations/toolkit.ts'
+import { fuse } from './algorithms/retrieval.ts'
 import type { DistillProvider } from './algorithms/distill.ts'
 import { EventObserver } from './event/observer.ts'
 import { registerMemorySettings } from './settings.ts'
 import { registerHooks, PLUGIN_NAME, PATTERN_OPEN, PATTERN_CLOSE } from './hooks.ts'
+import type { TurnSignals } from './hooks.ts'
 import { registerTools } from './tools.ts'
 import { buildHotPack } from './hot-pack.ts'
 import { projectScope, readableScopes, UNKNOWN_SCOPE_ID } from './scope/namespace.ts'
 import type { ScopeNode } from './types.ts'
+import type { ReinforcementKind } from './types.ts'
 
 export { Config, resolveConfig } from './config.ts'
 export type { Config as MemoryConfig, ResolvedConfig } from './config.ts'
@@ -108,6 +112,7 @@ export {
   emptyTtlReport,
   evaluateTTL,
   inStartupGrace,
+  mentionsFact,
   reinforce,
   reinforcementTotal,
   sessionCount,
@@ -116,10 +121,23 @@ export {
 } from './algorithms/retention.ts'
 export type { RetentionConfig } from './algorithms/retention.ts'
 export {
+  JUDGE_MODEL_FILE,
+  JUDGE_MODEL_REPO,
+  JUDGE_MODEL_TAG,
+  JUDGE_MODEL_PROXIES,
+  JUDGE_MODEL_URL,
+  JUDGE_MODEL_VERSION,
+  judgeModelSources,
+  pickFastestSource,
   JUDGE_PROMPT_VERSION,
-  JUDGE_SYSTEM_PROMPT,
+  JUDGE_DEVELOPER_PROMPT,
+  JUDGE_FUNCTION_DECLARATION,
+  FUNCTION_CALL_OPEN,
+  FUNCTION_CALL_CLOSE,
   LlamaCppJudge,
   buildJudgePrompt,
+  downloadJudgeModel,
+  ensureJudgeModel,
   loadLlamaCppModel,
   parseJudgeVerdict,
 } from './algorithms/local-judge.ts'
@@ -412,8 +430,8 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const core = new MemoryCore({
     tiers,
     gate,
-    workingCapacity: resolved.bounds.workingCapacity,
-    stagingCapacity: resolved.bounds.stagingCapacity,
+    workingCapacity: resolved.capacity.workingMemorySlots,
+    stagingCapacity: resolved.capacity.stagingPoolCapacity,
     retention: () => {
       const { initialTTLDays, structuralException } = currentConfig().retention
       return { initialTTLDays, structuralException }
@@ -522,10 +540,14 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
    * what makes the core independent of the integrations — unloading every one
    * of them leaves capture, judgment, retention, extraction, application, and
    * curation exactly as they were.
+   *
+   * The toolkit integration takes no root: it finds each workspace's `.memory/`
+   * from the scope a pack is built for, so one instance serves every workspace
+   * it runs in. `off` and a disabled auto-detect are the two ways it stays out.
    */
   const integrationReport = await loadIntegrations(
-    currentConfig().integrations.autoDetect && currentConfig().integrations.toolkitRoot !== ''
-      ? [createToolkitIntegration({ root: currentConfig().integrations.toolkitRoot })]
+    currentConfig().integrations.autoDetect && currentConfig().integrations.toolkit.enabled !== 'off'
+      ? [createToolkitIntegration()]
       : [],
   )
   const integrations = integrationReport.active
@@ -536,29 +558,82 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const observer = new EventObserver(ctx, {
     sink: core,
     userId: () => userId,
-    judgmentEnabled: () => currentConfig().judgment.enabled,
-    // The local model is only constructed when it is both enabled and given a
-    // path. Without a path there is nothing to load, and the rule path is the
-    // correct judge — so the seam stays closed rather than failing per message.
-    ...(currentConfig().judgment.localLlm.enabled && currentConfig().judgment.localLlm.modelPath !== ''
-      ? {
-        judge: new LlamaCppJudge({
-          modelPath: currentConfig().judgment.localLlm.modelPath,
-          gpuLayers: currentConfig().judgment.localLlm.gpuLayers,
-          contextSize: currentConfig().judgment.localLlm.contextSize,
-          loader: (path: string) => loadLlamaCppModel(
-            path,
-            currentConfig().judgment.localLlm.gpuLayers,
-            currentConfig().judgment.localLlm.contextSize,
-          ),
-        }),
-      }
-      : {}),
+    ruleMode: () => currentConfig().judgment.ruleEngine.mode,
+    judgeVersions: () => ({
+      // The config label wins when it is set; the pinned download fills in the
+      // real weights label so a row is never stamped with an empty model.
+      modelVersion: currentConfig().judgment.localLlm.modelVersion || JUDGE_MODEL_VERSION,
+      promptVersion: currentConfig().judgment.localLlm.promptVersion,
+    }),
+    // Built on first use, not at mount: the composition entry ships the local
+    // model disabled, so reading it here would freeze whatever the entry said
+    // and a Settings toggle would never take effect. LazyJudge re-reads the
+    // config when the first statement actually needs judging.
+    judge: new LazyJudge(() => {
+      const localLlm = currentConfig().judgment.localLlm
+      // Without a path there is nothing to load, and the rule path is the
+      // correct judge — so the seam stays closed rather than failing per message.
+      if (!localLlm.enabled || localLlm.modelPath === '') return undefined
+      return new LlamaCppJudge({
+        modelPath: localLlm.modelPath,
+        gpuLayers: localLlm.gpuLayers,
+        contextSize: localLlm.contextSize,
+        loader: (path: string) => loadLlamaCppModel(path, localLlm.gpuLayers, localLlm.contextSize),
+      })
+    }),
   })
   /** The retention usage signal: a recalled memory is one that was used. */
   const onRecalled = (memoryId: string, now: number): void => {
     void reinforce(repository, memoryId, 'usage', now).catch((error: unknown) => {
       ctx.logger.warn(`bio-memory: reinforcement write failed: ${String(error)}`)
+    })
+  }
+  /**
+   * The two retention signals that do not depend on retrieval.
+   *
+   * Both are written per memory and both are one-way: the caller already
+   * established the candidate set and the query, and this only decides which
+   * candidates earned which signal. The write is fire-and-forget for the same
+   * reason usage is — a memory subsystem must not make a turn wait on it.
+   */
+  const onTurnSignals = (turn: TurnSignals): void => {
+    const retention = currentConfig().retention
+    if (!retention.enableAdjacency && !retention.enableMention) return
+    const live = turn.memories.filter(isRetrievable)
+    const write = (memoryId: string, kind: ReinforcementKind): void => {
+      void reinforce(repository, memoryId, kind, turn.now).catch((error: unknown) => {
+        ctx.logger.warn(`bio-memory: reinforcement write failed: ${String(error)}`)
+      })
+    }
+    if (retention.enableAdjacency) {
+      const recalled = new Set(turn.recalledIds)
+      const relevance = fuse(turn.query, live, currentConfig().retrieval.useVector)
+      for (const memory of live) {
+        const id = memory.identity.id
+        // Excluding the recalled ones is the whole definition of the signal: a
+        // memory the pipeline already found earned usage instead, and counting
+        // it again here would double the same evidence.
+        if (recalled.has(id)) continue
+        if ((relevance.get(id) ?? 0) < retention.adjacencyThreshold) continue
+        write(id, 'adjacency')
+      }
+    }
+    if (retention.enableMention) {
+      for (const memory of live) {
+        if (mentionsFact(memory, turn.message)) write(memory.identity.id, 'mention')
+      }
+    }
+  }
+  /**
+   * Fetch the judge model when automatic download is on.
+   *
+   * Mount-time, background, and non-fatal by design: the plugin must not block
+   * on a 292 MB download, and a store that never gets the model still judges
+   * with the rule path.
+   */
+  if (currentConfig().judgment.localLlm.autoDownload) {
+    void ensureJudgeModel(currentConfig().judgment.localLlm.modelPath, (error) => {
+      ctx.logger.warn(`bio-memory: judge model download failed: ${String(error)}`)
     })
   }
   /**
@@ -597,7 +672,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       const patterns = inject
         ? (await repository.allPatterns()).filter(item => item.state === 'active')
         : []
-      const sections = currentConfig().integrations.toolkitReadHotPackSection
+      const sections = currentConfig().integrations.toolkit.readHotPackSection
         ? await collectIntegrationSections(integrations, scope.kind === 'global' ? 'global' : readableScopes(scope)[0] ?? 'global')
         : []
       return buildHotPack(
@@ -612,9 +687,10 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
         })),
       )
     },
-    hotPackEnabled: () => currentConfig().injection.hotPack,
-    recallMaxChars: () => currentConfig().injection.recallMaxChars,
+    hotPackEnabled: () => currentConfig().injection.injectHotPack,
+    recallMaxChars: () => currentConfig().capacity.recallBlockMaxChars,
     onRecalled,
+    onTurnSignals,
     applyPatterns,
     clock: () => Date.now(),
   })
@@ -626,24 +702,33 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     onRecalled,
     extractPatterns: currentConfig().patternExtraction.enabled
       ? () => runExtraction(repository, {
-        preferenceMinProjects: currentConfig().patternExtraction.preferenceMinProjects,
-        failureMinOccurrences: currentConfig().patternExtraction.failureMinOccurrences,
-        environmentMinProjects: currentConfig().patternExtraction.environmentMinProjects,
+        preferenceMinProjects: currentConfig().patternExtraction.thresholds.preferenceMinProjects,
+        failureMinOccurrences: currentConfig().patternExtraction.thresholds.failureMinOccurrences,
+        environmentMinProjects: currentConfig().patternExtraction.thresholds.environmentMinProjects,
+        workflowMinOccurrences: currentConfig().patternExtraction.thresholds.workflowMinOccurrences,
       }, Date.now())
       : undefined,
     runCuration: currentConfig().curation.enabled
-      ? () => runCuration(
-        repository,
-        undefined,
-        {
-          modelContextSize: currentConfig().curation.modelContextSize,
-          systemReserve: currentConfig().curation.systemReserve,
-          safetyMargin: currentConfig().curation.safetyMargin,
-          inputRatio: currentConfig().curation.inputRatio,
-        },
-        Date.now(),
-        `cur_${Date.now().toString(36)}`,
-      )
+      ? async () => {
+        const meta = await repository.meta()
+        const report = await runCuration(
+          repository,
+          undefined,
+          currentConfig().curation.batchPolicy,
+          currentConfig().curation.nextLayer,
+          currentConfig().curation.fullRebuild,
+          currentConfig().curation.budget,
+          Date.now(),
+          `cur_${Date.now().toString(36)}`,
+          meta.lastCurationRunCount ?? 0,
+        )
+        await repository.setMeta({
+          ...meta,
+          lastCurationAt: Date.now(),
+          lastCurationRunCount: (meta.lastCurationRunCount ?? 0) + 1,
+        })
+        return report
+      }
       : undefined,
     clock: () => Date.now(),
   })
@@ -686,7 +771,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   // The authorization plane only participates when it is enabled. Registering
   // the listener unconditionally would make a memory plugin change tool
   // behavior in a deployment that never asked for it.
-  const authorization = resolved.authorization.enabled
+  const authorization = resolved.authorization.usePolicyPlane
     ? ctx.on('tools/pre-execute', async (exec, next) => {
       const agent = exec.agent
       if (agent === undefined) return next()

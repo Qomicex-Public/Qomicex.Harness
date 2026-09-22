@@ -306,6 +306,7 @@ export const memorySystemMetaSchema = z.object({
   sequence: z.number(),
   lastPatternExtractionAt: z.number().nullable().default(null),
   lastCurationAt: z.number().nullable().default(null),
+  lastCurationRunCount: z.number().nullable().default(null),
 })
 
 /**
@@ -315,7 +316,7 @@ export const memorySystemMetaSchema = z.object({
  */
 export const patternSchema = z.object({
   id: z.string(),
-  kind: z.enum(['preference', 'failure', 'environment']),
+  kind: z.enum(['preference', 'failure', 'environment', 'workflow']),
   content: z.string(),
   canonicalForm: z.string(),
   confidence: z.number(),
@@ -362,6 +363,8 @@ export const judgmentLogSchema = z.object({
   context: z.array(z.string()),
   localJudgment: z.enum(['remember', 'forget']),
   source: z.enum(['local-llm', 'rule-engine']),
+  modelVersion: z.string().default(''),
+  promptVersion: z.string().default(''),
   confidence: z.number(),
   usageSignal: z.number(),
   cloudVerdict: z.enum(['remember', 'forget']).nullable(),
@@ -404,6 +407,7 @@ export const memoryDomain = defineDomain({
       sequence: 0,
       lastPatternExtractionAt: null,
       lastCurationAt: null,
+      lastCurationRunCount: null,
     },
   },
   tables: {

@@ -37,13 +37,16 @@ export interface PatternThresholds {
   failureMinOccurrences: number
   /** Distinct projects an environment constraint must span. */
   environmentMinProjects: number
+  /** Repeats a tool-call sequence needs to count as a workflow pattern. */
+  workflowMinOccurrences: number
 }
 
-/** The default thresholds, matching the design document's MVP numbers. */
+/** The default thresholds, matching the design document's numbers. */
 export const DEFAULT_PATTERN_THRESHOLDS: PatternThresholds = {
   preferenceMinProjects: 3,
   failureMinOccurrences: 2,
   environmentMinProjects: 3,
+  workflowMinOccurrences: 5,
 }
 
 /** Error markers that make a memory a failure-pattern candidate. */
@@ -108,16 +111,80 @@ export function extractPatterns(
   memories: readonly Memory[],
   retentions: ReadonlyMap<string, RetentionRecord>,
   thresholds: PatternThresholds = DEFAULT_PATTERN_THRESHOLDS,
+  toolSequences: readonly (readonly string[])[] = [],
 ): PatternCandidate[] {
   const candidates: PatternCandidate[] = [
     ...extractPreferences(memories, retentions, thresholds),
     ...extractFailures(memories, retentions, thresholds),
     ...extractEnvironments(memories, retentions, thresholds),
+    ...extractWorkflows(toolSequences, thresholds),
   ]
   return candidates.sort((left, right) =>
     right.occurrenceCount - left.occurrenceCount
     || right.projectCount - left.projectCount
     || left.canonicalForm.localeCompare(right.canonicalForm))
+}
+
+/** The shortest tool-call sequence that can count as a workflow. */
+export const WORKFLOW_MIN_LENGTH = 3
+
+/** The longest tool-call sequence that can count as a workflow. */
+export const WORKFLOW_MAX_LENGTH = 8
+
+/**
+ * A tool-call sequence that repeats across task runs is a workflow pattern.
+ *
+ * The unit is a run of consecutive tool names within one session, and the
+ * windows slide over it at every length between {@link WORKFLOW_MIN_LENGTH} and
+ * {@link WORKFLOW_MAX_LENGTH}. Only the *longest* window at each start is kept,
+ * so a repeated five-step sequence is reported as one pattern rather than as
+ * the five- and four-step fragments it also contains — fragments are noise, and
+ * they would all be approved or rejected together anyway.
+ *
+ * This reads the observation stream, not the memory store: how work gets done
+ * is not a fact anyone wrote down.
+ * @param sequences - One ordered list of tool names per session.
+ * @param thresholds - The thresholds to apply.
+ * @returns The candidates.
+ */
+function extractWorkflows(
+  sequences: readonly (readonly string[])[],
+  thresholds: PatternThresholds,
+): PatternCandidate[] {
+  const counts = new Map<string, number>()
+  for (const sequence of sequences) {
+    if (sequence.length < WORKFLOW_MIN_LENGTH) continue
+    const seenInRun = new Set<string>()
+    for (let start = 0; start < sequence.length; start += 1) {
+      for (let length = WORKFLOW_MAX_LENGTH; length >= WORKFLOW_MIN_LENGTH; length -= 1) {
+        if (start + length > sequence.length) continue
+        const window = sequence.slice(start, start + length)
+        const key = window.join('>')
+        // One run counts once per distinct window: a sequence that happens to
+        // contain the same window twice in a row is one occurrence of a habit,
+        // not two.
+        if (seenInRun.has(key)) break
+        seenInRun.add(key)
+        counts.set(key, (counts.get(key) ?? 0) + 1)
+        break
+      }
+    }
+  }
+
+  const candidates: PatternCandidate[] = []
+  for (const [key, count] of counts) {
+    if (count < thresholds.workflowMinOccurrences) continue
+    candidates.push({
+      kind: 'workflow',
+      content: `${key.split('>').join(' → ')} (运行 ${count} 次)`,
+      canonicalForm: `workflow|${key}`,
+      confidence: Math.min(count / (thresholds.workflowMinOccurrences * 2), 0.95),
+      evidenceMemoryIds: [],
+      projectCount: 0,
+      occurrenceCount: count,
+    })
+  }
+  return candidates
 }
 
 /**
@@ -368,8 +435,36 @@ export async function runExtraction(
     (await repository.allRetentions()).map(record => [record.memoryId, record]),
   )
   const memories = [...(await repository.allMemories('episodic')), ...(await repository.allMemories('semantic'))]
-  const candidates = extractPatterns(memories, retentions, thresholds)
+  const sequences = toolSequencesOf(await repository.allObservations())
+  const candidates = extractPatterns(memories, retentions, thresholds, sequences)
   return promoteCandidates(repository, candidates, now)
+}
+
+/**
+ * The tool-call sequence of each session, in call order.
+ *
+ * Read from the observation stream rather than the memory store: a workflow is
+ * how the work was done, and nothing about it is written down as a memory. The
+ * sequence is per session, because two different sessions doing the same three
+ * calls is the repetition being looked for.
+ * @param observations - Every stored observation.
+ * @returns One ordered list of tool names per session that called any tool.
+ */
+export function toolSequencesOf(
+  observations: readonly { sessionId: string; seq: number; eventType: string; payload: unknown }[],
+): string[][] {
+  const bySession = new Map<string, { seq: number; name: string }[]>()
+  for (const event of observations) {
+    if (event.eventType !== 'tool_call') continue
+    if (typeof event.payload !== 'object' || event.payload === null) continue
+    const name = (event.payload as { name?: unknown }).name
+    if (typeof name !== 'string') continue
+    const list = bySession.get(event.sessionId) ?? []
+    list.push({ seq: event.seq, name })
+    bySession.set(event.sessionId, list)
+  }
+  return [...bySession.values()].map(calls =>
+    calls.sort((left, right) => left.seq - right.seq).map(call => call.name))
 }
 
 /**

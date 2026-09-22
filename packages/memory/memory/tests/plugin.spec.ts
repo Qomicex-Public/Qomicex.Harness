@@ -83,7 +83,7 @@ describe('plugin mount', () => {
     expect(h.ctx.get(MEMORY_SERVICES.policyPlane)).toBeDefined()
     expect(h.ctx.get(MEMORY_SERVICES.promotionGate)).toBeDefined()
     expect(h.ctx.get(MEMORY_SERVICES.daemon)).toBeDefined()
-    expect(memoryServices(h.ctx)?.config.authorization.enabled).toBe(false)
+    expect(memoryServices(h.ctx)?.config.authorization.usePolicyPlane).toBe(false)
   })
 
   it('contributes the static instruction section to the system prompt', async () => {

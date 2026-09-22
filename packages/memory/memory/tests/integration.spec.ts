@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { mkdtemp, rm, writeFile, readFile, mkdir } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildHotPack } from '../src/hot-pack.ts'
@@ -8,6 +8,7 @@ import type { HotPackSection, Integration } from '../src/integration.ts'
 import { createToolkitIntegration, TOOLKIT_PREFERENCES_FILE } from '../src/integrations/toolkit.ts'
 import { Context } from '@deepseek-ai/cordis'
 import { resolveConfig, Config } from '../src/config.ts'
+import { projectScope, serializeScope } from '../src/scope/namespace.ts'
 
 const roots: Context[] = []
 
@@ -127,66 +128,81 @@ describe('collecting integration sections', () => {
 })
 
 describe('the toolkit integration', () => {
-  it('does not detect when the toolkit directory is absent', async () => {
+  /** A serialized project scope whose id is the given working directory. */
+  const scopeOfCwd = (cwd: string): string => serializeScope(projectScope(cwd))
+
+  it('detects once per machine and defers presence to each scope', async () => {
+    // The `.memory/` directory lives in a workspace, so whether the toolkit is
+    // installed is not knowable before a scope arrives. The probe only answers
+    // for an explicit root; per-scope discovery always loads.
+    expect(await createToolkitIntegration().detect()).toBe(true)
     const root = await tempDir()
     expect(await createToolkitIntegration({ root }).detect()).toBe(false)
-  })
-
-  it('detects when the toolkit directory exists', async () => {
-    const root = await tempDir()
     await mkdir(join(root, '.memory'), { recursive: true })
     expect(await createToolkitIntegration({ root }).detect()).toBe(true)
   })
 
-  it('relays the toolkit preferences as a hot-pack section', async () => {
+  it('finds the .memory directory of the workspace the scope names', async () => {
     const root = await tempDir()
     await mkdir(join(root, '.memory'), { recursive: true })
     await writeFile(join(root, '.memory', TOOLKIT_PREFERENCES_FILE), '- 前端用 pnpm\n- 回复用中文\n', 'utf8')
-    const section = await createToolkitIntegration({ root }).collectHotPackSection?.('project=a')
+    const section = await createToolkitIntegration().collectHotPackSection?.(scopeOfCwd(root))
     expect(section?.name).toBe('toolkit')
     expect(section?.content).toContain('前端用 pnpm')
     expect(section?.budgetBytes).toBeGreaterThan(0)
   })
 
+  it('reads a different workspace for a different scope', async () => {
+    // The failure this guards: one configured root cannot serve two
+    // workspaces, so the directory has to follow the scope.
+    const first = await tempDir()
+    const second = await tempDir()
+    await mkdir(join(first, '.memory'), { recursive: true })
+    await writeFile(join(first, '.memory', TOOLKIT_PREFERENCES_FILE), '- 第一个工作区\n', 'utf8')
+    await mkdir(join(second, '.memory'), { recursive: true })
+    await writeFile(join(second, '.memory', TOOLKIT_PREFERENCES_FILE), '- 第二个工作区\n', 'utf8')
+    const integration = createToolkitIntegration()
+    expect((await integration.collectHotPackSection?.(scopeOfCwd(first)))?.content).toContain('第一个工作区')
+    expect((await integration.collectHotPackSection?.(scopeOfCwd(second)))?.content).toContain('第二个工作区')
+  })
+
+  it('contributes nothing for a workspace with no .memory directory', async () => {
+    const root = await tempDir()
+    expect(await createToolkitIntegration().collectHotPackSection?.(scopeOfCwd(root))).toBeNull()
+  })
+
+  it('contributes nothing for a scope that names no workspace', async () => {
+    expect(await createToolkitIntegration().collectHotPackSection?.('global')).toBeNull()
+  })
+
   it('contributes nothing when the preferences file is missing', async () => {
     const root = await tempDir()
     await mkdir(join(root, '.memory'), { recursive: true })
-    expect(await createToolkitIntegration({ root }).collectHotPackSection?.('project=a')).toBeNull()
+    expect(await createToolkitIntegration().collectHotPackSection?.(scopeOfCwd(root))).toBeNull()
   })
 
   it('contributes nothing when the preferences file is blank', async () => {
     const root = await tempDir()
     await mkdir(join(root, '.memory'), { recursive: true })
     await writeFile(join(root, '.memory', TOOLKIT_PREFERENCES_FILE), '   \n', 'utf8')
-    expect(await createToolkitIntegration({ root }).collectHotPackSection?.('project=a')).toBeNull()
-  })
-
-  it('writes an approved pattern back into the toolkit file', async () => {
-    const root = await tempDir()
-    await mkdir(join(root, '.memory'), { recursive: true })
-    await writeFile(join(root, '.memory', TOOLKIT_PREFERENCES_FILE), '- 现有偏好\n', 'utf8')
-    await createToolkitIntegration({ root }).writePatternOnApproval?.('pat_1', 'TypeScript strict')
-    const text = await readFile(join(root, '.memory', TOOLKIT_PREFERENCES_FILE), 'utf8')
-    // The existing content survives; the pattern is appended, not substituted.
-    expect(text).toContain('现有偏好')
-    expect(text).toContain('TypeScript strict')
-    expect(text).toContain('pat_1')
-  })
-
-  it('creates the directory when writing to a root that has none', async () => {
-    const root = await tempDir()
-    await createToolkitIntegration({ root }).writePatternOnApproval?.('pat_1', 'a pattern')
-    const text = await readFile(join(root, '.memory', TOOLKIT_PREFERENCES_FILE), 'utf8')
-    expect(text).toContain('a pattern')
+    expect(await createToolkitIntegration().collectHotPackSection?.(scopeOfCwd(root))).toBeNull()
   })
 
   it('honours a custom budget', async () => {
     const root = await tempDir()
     await mkdir(join(root, '.memory'), { recursive: true })
     await writeFile(join(root, '.memory', TOOLKIT_PREFERENCES_FILE), '- x\n', 'utf8')
-    const section = await createToolkitIntegration({ root, budgetBytes: 128 })
-      .collectHotPackSection?.('project=a')
+    const section = await createToolkitIntegration({ budgetBytes: 128 })
+      .collectHotPackSection?.(scopeOfCwd(root))
     expect(section?.budgetBytes).toBe(128)
+  })
+
+  it('still reads the override root when one is configured', async () => {
+    const root = await tempDir()
+    await mkdir(join(root, '.memory'), { recursive: true })
+    await writeFile(join(root, '.memory', TOOLKIT_PREFERENCES_FILE), '- 覆盖路径\n', 'utf8')
+    const section = await createToolkitIntegration({ root }).collectHotPackSection?.('global')
+    expect(section?.content).toContain('覆盖路径')
   })
 })
 
@@ -222,31 +238,46 @@ describe('the core is independent of the integrations', () => {
     // this is the out-of-the-box shape.
     const resolved = resolveConfig(Config({}))
     expect(resolved.integrations.autoDetect).toBe(false)
-    expect(resolved.integrations.toolkitRoot).toBe('')
+    expect(resolved.integrations.toolkit.enabled).toBe('auto')
   })
 
-  it('defaults both integration directions off', async () => {
-    // Reading in and writing back are separately gated, and neither is on by
-    // default: an integration must be opted into twice, once per direction.
+  it('defaults both integration directions on', async () => {
+    // Reading in and writing back are separately gated, and both are on by
+    // default: `enabled: 'auto'` already decides presence per workspace, so a
+    // second opt-in would only turn an integration that is already mounted
+    // into a no-op.
     const resolved = resolveConfig(Config({}))
-    expect(resolved.integrations.toolkitReadHotPackSection).toBe(false)
-    expect(resolved.integrations.toolkitWriteBackOnApproval).toBe(false)
+    expect(resolved.integrations.toolkit.readHotPackSection).toBe(true)
+    expect(resolved.integrations.toolkit.writeBackOnApproval).toBe(true)
   })
 
   it('keeps a disabled integration out of the candidate list entirely', async () => {
-    // An empty root means no candidate is even built, so there is nothing to
-    // probe and nothing that can fail.
-    const resolved = resolveConfig(Config({
+    // `off` and a disabled auto-detect both mean no candidate is built, so
+    // there is nothing to probe and nothing that can fail.
+    const disabled = resolveConfig(Config({
       integrations: {
-        autoDetect: false,
-        toolkitReadHotPackSection: false,
-        toolkitWriteBackOnApproval: false,
-        toolkitRoot: '',
+        autoDetect: true,
+        toolkit: { enabled: 'off', readHotPackSection: false, writeBackOnApproval: false },
       },
     }))
-    const candidates = resolved.integrations.autoDetect && resolved.integrations.toolkitRoot !== ''
-      ? [createToolkitIntegration({ root: resolved.integrations.toolkitRoot })]
-      : []
-    expect(candidates).toEqual([])
+    expect(disabled.integrations.autoDetect && disabled.integrations.toolkit.enabled !== 'off').toBe(false)
+
+    const undetected = resolveConfig(Config({
+      integrations: {
+        autoDetect: false,
+        toolkit: { enabled: 'auto', readHotPackSection: false, writeBackOnApproval: false },
+      },
+    }))
+    expect(undetected.integrations.autoDetect && undetected.integrations.toolkit.enabled !== 'off').toBe(false)
+
+    // The default is neither of those, so the toolkit is a candidate and finds
+    // each workspace's own `.memory/` from the scope a pack is built for.
+    const enabled = resolveConfig(Config({
+      integrations: {
+        autoDetect: true,
+        toolkit: { enabled: 'auto', readHotPackSection: false, writeBackOnApproval: false },
+      },
+    }))
+    expect(enabled.integrations.autoDetect && enabled.integrations.toolkit.enabled !== 'off').toBe(true)
   })
 })

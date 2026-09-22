@@ -95,6 +95,7 @@ describe('memory domain declaration', () => {
       sequence: 0,
       lastPatternExtractionAt: null,
       lastCurationAt: null,
+      lastCurationRunCount: null,
     })
   })
 
@@ -108,6 +109,7 @@ describe('memory domain declaration', () => {
       sequence: 7,
       lastPatternExtractionAt: null,
       lastCurationAt: null,
+      lastCurationRunCount: null,
     })
     await first.domain.close()
     const second = await harness(pool)
@@ -118,6 +120,7 @@ describe('memory domain declaration', () => {
       sequence: 7,
       lastPatternExtractionAt: null,
       lastCurationAt: null,
+      lastCurationRunCount: null,
     })
   })
 })
@@ -253,6 +256,8 @@ describe('MemoryRepository', () => {
       context: ['上一个问题里我们用了 webpack'],
       localJudgment: 'remember',
       source: 'rule-engine',
+      modelVersion: '',
+      promptVersion: '',
       confidence: 0.5,
       usageSignal: 0,
       cloudVerdict: null,
@@ -269,6 +274,8 @@ describe('MemoryRepository', () => {
       context: ['上一个问题里我们用了 webpack'],
       localJudgment: 'remember',
       source: 'rule-engine',
+      modelVersion: '',
+      promptVersion: '',
       confidence: 0.5,
       usageSignal: 0,
       cloudVerdict: null,
