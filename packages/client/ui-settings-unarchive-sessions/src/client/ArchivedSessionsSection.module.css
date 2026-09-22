@@ -81,3 +81,11 @@
   line-height: 18px;
   color: var(--dsw-alias-label-tertiary);
 }
+
+.danger {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.danger:disabled {
+  color: var(--dsw-alias-state-error-secondary);
+}

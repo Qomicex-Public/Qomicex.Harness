@@ -5,7 +5,9 @@
  * gone has no row and no action; the set itself stays host-owned.
  */
 import { useMemo, useState, type ReactNode } from 'react'
-import { Button, IconSearchOutline16, relativeTime } from '@deepseek-ai/dsh-client-ui-primitives'
+import {
+  Button, IconSearchOutline16, RiskConfirmation, relativeTime,
+} from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import css from './ArchivedSessionsSection.module.css'
@@ -17,6 +19,11 @@ export interface ArchivedSessionsSectionInjected {
    * @param sessionId - Session to unarchive.
    */
   unarchive: (sessionId: SessionId) => Promise<void>
+  /**
+   * Permanently erase one archived Session and its durable log.
+   * @param sessionId - Session to delete.
+   */
+  deleteSession: (sessionId: SessionId) => Promise<void>
 }
 
 /** Full component props assembled by the Settings slot renderer. */
@@ -55,11 +62,13 @@ function matches(row: ArchivedRow, normalizedQuery: string): boolean {
  * @returns the settings page element tree.
  */
 export function ArchivedSessionsSection(props: ArchivedSessionsSectionProps): ReactNode {
-  const { t, unarchive, useSessions, useWorkspaces } = props
+  const { t, unarchive, deleteSession, useSessions, useWorkspaces } = props
   const sessions = useSessions(state => state)
   const workspaces = useWorkspaces(state => state.items)
   const archivedSessionIds = useWorkspaces(state => state.archivedSessionIds)
   const [query, setQuery] = useState('')
+  const [pending, setPending] = useState<ArchivedRow | undefined>(undefined)
+  const [acknowledged, setAcknowledged] = useState(false)
   const ungrouped = t('ungrouped')
   const summaries = sessions.byId
 
@@ -116,6 +125,18 @@ export function ArchivedSessionsSection(props: ArchivedSessionsSectionProps): Re
               <Button
                 variant="outline"
                 size="sm"
+                className={css.danger}
+                aria-label={t('deleteNamed', { title: row.title })}
+                onClick={() => {
+                  setAcknowledged(false)
+                  setPending(row)
+                }}
+              >
+                {t('delete')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 aria-label={t('unarchiveNamed', { title: row.title })}
                 onClick={() => {
                   unarchive(row.id).catch((reason: unknown) => {
@@ -129,6 +150,26 @@ export function ArchivedSessionsSection(props: ArchivedSessionsSectionProps): Re
           ))}
         </ul>
       ) : null}
+      <RiskConfirmation
+        open={pending !== undefined}
+        title={t('confirmTitle')}
+        description={t('confirmBody', { title: pending?.title ?? '' })}
+        acknowledgeLabel={t('confirmAcknowledge')}
+        cancelLabel={t('cancel')}
+        closeLabel={t('close')}
+        confirmLabel={t('confirmAction')}
+        acknowledged={acknowledged}
+        onAcknowledgedChange={setAcknowledged}
+        onCancel={() => { setPending(undefined) }}
+        onConfirm={() => {
+          const row = pending
+          setPending(undefined)
+          if (row === undefined) return
+          deleteSession(row.id).catch((reason: unknown) => {
+            console.warn('session delete rejected:', reason)
+          })
+        }}
+      />
     </div>
   )
 }

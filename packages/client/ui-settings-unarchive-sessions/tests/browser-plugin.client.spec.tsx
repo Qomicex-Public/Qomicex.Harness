@@ -21,8 +21,9 @@ async function bench() {
   const locale = new LocaleRuntime(ctx)
   ctx.provide('locale', locale)
   const unarchiveSession = vi.fn<(sessionId: SessionId) => Promise<void>>(async () => {})
-  ctx.provide('uiWorkspace', { unarchiveSession })
-  return { ctx, slots: ctx.get('slots') as SlotRegistry, locale, unarchiveSession }
+  const deleteSession = vi.fn<(sessionId: SessionId) => Promise<void>>(async () => {})
+  ctx.provide('uiWorkspace', { unarchiveSession, deleteSession })
+  return { ctx, slots: ctx.get('slots') as SlotRegistry, locale, unarchiveSession, deleteSession }
 }
 
 function declare(slots: SlotRegistry): () => void {
@@ -58,6 +59,8 @@ describe('ui-settings-unarchive-sessions browser plugin', () => {
     const injected = (entry.inject as unknown as () => ArchivedSessionsSectionInjected)()
     await expect(injected.unarchive('session-one' as SessionId)).resolves.toBeUndefined()
     expect(b.unarchiveSession).toHaveBeenCalledWith('session-one')
+    await expect(injected.deleteSession('session-one' as SessionId)).resolves.toBeUndefined()
+    expect(b.deleteSession).toHaveBeenCalledWith('session-one')
     await b.ctx.fiber.dispose()
   })
 

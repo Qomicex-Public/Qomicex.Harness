@@ -1,5 +1,5 @@
 ---
-description: "Archived-session Settings page for the dsh web client: the registry-global archive set as a searchable list with one Unarchive action per row."
+description: "Archived-session Settings page for the dsh web client: the registry-global archive set as a searchable list with one Unarchive action and one confirmed erase action per row."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The **Archived sessions** Settings page is the restore point for sessions hidden from Workspace navigation. It lists each archived session with the Workspace that owns it and its last activity, newest archive first, and offers one Unarchive action per row. A search box filters the list by session title or Workspace name. Rows come from the archive set joined with the loaded Session summaries, so an archive entry whose session record is gone has no row and no action. Every restore goes through the shared Workspace command.
+The **Archived sessions** Settings page is the restore point for sessions hidden from Workspace navigation. It lists each archived session with the Workspace that owns it and its last activity, newest archive first, and offers one Unarchive action and one Delete action per row. A search box filters the list by session title or Workspace name. Rows come from the archive set joined with the loaded Session summaries, so an archive entry whose session record is gone has no row and no action. Every restore goes through the shared Workspace command; every erasure goes through the same command family behind an irreversibility confirmation.
 
 ## Table of Contents
 
@@ -35,6 +35,10 @@ Each row shows the session's display title, the title of the Workspace that acco
 
 Unarchive restores the session to its recorded position under its Workspace, or to the ungrouped sessions when it belongs to none, and the row disappears from the page. The action calls `ctx.uiWorkspace.unarchiveSession`, whose echoed archive set updates every surface that filters on it, so the session reappears in the sidebar and search as well. A rejected call is logged as a console diagnostic and leaves the row in place for another attempt.
 
+### Deleting a session
+
+Delete permanently erases the session and its durable log. The row's Delete action opens a confirmation dialog whose primary action stays disabled until the irreversibility acknowledgement is checked; confirming calls `ctx.uiWorkspace.deleteSession` and closes the dialog, leaving the row update to the Host-echoed archive set. A session that is live in the Host process is refused there, and the refusal surfaces as the same console diagnostic a failed restore leaves.
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -47,7 +51,7 @@ The page is one localized `settings.section` contribution with id `archived-sess
 
 ### Registration and data sources
 
-`apply()` registers the locale namespace, binds it, and uses `ctx.slots.inject()` to contribute the section, so a late or restored slot declaration still reaches it. The page reads `state.archivedSessionIds` and `state.items` from `useWorkspaces` and the Session summaries from `useSessions`; it owns no store and no transport, and its only write is the injected `unarchive` callback that the registration closes over `ctx.uiWorkspace.unarchiveSession`.
+`apply()` registers the locale namespace, binds it, and uses `ctx.slots.inject()` to contribute the section, so a late or restored slot declaration still reaches it. The page reads `state.archivedSessionIds` and `state.items` from `useWorkspaces` and the Session summaries from `useSessions`; it owns no store and no transport, and its only writes are the injected `unarchive` and `deleteSession` callbacks the registration closes over `ctx.uiWorkspace.unarchiveSession` and `ctx.uiWorkspace.deleteSession`. The erase confirmation is the shared `RiskConfirmation` primitive; the page owns only its open state and acknowledgement.
 
 ### Row derivation
 
@@ -58,8 +62,8 @@ Rows are derived from the archive set joined with the loaded summaries: a member
 | File | Role |
 |---|---|
 | [`src/index.ts`](src/index.ts) | Host loader entry: the page is browser-only, so the plugin body is empty |
-| [`src/client/index.ts`](src/client/index.ts) | Browser plugin: locale namespace, section registration, injected Unarchive operation |
-| [`src/client/ArchivedSessionsSection.tsx`](src/client/ArchivedSessionsSection.tsx) | The page component: row derivation, search, per-row Unarchive |
+| [`src/client/index.ts`](src/client/index.ts) | Browser plugin: locale namespace, section registration, injected Unarchive and Delete operations |
+| [`src/client/ArchivedSessionsSection.tsx`](src/client/ArchivedSessionsSection.tsx) | The page component: row derivation, search, per-row Unarchive, erase confirmation |
 | [`src/client/locales.ts`](src/client/locales.ts) | Chinese and English dictionaries for every visible and accessible string |
 | [`src/client/ArchivedSessionsSection.module.css`](src/client/ArchivedSessionsSection.module.css) | Page styles |
 
@@ -97,7 +101,7 @@ None; this package neither assembles nor sends a provider request.
 These limits define which archived sessions this page can restore; they are current package constraints.
 
 - **Archived sessions without a loaded summary are unaddressable** — the page derives its rows by joining the archive set with the Session list, so a member the list does not carry has no row and no Unarchive action even though the archive set still holds it; a set whose members are all in that state reports itself as unrestorable rather than empty.
-- **The page lists sessions only; it offers no session deletion** — archives are reversible through this page, while deleting a session record remains a separate capability.
+- **Erasing a live session is refused by the Host** — a session that is live in the Host process owns the write handle over its log, so `ctx.uiWorkspace.deleteSession` rejects with `session/live`; the page keeps the row and logs the refusal.
 
 <a id="dev-note"></a>
 ### Dev Note

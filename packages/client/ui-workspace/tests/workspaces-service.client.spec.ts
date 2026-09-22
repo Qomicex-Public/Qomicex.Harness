@@ -591,6 +591,18 @@ describe('UiWorkspaceService', () => {
     expect(b.workspaces.unarchiveCalls).toEqual([idle, idle])
   })
 
+  it('forwards session deletion and preserves a live-session refusal', async () => {
+    const idle = sid('idle')
+    const b = bench()
+
+    await b.uiWorkspace.deleteSession(idle)
+    expect(b.workspaces.deleteCalls).toEqual([idle])
+
+    b.workspaces.onDelete = () => Promise.reject(new Error('session is live'))
+    await expect(b.uiWorkspace.deleteSession(idle)).rejects.toThrow('session is live')
+    expect(b.workspaces.deleteCalls).toEqual([idle, idle])
+  })
+
   it('passes directory operations to the Host and preserves structured browse failures', async () => {
     const b = bench()
     b.directoryPicker.onPick = () => Promise.resolve({ ok: true, value: '/w/alpha' })

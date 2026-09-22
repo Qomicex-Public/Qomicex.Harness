@@ -1,5 +1,5 @@
 ---
-description: "dsh Web 客户端的已归档会话设置页：把注册表全局归档集合呈现为可搜索列表，每行提供一个取消归档操作。"
+description: "dsh Web 客户端的已归档会话设置页：把注册表全局归档集合呈现为可搜索列表，每行提供一个取消归档操作和一个带确认的抹除操作。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-**已归档会话**设置页是从 Workspace 导航中隐藏的会话的恢复入口。它按归档时间由新到旧列出每个已归档会话，并显示其所属 Workspace 与最近活动时间，每行提供一个取消归档操作。搜索框按会话标题或 Workspace 名称过滤列表。行由归档集合与已加载的 Session 摘要合并而来，因此会话记录已不存在的归档条目既没有行也没有操作。每次恢复都经由共享的 Workspace 命令。
+**已归档会话**设置页是从 Workspace 导航中隐藏的会话的恢复入口。它按归档时间由新到旧列出每个已归档会话，并显示其所属 Workspace 与最近活动时间，每行提供一个取消归档操作和一个删除操作。搜索框按会话标题或 Workspace 名称过滤列表。行由归档集合与已加载的 Session 摘要合并而来，因此会话记录已不存在的归档条目既没有行也没有操作。每次恢复都经由共享的 Workspace 命令；每次抹除则在不可恢复确认之后经由同一命令族完成。
 
 ## 目录
 
@@ -35,6 +35,10 @@ kind: "package-reference"
 
 取消归档会把会话恢复到其 Workspace 下记录的位置；会话不属于任何 Workspace 时则恢复到未分组会话中，该行随即从页面消失。该操作调用 `ctx.uiWorkspace.unarchiveSession`，其回传的完整归档集合会更新所有依据它过滤的界面，因此会话也会重新出现在侧边栏与搜索中。调用被拒绝时会记录一条 console 诊断，并保留该行以便再次尝试。
 
+### 删除会话
+
+删除会永久抹除该会话及其持久日志。每行的删除操作打开一个确认对话框，在勾选不可恢复确认之前其主操作保持禁用；确认后调用 `ctx.uiWorkspace.deleteSession` 并关闭对话框，行状态的更新交给 Host 回传的归档集合。会话在 Host 进程中实时时会在那里被拒绝，该拒绝以与恢复失败相同的 console 诊断呈现。
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -47,7 +51,7 @@ kind: "package-reference"
 
 ### 注册与数据来源
 
-`apply()` 注册并绑定 locale namespace，再用 `ctx.slots.inject()` 贡献该分区，因此延迟声明或恢复声明的 slot 依然能触达它。页面从 `useWorkspaces` 读取 `state.archivedSessionIds` 与 `state.items`，从 `useSessions` 读取 Session 摘要；它不持有 store 也不持有 transport，唯一的写入是注册处以 `ctx.uiWorkspace.unarchiveSession` 闭包注入的 `unarchive` 回调。
+`apply()` 注册并绑定 locale namespace，再用 `ctx.slots.inject()` 贡献该分区，因此延迟声明或恢复声明的 slot 依然能触达它。页面从 `useWorkspaces` 读取 `state.archivedSessionIds` 与 `state.items`，从 `useSessions` 读取 Session 摘要；它不持有 store 也不持有 transport，仅有的写入是注册处以 `ctx.uiWorkspace.unarchiveSession` 与 `ctx.uiWorkspace.deleteSession` 闭包注入的 `unarchive` 与 `deleteSession` 回调。抹除确认使用共享的 `RiskConfirmation` 基元；页面只持有它的打开状态与确认勾选。
 
 ### 行的派生
 
@@ -58,8 +62,8 @@ kind: "package-reference"
 | 文件 | 职责 |
 |---|---|
 | [`src/index.ts`](src/index.ts) | 宿主 loader 入口：该页面仅供浏览器使用，因此插件体为空 |
-| [`src/client/index.ts`](src/client/index.ts) | 浏览器插件：locale namespace、分区注册、注入的取消归档操作 |
-| [`src/client/ArchivedSessionsSection.tsx`](src/client/ArchivedSessionsSection.tsx) | 页面组件：行的派生、搜索、每行的取消归档 |
+| [`src/client/index.ts`](src/client/index.ts) | 浏览器插件：locale namespace、分区注册、注入的取消归档与删除操作 |
+| [`src/client/ArchivedSessionsSection.tsx`](src/client/ArchivedSessionsSection.tsx) | 页面组件：行的派生、搜索、每行的取消归档、抹除确认 |
 | [`src/client/locales.ts`](src/client/locales.ts) | 全部可见与无障碍字符串的中英文字典 |
 | [`src/client/ArchivedSessionsSection.module.css`](src/client/ArchivedSessionsSection.module.css) | 页面样式 |
 
@@ -97,7 +101,7 @@ kind: "package-reference"
 这些限制界定本页面能够恢复哪些已归档会话；它们是当前包约束。
 
 - **已加载摘要缺失的已归档会话无法寻址**：页面通过与 Session 列表合并来派生行，因此列表未携带的成员没有行也没有取消归档操作，尽管归档集合仍持有它；当集合中的成员全部处于该状态时，页面报告无法恢复，而不是报告归档为空。
-- **页面只列出会话，不提供会话删除**：归档可通过本页面恢复，而删除会话记录仍是彼此独立的能力。
+- **Host 拒绝抹除实时会话**：在 Host 进程中实时的会话拥有其日志上的写句柄，因此 `ctx.uiWorkspace.deleteSession` 以 `session/live` 拒绝；页面保留该行并记录该拒绝。
 
 <a id="dev-note"></a>
 ### 开发备注

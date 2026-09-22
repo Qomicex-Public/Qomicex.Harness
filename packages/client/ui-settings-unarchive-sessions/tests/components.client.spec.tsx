@@ -54,10 +54,12 @@ function props(options: {
   sessions: SessionListState
   workspaces: WorkspaceSnapshot
   unarchive?: (sessionId: SessionId) => Promise<void>
+  deleteSession?: (sessionId: SessionId) => Promise<void>
 }): ArchivedSessionsSectionProps {
   return {
     t,
     unarchive: options.unarchive ?? (async () => {}),
+    deleteSession: options.deleteSession ?? (async () => {}),
     useSessions: ((select: (state: SessionListState) => unknown) => select(options.sessions)),
     useWorkspaces: ((select: (state: WorkspaceSnapshot) => unknown) => select(options.workspaces)),
   } as unknown as ArchivedSessionsSectionProps
@@ -79,8 +81,8 @@ describe('ArchivedSessionsSection', () => {
     render(<ArchivedSessionsSection {...twoRows()} />)
 
     expect(screen.getAllByRole('listitem').map(row => row.textContent)).toEqual([
-      'Newer sessionProject · nowUnarchive',
-      'Older sessionProject · 2dUnarchive',
+      'Newer sessionProject · nowDeleteUnarchive',
+      'Older sessionProject · 2dDeleteUnarchive',
     ])
     expect(screen.getAllByRole('button', { name: /^Unarchive/ }).map(button => button.getAttribute('aria-label')))
       .toEqual(['Unarchive Newer session', 'Unarchive Older session'])
@@ -155,6 +157,44 @@ describe('ArchivedSessionsSection', () => {
     })} />)
     fireEvent.click(screen.getByRole('button', { name: 'Unarchive Older session' }))
     await waitFor(() => { expect(warn).toHaveBeenCalledWith('session unarchive rejected:', failure) })
+    warn.mockRestore()
+  })
+
+  it('deletes only after the irreversibility acknowledgement is checked', async () => {
+    const deleteSession = vi.fn(async () => {})
+    render(<ArchivedSessionsSection {...twoRows()} deleteSession={deleteSession} />)
+    const trigger = screen.getByRole('button', { name: 'Delete Newer session' })
+    expect(trigger.className).toContain('danger')
+    fireEvent.click(trigger)
+
+    const confirm = screen.getByRole('button', { name: en.confirmAction })
+    expect(confirm.hasAttribute('disabled')).toBe(true)
+    expect(screen.getByText(en.confirmBody.replace('{title}', 'Newer session'))).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: en.cancel }))
+    expect(screen.queryByRole('button', { name: en.confirmAction })).toBeNull()
+    expect(deleteSession).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Older session' }))
+    fireEvent.click(screen.getByRole('checkbox'))
+    expect(screen.getByRole('button', { name: en.confirmAction }).hasAttribute('disabled')).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: en.confirmAction }))
+    expect(deleteSession).toHaveBeenCalledWith('older')
+    await waitFor(() => { expect(screen.queryByRole('button', { name: en.confirmAction })).toBeNull() })
+  })
+
+  it('keeps a rejected delete as a console diagnostic', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const failure = new Error('session is live')
+    render(<ArchivedSessionsSection {...props({
+      sessions: sessionState([summary('older', 'Older session', Date.now())]),
+      workspaces: snapshot(['older']),
+      deleteSession: async () => { throw failure },
+    })} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Older session' }))
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('button', { name: en.confirmAction }))
+    await waitFor(() => { expect(warn).toHaveBeenCalledWith('session delete rejected:', failure) })
     warn.mockRestore()
   })
 })
