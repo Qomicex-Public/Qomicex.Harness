@@ -1,11 +1,20 @@
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync, realpathSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
+import { DESKTOP_PACKAGES_DIR, DESKTOP_PACKAGE_SET_FILE } from '../src/core-package-set.ts'
+import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
 import { resolveDesktopPaths } from '../src/paths.ts'
-import { DesktopProjectManager, packageNameFromSpec, type DesktopProjectHooks } from '../src/project-manager.ts'
+import {
+  DesktopProjectManager,
+  createRuntimeProjectMetadata,
+  packageNameFromSpec,
+  type DesktopProjectHooks,
+} from '../src/project-manager.ts'
 import { readDesktopProfileState } from '../src/profile-packages.ts'
+import { parseDesktopRelease } from '../src/release.ts'
 import { runtimeFixture } from './runtime-fixture.ts'
 
 const roots: string[] = []
@@ -68,6 +77,43 @@ afterEach(async () => {
   for (const root of directories) rmSync(root, { recursive: true, force: true })
   const failures: unknown[] = results.flatMap((result): unknown[] => result.status === 'rejected' ? [result.reason] : [])
   if (failures.length > 0) throw new AggregateError(failures, 'desktop worker cleanup failed')
+})
+
+describe('desktop runtime project metadata', () => {
+  it('approves every build-script dependency the runtime closure installs', () => {
+    const root = temporaryRoot()
+    const release = parseDesktopRelease({
+      schemaVersion: 1,
+      version: '1.2.3',
+      hostProtocolVersion: DESKTOP_HOST_PROTOCOL_VERSION,
+      nodeVersion: '24.17.0',
+      pnpmVersion: '11.7.0',
+    })
+    const packageDir = join(root, DESKTOP_PACKAGES_DIR)
+    mkdirSync(packageDir, { recursive: true })
+    const packages = ['@deepseek-ai/dsh', '@deepseek-ai/dsh-base', '@deepseek-ai/dsh-desktop-host']
+      .map((name, index) => {
+        const body = Buffer.from(name)
+        const file = `package-${String(index)}.tgz`
+        writeFileSync(join(packageDir, file), body)
+        return {
+          name,
+          version: release.version,
+          file,
+          bytes: body.byteLength,
+          integrity: `sha512-${createHash('sha512').update(body).digest('base64')}`,
+        }
+      })
+    writeFileSync(join(root, DESKTOP_PACKAGE_SET_FILE), `${JSON.stringify({ schemaVersion: 1, packages })}\n`)
+
+    createRuntimeProjectMetadata(root, release)
+
+    const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8')
+    expect(workspace).toContain('strictDepBuilds: true')
+    // The local judgment model's postinstall downloads its platform binary;
+    // a missing allowance is a hard install error under strictDepBuilds.
+    expect(workspace).toMatch(/^ {2}node-llama-cpp: true$/mu)
+  })
 })
 
 describe('desktop external plugin profile', () => {
