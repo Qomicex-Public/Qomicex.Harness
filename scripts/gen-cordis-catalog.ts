@@ -130,6 +130,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   workspaceFiles: 'workspace.md',
   terminalController: 'workspace.md',
   directoryPickerController: 'workspace.md',
+  memoryController: 'memory.md',
 }
 
 /**
