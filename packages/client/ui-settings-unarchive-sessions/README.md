@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The **Archived sessions** Settings page is the restore point for sessions hidden from Workspace navigation. It lists each archived session with the Workspace that owns it and its last activity, newest archive first, and offers one Unarchive action and one Delete action per row. A search box filters the list by session title or Workspace name. Rows come from the archive set joined with the loaded Session summaries, so an archive entry whose session record is gone has no row and no action. Every restore goes through the shared Workspace command; every erasure goes through the same command family behind an irreversibility confirmation.
+The **Archived sessions** Settings page is the restore point for sessions hidden from Workspace navigation. It lists each archived session with its owning Workspace and last activity, newest archive first, and offers one Unarchive and one Delete action per row. A search box filters by session title or Workspace name. Rows come from the archive set joined with the loaded Session summaries, so an entry whose session record is gone has no row and no action. Restores go through the shared Workspace command; erasures through the same command family behind an irreversibility confirmation.
 
 ## Table of Contents
 

@@ -331,6 +331,13 @@ Host service backing the generated `ctx.remote.workspace` namespace.
 @Remote('unarchiveSession') unarchiveSession(request: WorkspaceUnarchiveSessionRequest): Promise<WorkspaceArchiveValue>
 
 /**
+ * Permanently erase one Session and its durable log.
+ * @param request - Session identity to erase.
+ * @returns deletion confirmation.
+ */
+@Remote('deleteSession') deleteSession(request: WorkspaceDeleteSessionRequest): Promise<WorkspaceDeleteSessionValue>
+
+/**
  * Stream a complete Workspace baseline followed by ordered increments.
  * @param signal - generation cancellation.
  * @returns baseline followed by ordered Workspace increments.
@@ -493,6 +500,21 @@ archiveSession(sessionId: SessionId): Promise<void>
  * @returns resolution after durability.
  */
 unarchiveSession(sessionId: SessionId): Promise<void>
+
+/**
+ * Permanently delete one session: erase its durable persistence artifacts,
+ * then drop it from every durable account — the workspace `sessionIds` slot
+ * and the registry-global archive set — and from the header index. The erase
+ * runs first, so an interrupted delete leaves a ghost session the next start
+ * filters out instead of a session the user believes is gone while its log
+ * still occupies storage.
+ *
+ * A live session refuses: its owning agent holds a write handle over the log
+ * being erased.
+ * @param sessionId - The session to delete.
+ * @returns resolution after durability.
+ */
+deleteSession(sessionId: SessionId): Promise<void>
 
 /**
  * Resolve by canonical directory path without creating or mutating a
