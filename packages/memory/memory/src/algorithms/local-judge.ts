@@ -341,6 +341,48 @@ export class LlamaCppJudge implements LocalJudge {
   }
 }
 
+/**
+ * A judge that builds its model on the first statement it is asked about.
+ *
+ * The settings page can enable the local model while the harness runs, and a
+ * judge constructed at mount would have read the composition entry — which
+ * ships disabled — so the edit would never take effect until a restart. Reading
+ * the config at first use instead means the toggle applies immediately, which
+ * is what the Settings page promises.
+ *
+ * A build that yields nothing (model off, or no path) is remembered: retrying
+ * per statement would re-read the same config and reach the same answer.
+ */
+export class LazyJudge implements LocalJudge {
+  private built: LocalJudge | undefined
+  private absent = false
+
+  /** @param build - Produces the judge, or `undefined` when it is not configured. */
+  constructor(private readonly build: () => LocalJudge | undefined) {}
+
+  /**
+   * Judge one statement, building the model on first use.
+   * @param input - The statement and its context.
+   * @returns The verdict, or `undefined` to fall back to the rule path.
+   */
+  async judge(input: JudgmentInput): Promise<JudgmentResult | undefined> {
+    if (this.absent) return undefined
+    this.built ??= this.build()
+    if (this.built === undefined) {
+      this.absent = true
+      return undefined
+    }
+    return this.built.judge(input)
+  }
+
+  /** Release the model, if one was ever built. */
+  async dispose(): Promise<void> {
+    const built = this.built as { dispose?: () => Promise<void> } | undefined
+    this.built = undefined
+    await built?.dispose?.()
+  }
+}
+
 /** The verdict a boolean answer maps to; exported so tests read one name. */
 export function verdictOf(shouldRemember: boolean): JudgmentVerdict {
   return shouldRemember ? 'remember' : 'forget'

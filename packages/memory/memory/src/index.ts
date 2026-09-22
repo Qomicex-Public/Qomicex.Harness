@@ -31,7 +31,7 @@ import { ScopePromotionGate } from './authorization/scope-promotion.ts'
 import { ConsolidationDaemon } from './algorithms/consolidation.ts'
 import { reinforce, mentionsFact } from './algorithms/retention.ts'
 import { runExtraction, matchPatterns, recordApplication, feedbackFor, recordFeedback } from './algorithms/patterns.ts'
-import { LlamaCppJudge, loadLlamaCppModel, ensureJudgeModel, JUDGE_MODEL_VERSION } from './algorithms/local-judge.ts'
+import { LazyJudge, LlamaCppJudge, loadLlamaCppModel, ensureJudgeModel, JUDGE_MODEL_VERSION } from './algorithms/local-judge.ts'
 import { runCuration } from './algorithms/curation.ts'
 import { collectIntegrationSections, loadIntegrations } from './integration.ts'
 import { createToolkitIntegration } from './integrations/toolkit.ts'
@@ -566,23 +566,22 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       modelVersion: currentConfig().judgment.localLlm.modelVersion || JUDGE_MODEL_VERSION,
       promptVersion: currentConfig().judgment.localLlm.promptVersion,
     }),
-    // The local model is only constructed when it is both enabled and given a
-    // path. Without a path there is nothing to load, and the rule path is the
-    // correct judge — so the seam stays closed rather than failing per message.
-    ...(currentConfig().judgment.localLlm.enabled && currentConfig().judgment.localLlm.modelPath !== ''
-      ? {
-        judge: new LlamaCppJudge({
-          modelPath: currentConfig().judgment.localLlm.modelPath,
-          gpuLayers: currentConfig().judgment.localLlm.gpuLayers,
-          contextSize: currentConfig().judgment.localLlm.contextSize,
-          loader: (path: string) => loadLlamaCppModel(
-            path,
-            currentConfig().judgment.localLlm.gpuLayers,
-            currentConfig().judgment.localLlm.contextSize,
-          ),
-        }),
-      }
-      : {}),
+    // Built on first use, not at mount: the composition entry ships the local
+    // model disabled, so reading it here would freeze whatever the entry said
+    // and a Settings toggle would never take effect. LazyJudge re-reads the
+    // config when the first statement actually needs judging.
+    judge: new LazyJudge(() => {
+      const localLlm = currentConfig().judgment.localLlm
+      // Without a path there is nothing to load, and the rule path is the
+      // correct judge — so the seam stays closed rather than failing per message.
+      if (!localLlm.enabled || localLlm.modelPath === '') return undefined
+      return new LlamaCppJudge({
+        modelPath: localLlm.modelPath,
+        gpuLayers: localLlm.gpuLayers,
+        contextSize: localLlm.contextSize,
+        loader: (path: string) => loadLlamaCppModel(path, localLlm.gpuLayers, localLlm.contextSize),
+      })
+    }),
   })
   /** The retention usage signal: a recalled memory is one that was used. */
   const onRecalled = (memoryId: string, now: number): void => {

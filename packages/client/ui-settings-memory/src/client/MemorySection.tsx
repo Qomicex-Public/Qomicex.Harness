@@ -72,9 +72,9 @@ export interface MemorySectionInjected {
    */
   readonly downloadModel?: () => Promise<LoadOutcome<unknown>>
   /** Poll the download's progress, or its absence. */
-  readonly modelDownloadStatus?: () => Promise<unknown>
+  readonly modelDownloadStatus?: () => Promise<LoadOutcome<unknown>>
   /** Reveal the model file in the platform's file manager. */
-  readonly revealModelFile?: () => Promise<unknown>
+  readonly revealModelFile?: () => Promise<LoadOutcome<unknown>>
 }
 
 /** One provider and the model ids it declares, for the distillation dropdowns. */
@@ -245,10 +245,18 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
               }}
             modelDownloadStatus={modelDownloadStatus === undefined
               ? undefined
-              : () => modelDownloadStatus()}
+              : async () => {
+                const outcome = await modelDownloadStatus()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
             revealModelFile={revealModelFile === undefined
               ? undefined
-              : () => revealModelFile()}
+              : async () => {
+                const outcome = await revealModelFile()
+                if (outcome.kind === 'failed') throw new Error(outcome.message)
+                return outcome.value
+              }}
           />
         )}
     </section>
