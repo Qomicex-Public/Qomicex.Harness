@@ -38,16 +38,31 @@ export function WorkspaceId(id: string): WorkspaceId {
 }
 
 /**
- * An archiveSession request named a session neither live nor in session
- * persistence — a definite miss only; storage faults propagate as themselves.
+ * An archiveSession or deleteSession request named a session neither live nor
+ * in session persistence — a definite miss only; storage faults propagate as
+ * themselves.
  */
 export class WorkspaceUnknownSessionError extends Error {
   /**
    * @param sessionId - The unknown session id.
    */
   constructor(readonly sessionId: SessionId) {
-    super(`cannot archive session '${sessionId}': live sessions and session persistence hold no such session`)
+    super(`session '${sessionId}' is neither live nor in session persistence`)
     this.name = 'WorkspaceUnknownSessionError'
+  }
+}
+
+/**
+ * A deleteSession request named a session that is live in this process; its
+ * owning agent must be closed first.
+ */
+export class WorkspaceLiveSessionError extends Error {
+  /**
+   * @param sessionId - The live session id.
+   */
+  constructor(readonly sessionId: SessionId) {
+    super(`cannot delete live session '${sessionId}': close its agent first`)
+    this.name = 'WorkspaceLiveSessionError'
   }
 }
 
@@ -274,6 +289,52 @@ export class WorkspaceRegistry extends Service {
         archivedSessionIds: state.archivedSessionIds.filter(id => id !== sessionId),
       })
     })
+  }
+
+  /**
+   * Permanently delete one session: erase its durable persistence artifacts,
+   * then drop it from every durable account — the workspace `sessionIds` slot
+   * and the registry-global archive set — and from the header index. The erase
+   * runs first, so an interrupted delete leaves a ghost session the next start
+   * filters out instead of a session the user believes is gone while its log
+   * still occupies storage.
+   *
+   * A live session refuses: its owning agent holds a write handle over the log
+   * being erased.
+   * @param sessionId - The session to delete.
+   * @returns resolution after durability.
+   */
+  deleteSession(sessionId: SessionId): Promise<void> {
+    return this.enqueueOperation(async () => {
+      if (this.ctx.get('sessions')?.get(sessionId) !== undefined) {
+        throw new WorkspaceLiveSessionError(sessionId)
+      }
+      if (!(await this.sessionKnown(sessionId))) {
+        throw new WorkspaceUnknownSessionError(sessionId)
+      }
+      await this.ctx.sessionPersistence.delete(sessionId)
+      const holder = this.sessionHolder(sessionId)
+      if (holder !== undefined) await holder.detachSession(sessionId)
+      const state = this.requireState()
+      if (state.archivedSessionIds.includes(sessionId)) {
+        await this.setState({
+          ...state,
+          archivedSessionIds: state.archivedSessionIds.filter(id => id !== sessionId),
+        })
+      }
+      this.headers.delete(sessionId)
+      this.sessionPaths.delete(sessionId)
+      this.invalidSessionPaths.delete(sessionId)
+    })
+  }
+
+  /** The workspace entity that durably accounts a session, if any. */
+  private sessionHolder(sessionId: SessionId): WorkspaceEntity | undefined {
+    for (const entity of this.entities.values()) {
+      const record = this.requireTable().get(entity.id) as WorkspaceRecord
+      if (record.sessionIds.includes(sessionId)) return entity
+    }
+    return undefined
   }
 
   /**

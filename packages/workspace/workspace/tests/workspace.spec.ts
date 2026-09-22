@@ -53,7 +53,8 @@ async function harness(options: HarnessOptions = {}) {
     listed.map(header => ({ header, revision: SessionPersistenceRevision(`rev-${header.id}`) })))
   const open = vi.fn(() => { throw new Error('event bodies must not be opened') })
   const stat = vi.fn(() => { throw new Error('per-session stat must not be needed') })
-  ctx.provide('sessionPersistence', { list, open, stat } as never)
+  const deleteSession = vi.fn(async () => {})
+  ctx.provide('sessionPersistence', { list, open, stat, delete: deleteSession } as never)
 
   if (options.sessionStore === true) {
     await ctx.plugin(SessionStore)
@@ -80,6 +81,7 @@ async function harness(options: HarnessOptions = {}) {
     list,
     open,
     stat,
+    deleteSession,
     setSessions: (headers: SessionHeader[]) => { listed = headers },
   }
 }
@@ -938,7 +940,7 @@ describe('registry-global session archive', () => {
     expect(result.registry.archivedSessionIds).toEqual(['stray', 'live-only'])
 
     await expect(result.registry.archiveSession(SessionId('ghost')))
-      .rejects.toThrow(/cannot archive session 'ghost'/)
+      .rejects.toThrow(/session 'ghost' is neither live nor in session persistence/)
     expect(storedState(result.pool).archivedSessionIds).toEqual(['stray', 'live-only'])
   })
 
@@ -1031,5 +1033,57 @@ describe('registry-global session unarchive', () => {
 
     const second = await harness({ pool, sessions })
     expect(second.registry.archivedSessionIds).toEqual(['kept'])
+  })
+})
+
+describe('registry-global session deletion', () => {
+  it('erases the log, drops the accounting slot, and clears the archive entry', async () => {
+    const dir = await makeDir('delete-home')
+    const result = await harness({
+      sessions: [header('doomed', dir, 100), header('neighbor', dir, 200)],
+    })
+    const workspace = result.registry.list()[0]!
+    await result.registry.archiveSession(SessionId('doomed'))
+    expect(workspace.sessionIds.map(String)).toEqual(['neighbor', 'doomed'])
+
+    await result.registry.deleteSession(SessionId('doomed'))
+
+    expect(result.deleteSession).toHaveBeenCalledTimes(1)
+    expect(result.deleteSession).toHaveBeenCalledWith(SessionId('doomed'))
+    // The durable account drops the id and the archive set loses its entry.
+    expect(workspace.sessionIds.map(String)).toEqual(['neighbor'])
+    expect(result.registry.archivedSessionIds).toEqual([])
+    const stored = storedState(result.pool)
+    expect(stored.archivedSessionIds).toEqual([])
+    expect(storedRecord(result.pool, workspace.id).sessionIds.map(String)).toEqual(['neighbor'])
+  })
+
+  it('refuses a live session and an unknown id without erasing anything', async () => {
+    const dir = await makeDir('delete-refusals')
+    const liveDir = await makeDir('delete-live')
+    const result = await harness({
+      sessions: [header('stored', dir, 100)],
+      liveSessions: [header('active', liveDir, 200)],
+    })
+
+    await expect(result.registry.deleteSession(SessionId('active')))
+      .rejects.toThrow(/cannot delete live session 'active'/)
+    await expect(result.registry.deleteSession(SessionId('ghost')))
+      .rejects.toThrow(/session 'ghost' is neither live nor in session persistence/)
+    expect(result.deleteSession).not.toHaveBeenCalled()
+    expect(storedState(result.pool).archivedSessionIds).toEqual([])
+  })
+
+  it('propagates a persistence erase failure and keeps the account', async () => {
+    const dir = await makeDir('delete-failure')
+    const result = await harness({ sessions: [header('doomed', dir, 100)] })
+    const workspace = result.registry.list()[0]!
+    result.deleteSession.mockRejectedValueOnce(new Error('persistence backend down'))
+
+    await expect(result.registry.deleteSession(SessionId('doomed')))
+      .rejects.toThrow(/persistence backend down/)
+    // The account survives a failed erase: the next start still lists the session.
+    expect(workspace.sessionIds.map(String)).toEqual(['doomed'])
+    expect(result.deleteSession).toHaveBeenCalledTimes(1)
   })
 })
