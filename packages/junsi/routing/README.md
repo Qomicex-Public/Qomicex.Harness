@@ -94,7 +94,7 @@ Every request in this plugin's registration scope contains the routing section (
 ```markdown
 # junsi-dev-toolkit 开发任务路由
 
-按关键词把开发请求路由到对应子技能，命中后用 \`skill\` 工具加载对应子技能全文，并严格执行其流程：
+按关键词把开发请求路由到对应子技能。命中下表任一关键词时，**必须按下方"硬性动作序列"顺序执行，缺任一即违规**：
 - 移植/迁移/port/跨语言/跨框架 → \`code-migrater\`
 - 报错/不对/不工作/返回错误/空列表/崩溃/白屏 → \`diagnose-before-fix\`
 - 顾问/权衡/利弊/方案对比/选哪个/优缺点 → \`advisor\`
@@ -104,12 +104,16 @@ Every request in this plugin's registration scope contains the routing section (
 - 添加/新增/实现/优化/重构/加个新功能/页面/接口/组件 → \`requirements-driven-dev\`
 - 集群/多agent/并行分工/多模型 → 用 \`subagent\`/\`workflow\` 派发并行执行
 
-允许的流程约束（缺任一不得宣称完成）：
-1. 回复开头输出 \`📌 路由宣告: {skill-id}\`
-2. 阶段确认/方向确定后 → 调用 \`store-decision\` 记录决策
-3. 涉及 API/架构/UI/行为变更 → 调用 project-docs 的 \`update_doc\`/\`create_adr\`（或写 docs/ 下的决策记录），禁止乱写文档
-4. 任务完成 → 调用 \`save-progress\` 保存进度
-5. 上下文将满/换会话 → 调用 \`prepare-handoff\`，新会话 \`restore-handoff\`
+硬性动作序列（命中上表关键词时必须严格遵守，按顺序执行，缺任一即违规）：
+1. **回复第一行必须输出** `📌 路由宣告: <skill-id>`（用上表命中的 skill-id；未输出即违规）
+2. **必须先调用 `skill` 工具加载对应 `<skill-id>` 的 SKILL.md 全文**并严格遵循其流程，不得跳过直接执行
+3. 严格按子技能流程执行任务
+
+完成约束（缺任一不得宣称完成）：
+- 阶段确认/方向确定后 → 调用 `store-decision` 记录决策
+- 涉及 API/架构/UI/行为变更 → 调用 project-docs 的 `update_doc`/`create_adr`（或写 docs/ 下的决策记录），禁止乱写文档
+- 任务完成 → 调用 `save-progress` 保存进度
+- 上下文将满/换会话 → 调用 `prepare-handoff`，新会话 `restore-handoff`
 
 memory 工具（\`store-decision\`/\`save-progress\`/\`prepare-handoff\`/\`restore-handoff\`/\`list-decisions\`/\`memory-doctor\`/\`save-preference\`）把数据写入当前工作区 \`.memory/\` 目录。
 ```
@@ -156,7 +160,7 @@ Append-only; the section sits ahead of reusable request prefixes and does not in
 
 These limits define when the section is a poor fit. They are current package constraints, not a task backlog.
 
-- **Advisory only, no enforcement** — the routing text steers the model but nothing enforces it; a model can ignore the keywords and the completion constraints.
+- **Advisory under the hood, hardened wording** — DeepSeek has no opencode message-transform hook, so the section cannot hard-inject the sub-skill body into a message; the routing states a mandatory action sequence (announce `📌 路由宣告` → load the matched `SKILL.md` via `skill` → execute) with violation wording to raise compliance, but a model can still ignore it.
 - **Names capabilities outside this package** — the section references the `skill` tool, the seven memory tools, and `project-docs` workflows; a composition missing any of them leaves the guidance pointing at absent capabilities.
 - **Keyword-coupled routing** — dispatch is a fixed keyword-to-skill mapping; a request that matches none (or several) gets no single, deterministic directive.
 - **No tool visibility itself** — because it owns no tools, the section alone cannot act; it depends on the rest of the preset being mounted.

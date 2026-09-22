@@ -21,7 +21,7 @@ describe('junsi-routing', () => {
     }))
     const arg = section.mock.calls[0]![0] as { text: string }
     expect(arg.text).toContain('junsi-dev-toolkit 开发任务路由')
-    expect(arg.text).toContain('📌 路由宣告: {skill-id}')
+    expect(arg.text).toContain('📌 路由宣告: <skill-id>')
     expect(arg.text).toContain('store-decision')
   })
 })
