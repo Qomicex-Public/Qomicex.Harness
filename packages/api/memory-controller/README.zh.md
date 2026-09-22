@@ -41,7 +41,7 @@ kind: "package-reference"
 
 ### 判断模型
 
-判断层运行一个本地 GGUF 模型，其分发由本命名空间负责。`downloadModel()` 从固定 release 发起抓取并立即返回，因此 278 MB 的传输不会阻塞一次 Remote 调用；`modelDownloadStatus()` 报告它进行到哪一步，而 `idle` 同时意味着"检查过，不在"，于是页面在后续运行中可以显示完成态，而不必提供第二次抓取。`revealModelFile()` 在宿主文件管理器中打开所在文件夹。失败以 `memory/download-failed` 回报而非抛出，因为页面正是用户修复它的界面。
+判断层运行一个本地 GGUF 模型，其分发由本命名空间负责。`downloadModel()` 从固定 release 发起抓取并立即返回，因此 278 MB 的传输不会阻塞一次 Remote 调用；`modelDownloadStatus()` 报告它进行到哪一步，而 `idle` 同时意味着"检查过，不在"，于是页面在后续运行中可以显示完成态，而不必提供第二次抓取。`revealModelFile()` 在平台文件管理器中选中模型文件，在管理器不提供选中的平台上则打开其所在文件夹。失败不是错误码：下载失败会以 `status: 'failed'` 连同 `error` 落在被轮询的那个状态里——页面正是用户修复它的界面，而一个抛出的 RemoteError 会把那个界面一起拖垮。
 
 ### 模式
 
@@ -69,7 +69,7 @@ kind: "package-reference"
 
 ### 线缆形状
 
-`src/types.ts` 是浏览器安全的：它声明节点、边、作用域计数、统计、状态与遗忘视图，判断模型的下载状态，以及模式视图、决策请求与结果，并以 `memory/unavailable`、`memory/not-found`、`memory/download-failed` 的 `RemoteErrorDetailsMap` 条目收尾。浏览器导入的 Remote 客户端面由同一批装饰器生成，因此页面读到的是 Host 所回应的那份声明。
+`src/types.ts` 是浏览器安全的：它声明节点、边、作用域计数、统计、状态与遗忘视图，判断模型的下载状态，以及模式视图、决策请求与结果，并以 `memory/unavailable`、`memory/not-found` 的 `RemoteErrorDetailsMap` 条目收尾。下载不设错误条目，因为下载失败是一种状态而非错误。浏览器导入的 Remote 客户端面由同一批装饰器生成，因此页面读到的是 Host 所回应的那份声明。
 
 ### Source map
 

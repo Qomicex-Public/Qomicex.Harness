@@ -164,7 +164,5 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
     'memory/not-found': { readonly memoryId: string }
     /** The plugin is not mounted, so there is nothing to inspect. */
     'memory/unavailable': Record<string, never>
-    /** The download failed. */
-    'memory/download-failed': { readonly message: string }
   }
 }

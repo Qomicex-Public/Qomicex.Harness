@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildHotPack } from '../src/hot-pack.ts'
-import { collectIntegrationSections, loadIntegrations } from '../src/integration.ts'
+import { collectIntegrationSections, loadIntegrations, toolkitIntegrationRequested } from '../src/integration.ts'
 import type { HotPackSection, Integration } from '../src/integration.ts'
 import { createToolkitIntegration, TOOLKIT_PREFERENCES_FILE } from '../src/integrations/toolkit.ts'
 import { Context } from '@deepseek-ai/cordis'
@@ -232,6 +232,25 @@ describe('the hot pack carries integrations apart from the core', () => {
 })
 
 describe('the core is independent of the integrations', () => {
+  it("loads the toolkit under 'on' even with auto-detect off", () => {
+    // `on` is the state that decides, so a probe the deployment just switched
+    // off must not overrule it. Gating the candidate on autoDetect conflated
+    // "decide for me" with "I already decided" and silently produced no
+    // integration for a deployment that named one.
+    expect(toolkitIntegrationRequested({
+      autoDetect: false,
+      toolkit: { enabled: 'on' },
+    })).toBe(true)
+    expect(toolkitIntegrationRequested({
+      autoDetect: false,
+      toolkit: { enabled: 'auto' },
+    })).toBe(false)
+    expect(toolkitIntegrationRequested({
+      autoDetect: true,
+      toolkit: { enabled: 'off' },
+    })).toBe(false)
+  })
+
   it('still mounts and captures with no integration configured', async () => {
     // The invariant the whole separation exists for: with every integration
     // absent, the core is unchanged. Probing is on by default and returns an

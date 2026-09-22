@@ -41,7 +41,7 @@ Two independent relations produce the edges, because either alone leaves a misle
 
 ### The judge model
 
-The judgement layer runs a local GGUF model, and this namespace owns its delivery. `downloadModel()` starts a fetch from the pinned release and returns immediately, so a 278 MB transfer never blocks a Remote call; `modelDownloadStatus()` reports where it stands, and `idle` also means "checked and not there" so the page can show the finished state on a later run without offering a second fetch. `revealModelFile()` opens the containing folder in the host file manager. Failure is reported as `memory/download-failed` rather than thrown, because the page is the surface a user repairs it from.
+The judgement layer runs a local GGUF model, and this namespace owns its delivery. `downloadModel()` starts a fetch from the pinned release and returns immediately, so a 278 MB transfer never blocks a Remote call; `modelDownloadStatus()` reports where it stands, and `idle` also means "checked and not there" so the page can show the finished state on a later run without offering a second fetch. `revealModelFile()` selects the model file in the platform's file manager, or opens the folder containing it where a manager offers no selection. Failure is not an error code: a failed download lands in the polled state as `status: 'failed'` with `error` set, because the page is the surface a user repairs it from and a thrown RemoteError would take that surface down with it.
 
 ### Patterns
 
@@ -69,7 +69,7 @@ Every verb reads through `memoryServices(ctx)`, the typed accessor the memory pl
 
 ### Wire shape
 
-`src/types.ts` is browser-safe: it declares the node, edge, scope-count, stats, status, and forget views, the judge-model download state, and the pattern view, decision request, and outcome, plus the `RemoteErrorDetailsMap` entries for `memory/unavailable`, `memory/not-found`, and `memory/download-failed`. The Remote client face the browser imports is generated from the same decorators, so the page reads the very declaration the Host answers.
+`src/types.ts` is browser-safe: it declares the node, edge, scope-count, stats, status, and forget views, the judge-model download state, and the pattern view, decision request, and outcome, plus the `RemoteErrorDetailsMap` entries for `memory/unavailable` and `memory/not-found`. The download carries no error entry, because a failed download is a state rather than an error. The Remote client face the browser imports is generated from the same decorators, so the page reads the very declaration the Host answers.
 
 ### Source map
 

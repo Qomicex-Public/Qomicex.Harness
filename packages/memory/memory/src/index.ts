@@ -33,7 +33,7 @@ import { reinforce, mentionsFact } from './algorithms/retention.ts'
 import { runExtraction, matchPatterns, recordApplication, feedbackFor, recordFeedback } from './algorithms/patterns.ts'
 import { LazyJudge, LlamaCppJudge, loadLlamaCppModel, ensureJudgeModel, JUDGE_MODEL_VERSION } from './algorithms/local-judge.ts'
 import { runCuration } from './algorithms/curation.ts'
-import { collectIntegrationSections, loadIntegrations } from './integration.ts'
+import { collectIntegrationSections, loadIntegrations, toolkitIntegrationRequested } from './integration.ts'
 import { createToolkitIntegration } from './integrations/toolkit.ts'
 import { fuse } from './algorithms/retrieval.ts'
 import type { DistillProvider } from './algorithms/distill.ts'
@@ -156,7 +156,7 @@ export {
   verdictFor,
 } from './algorithms/curation.ts'
 export type { BatchPolicy, CurationProvider, CurationReport, NextLayerPolicy } from './algorithms/curation.ts'
-export { collectIntegrationSections, loadIntegrations } from './integration.ts'
+export { collectIntegrationSections, loadIntegrations, toolkitIntegrationRequested } from './integration.ts'
 export type { HotPackSection, Integration, IntegrationLoadReport } from './integration.ts'
 export { createToolkitIntegration, TOOLKIT_PREFERENCES_FILE, TOOLKIT_SECTION_BUDGET } from './integrations/toolkit.ts'
 export type { ToolkitIntegrationOptions } from './integrations/toolkit.ts'
@@ -543,10 +543,12 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
    *
    * The toolkit integration takes no root: it finds each workspace's `.memory/`
    * from the scope a pack is built for, so one instance serves every workspace
-   * it runs in. `off` and a disabled auto-detect are the two ways it stays out.
+   * it runs in. `off` is the only way it stays out — `on` reaches the loader
+   * even with auto-detect switched off, because a deployment that knows the
+   * toolkit is there must not be overruled by a probe it just disabled.
    */
   const integrationReport = await loadIntegrations(
-    currentConfig().integrations.autoDetect && currentConfig().integrations.toolkit.enabled !== 'off'
+    toolkitIntegrationRequested(currentConfig().integrations)
       ? [createToolkitIntegration()]
       : [],
   )
