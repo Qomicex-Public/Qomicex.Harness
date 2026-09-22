@@ -20,12 +20,13 @@ import { scheduler } from 'node:timers/promises'
 import { randomBytes } from 'node:crypto'
 import {
   SessionPersistence, SessionPersistenceRevision, SessionFormatUnsupportedError,
-  SessionPersistenceCorruptionError,
-  SessionAlreadyExistsError, SessionPersistenceNotFoundError,
+  SessionPersistenceCorruptionError, SessionAlreadyExistsError, SessionAlreadyOwnedError,
+  SessionPersistenceNotFoundError,
   assertStoredId, materializeCreateHeader, sessionFormatVersionRefusal, validateStoredEvents,
   type SessionAccess, type SessionHandle,
   type SessionHandleReadResult,
   type SessionLocation, type SessionPersistenceCreateOptions,
+  type SessionPersistenceDeleteOptions,
   type SessionPersistenceListOptions, type SessionPersistenceOpenOptions,
   type SessionPersistenceSnapshot, type SessionPersistenceStatOptions,
   type SessionPersistenceRevision as PersistenceRevision,
@@ -487,6 +488,36 @@ class JsonlSessionPersistence extends SessionPersistence {
     }
     signal?.throwIfAborted()
     return snapshots
+  }
+
+  /**
+   * Permanently erase one stored session and every durable artifact of it.
+   * The session directory holds every immutable generation and the lock file,
+   * so removing it is the complete erase. The cross-process write lock is
+   * claimed before removal and released afterwards, so a writer in another
+   * process refuses the erase instead of writing into a removed directory.
+   * @param id - the stored session to erase.
+   * @param options - optional cancellation.
+   * @returns resolution once every durable artifact is gone.
+   */
+  async delete(id: SessionId, options?: SessionPersistenceDeleteOptions): Promise<void> {
+    options?.signal?.throwIfAborted()
+    await this.ensureRootEncoding()
+    options?.signal?.throwIfAborted()
+    if (this.tracker.hasWriteOwner(id)) throw new SessionAlreadyOwnedError(id)
+    const selected = await this.findLog(id, options?.signal)
+    if (selected === undefined) throw new SessionPersistenceNotFoundError(id)
+    options?.signal?.throwIfAborted()
+    const dir = dirname(selected.currentPath)
+    const lease = await SessionWriteLease.acquire(dir, id)
+    try {
+      options?.signal?.throwIfAborted()
+      await rm(dir, { recursive: true, force: true })
+    } finally {
+      await lease.release()
+    }
+    // A stale memo entry would only serve an id whose artifact is gone.
+    this.coldLogMemo.delete(id)
   }
 
   // --- handle-facing storage internals (package-private via the handle class below) ---

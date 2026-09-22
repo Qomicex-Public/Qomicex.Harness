@@ -194,6 +194,8 @@ class TestPersistence extends SessionPersistence {
     await TestPersistence.listEffect?.(options?.signal)
     return snapshots
   }
+
+  async delete(): Promise<void> {}
 }
 
 async function liveContext(config: ConstructorParameters<typeof SqliteSessionQueryEngine>[1] = { path: ':memory:' }): Promise<Context> {

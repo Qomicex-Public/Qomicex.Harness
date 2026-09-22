@@ -3,7 +3,7 @@
  * backend package imports {@link runPersistenceContract} and calls it with a
  * factory that yields a fresh, empty backend (plus teardown, an optional
  * same-storage reopen, and an optional physical tail corruptor), so every
- * backend is held to the same create/open/handle semantics: append-only
+ * backend is held to the same create/open/delete/handle semantics: append-only
  * contiguous seqs, single-writer ownership, lazy materialization, fail-closed
  * vocabulary, freshness, and torn-tail repair. Backend-specific behavior
  * (file layout, encodings, artifact export) stays in each backend's own spec.
@@ -266,6 +266,57 @@ export function runPersistenceContract(name: string, make: () => Promise<Contrac
         await writer.close()
       } finally {
         await dispose()
+      }
+    })
+
+    it('delete erases a stored session, hides it everywhere, and frees the id', async () => {
+      const backend = await make()
+      try {
+        const m = meta('deleted', '/work')
+        const writer = await backend.persistence.create(m)
+        await writer.append(oneTurnLog())
+        await writer.close()
+
+        await backend.persistence.delete(m.id)
+
+        expect(await backend.persistence.stat(m.id)).toBeUndefined()
+        expect((await backend.persistence.list()).some(s => s.header.id === m.id)).toBe(false)
+        await expect(backend.persistence.open(m.id, 'read')).rejects.toBeInstanceOf(SessionPersistenceNotFoundError)
+        // The erased id is free for a new session.
+        const recreated = await backend.persistence.create(m)
+        // Flush materializes the empty session durably, so a fresh instance sees it.
+        await recreated.flush()
+        await recreated.close()
+
+        if (backend.reopen !== undefined) {
+          const reopened = await backend.reopen()
+          try {
+            expect(await reopened.persistence.stat(m.id)).toBeDefined()
+          } finally {
+            await reopened.dispose()
+          }
+        }
+      } finally {
+        await backend.dispose()
+      }
+    })
+
+    it('delete rejects an unknown id and refuses while a write owner holds the session', async () => {
+      const backend = await make()
+      try {
+        await expect(backend.persistence.delete(SessionId('absent'))).rejects.toBeInstanceOf(SessionPersistenceNotFoundError)
+
+        const m = meta('owned-delete')
+        const owner = await backend.persistence.create(m)
+        // The live creator holds write ownership even before materialization.
+        await expect(backend.persistence.delete(m.id)).rejects.toBeInstanceOf(SessionAlreadyOwnedError)
+        await owner.append(oneTurnLog())
+        await expect(backend.persistence.delete(m.id)).rejects.toBeInstanceOf(SessionAlreadyOwnedError)
+        // The refusals erased nothing.
+        expect(await backend.persistence.stat(m.id)).toBeDefined()
+        await owner.close()
+      } finally {
+        await backend.dispose()
       }
     })
 
