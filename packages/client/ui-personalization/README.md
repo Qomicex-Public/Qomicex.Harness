@@ -29,7 +29,7 @@ Open Settings and select **Personalization**. Mount `@deepseek-ai/dsh-client-ui-
 
 ### The background
 
-Choose **None**, **Solid**, **Gradient**, or **Image**. Solid and gradient take `#rrggbb` colours; the gradient also takes a direction in degrees. An image comes either from a local upload or from an `http(s)` URL. The **overlay** control sets a readability scrim between the background and the content, stronger for busy pictures. An uploaded image is stored as a Blob in the browser's IndexedDB; the settings document records only that the Blob is in use, so a different browser shows no image until it uploads one.
+Choose **None**, **Solid**, **Gradient**, or **Image**. Solid and gradient take `#rrggbb` colours; the gradient also takes a direction in degrees. An image comes either from a local upload or from an `http(s)` URL. The **overlay** control sets a readability scrim between the background and the content, stronger for busy pictures; under an image background the scrim defaults off (overlay 40 reads as 0) so the picture shows unmasked, and raising overlay adds it back. An uploaded image is stored as a Blob in the browser's IndexedDB; the settings document records only that the Blob is in use, so a different browser shows no image until it uploads one.
 
 ### The theme colour
 

@@ -172,8 +172,13 @@ export class PersonalizationEffects {
     }
 
     const paint = value.enabled ? value.background.mode : 'none'
+    // An image background shows the picture, so the readability scrim defaults
+    // off under image (the schema's overlay default of 40 reads as 0 there);
+    // solid and gradient keep it. Raising image overlay above that default
+    // re-enables the scrim for readability.
+    const scrimOverlay = value.background.mode === 'image' && value.background.overlay === 40 ? 0 : value.background.overlay
     on('data-dsh-p13n-bg', value.enabled && paint !== 'none', paint)
-    on('data-dsh-p13n-scrim', value.enabled && paint !== 'none' && value.background.overlay > 0)
+    on('data-dsh-p13n-scrim', value.enabled && paint !== 'none' && scrimOverlay > 0)
 
     const glassOn = value.enabled && value.glass.enabled
     on('data-dsh-p13n-glass', glassOn)
@@ -190,7 +195,7 @@ export class PersonalizationEffects {
     root.style.setProperty('--dsh-p13n-bg-gradient',
       `linear-gradient(${String(value.background.angle)}deg, ${value.background.gradientFrom}, ${value.background.gradientTo})`)
     root.style.setProperty('--dsh-p13n-bg-image', background === undefined ? 'none' : cssUrl(background.url))
-    root.style.setProperty('--dsh-p13n-overlay', String(value.background.overlay / 100))
+    root.style.setProperty('--dsh-p13n-overlay', String(scrimOverlay / 100))
     root.style.setProperty('--dsh-p13n-glass-blur', `${String(value.glass.blur)}px`)
     root.style.setProperty('--dsh-p13n-corner-image', corner === undefined ? 'none' : cssUrl(corner.url))
 
