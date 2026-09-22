@@ -267,8 +267,15 @@ export class MemoryController extends TypertRemoteService {
    * rule path depend on the network. Nothing about the download is automatic
    * here — `localLlm.autoDownload` covers the case where the user already
    * agreed in configuration.
-   * @returns Whether the download completed, with a human-readable detail.
-   * @throws RemoteError `memory/unavailable`, `memory/no-model-path`, or `memory/download-failed`.
+   *
+   * The transfer runs in the background, so this answers with the state it
+   * starts in rather than the outcome: a 278 MB fetch over a mirror takes
+   * minutes, and holding the Remote call open that long would invite a
+   * timeout. Failure is recorded in the state rather than thrown, because the
+   * caller is a button that stays on screen to say so.
+   * @returns The download state as it starts, always `downloading`. Poll
+   *   `modelDownloadStatus()` for progress, failure, and completion.
+   * @throws RemoteError `memory/unavailable` when the plugin is not mounted.
    */
   @Remote
   downloadModel(): Promise<MemoryDownloadState> {

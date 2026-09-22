@@ -1336,10 +1336,10 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: '@Remote downloadModel(): Promise<MemoryDownloadState>',
-        description: 'Download the local judge model into the configured path.\n\nThe one remote thing in the memory system, which is why it lives behind a click rather than inside a judgment: the download is a user action, and a plugin that fetches weights while deciding what to remember would make the rule path depend on the network. Nothing about the download is automatic here — `localLlm.autoDownload` covers the case where the user already agreed in configuration.',
+        description: 'Download the local judge model into the configured path.\n\nThe one remote thing in the memory system, which is why it lives behind a click rather than inside a judgment: the download is a user action, and a plugin that fetches weights while deciding what to remember would make the rule path depend on the network. Nothing about the download is automatic here — `localLlm.autoDownload` covers the case where the user already agreed in configuration.\n\nThe transfer runs in the background, so this answers with the state it starts in rather than the outcome: a 278 MB fetch over a mirror takes minutes, and holding the Remote call open that long would invite a timeout. Failure is recorded in the state rather than thrown, because the caller is a button that stays on screen to say so.',
         parameters: [],
-        returns: 'Whether the download completed, with a human-readable detail.',
-        throws: ['RemoteError `memory/unavailable`, `memory/no-model-path`, or `memory/download-failed`.'],
+        returns: 'The download state as it starts, always `downloading`. Poll `modelDownloadStatus()` for progress, failure, and completion.',
+        throws: ['RemoteError `memory/unavailable` when the plugin is not mounted.'],
       },
       {
         signature: '@Remote async modelDownloadStatus(): Promise<MemoryDownloadState>',
