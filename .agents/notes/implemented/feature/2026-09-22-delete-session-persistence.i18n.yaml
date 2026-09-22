@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-22-delete-session-persistence.md
-2026-09-22-delete-session-persistence.md: 3742450ee7367043e33046b824cdcd298b392121
-2026-09-22-delete-session-persistence.zh.md: a32d7da94313a049bfe783c3ce38f7123d27b504
+2026-09-22-delete-session-persistence.md: 107b579c3b0d1121b461a2a1bab19faec015e346
+2026-09-22-delete-session-persistence.zh.md: 23a1d99a31916bedb6db732fe0e99b75be20d275

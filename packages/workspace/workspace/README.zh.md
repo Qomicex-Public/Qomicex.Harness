@@ -102,7 +102,7 @@ ctx.workspaceRegistry.list() // shows the project, newest first
 
 ### 持久形态
 
-注册表打开 `workspace` 领域（版本 2）：一张以 `WorkspaceId` 为键的 `workspaces` 表，加上一个持有 `workspaceIds`（权威显示顺序）、`archivedSessionIds` 与可选 `pendingMutation` 标记的全局状态。在 `archivedSessionIds` 存在之前写入的记录会通过 schema 默认值解析为空集合。归档与取消归档都只重写该全局状态，因此恢复就是对同一字段的一次过滤写入；取消归档不做会话存在性探测，因为从集合中移除 id 不可能引入未知 id，而归档会在加入前校验会话。`deleteSession` 先抹除该会话的持久化产物，再从所属工作区记录与归档集合中移除其账目，因此被中断的删除只会留下一个下次启动即被过滤的幽灵会话，绝不会让用户以为已删除的日志继续占用存储。
+注册表打开 `workspace` 领域（版本 2）：一张以 `WorkspaceId` 为键的 `workspaces` 表，加上一个持有 `workspaceIds`（权威显示顺序）、`archivedSessionIds` 与可选 `pendingMutation` 标记的全局状态。在 `archivedSessionIds` 存在之前写入的记录会通过 schema 默认值解析为空集合。归档与取消归档都只重写该全局状态，因此恢复就是对同一字段的一次过滤写入；取消归档不做会话存在性探测，因为从集合中移除 id 不可能引入未知 id，而归档会在加入前校验会话。`deleteSession` 先抹除该会话的持久化产物，再从所属工作区记录与归档集合中移除其账目，因此被中断的删除只会留下一个下次启动即被过滤的幽灵会话，绝不会让用户以为已删除的日志继续占用存储。持久账目一致后，注册表发出 `workspace/session-erased`；Session Controller 把它转接为会话列表的移除边，因此每个已连接的客户端都会丢弃该行。
 
 ### 生命周期
 

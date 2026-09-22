@@ -56,9 +56,11 @@ describe('SessionController facade', () => {
     const status = vi.fn()
     const failure = vi.fn()
     const activity = vi.fn()
+    const removed = vi.fn()
     ctx.on('api-session/status', status)
     ctx.on('api-session/error', failure)
     ctx.on('api-session/activity', activity)
+    ctx.on('api-session/removed', removed)
 
     await expect(controller.inspect(sessionId)).resolves.toEqual({
       meta: header,
@@ -100,6 +102,8 @@ describe('SessionController facade', () => {
     expect(inspect).toHaveBeenCalledOnce()
     ctx.emit('agent/status', { agent, status: 'running' })
     ctx.emit('agent/error', { agent, turn: 1, step: 0, error: new Error('fixture failure') })
+    // A durable erasure reaches list consumers through the same removal edge.
+    ctx.emit('workspace/session-erased', sessionId)
     session.append('user/message', createUserMessage({
       content: [{ type: 'text', text: 'hello' }],
       source: { kind: 'user' },
@@ -111,6 +115,7 @@ describe('SessionController facade', () => {
     expect(status).toHaveBeenCalledWith(sessionId, true)
     expect(failure).toHaveBeenCalledWith(sessionId, expect.stringContaining('fixture failure'))
     expect(activity).toHaveBeenCalledWith(sessionId, expect.any(Number))
+    expect(removed).toHaveBeenCalledWith(sessionId)
     session.append('request/header', {
       header: { config: { provider: 'fixture', model: 'fixture-model' } },
       reason: 'initial',

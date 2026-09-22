@@ -18,9 +18,11 @@ Status: implemented
 
 `workspace-controller` 以 `workspace.deleteSession` Remote 方法暴露该动词，并把两种拒绝映射为稳定码 `session/live` 与 `session/not-found`。Client 模型从本地归档集合中丢弃被抹除的 id，`ctx.uiWorkspace` 新增 `deleteSession`，已归档会话设置页新增每行删除操作，打开共享的 `RiskConfirmation` 基元——抹除始终是那个点名不可恢复性的勾选确认，而不是一个裸按钮。
 
+客户端 Session 列表是拉取式的，因此宿主侧的抹除必须自我宣告：持久账目一致后，`WorkspaceRegistry.deleteSession` 发出 `workspace/session-erased`，Session Controller 把它转接为现有 `api-session/removed` 边——每个已连接的客户端本就会应用该边来丢弃行并标记已打开的实例。没有这次转接，该行会存活到下次重连，打开时报 `session/not-found`。
+
 ## 验证
 
-共享持久化契约套件（`runPersistenceContract`）承载 seam 级用例：抹除使已存储 Session 从 `stat`/`list`/`open` 消失并释放其 id 供重新创建；未知 id 或活跃写所有者拒绝且不抹除任何内容。注册表覆盖位于 `workspace.spec.ts`（账目移除、归档集合移除、拒绝、持久化失败传播）；控制器覆盖位于 `workspace-controller.host.spec.ts`（稳定失败映射）与 `model.client.spec.ts`（成功时归档集合移除、失败时保留）；UI 覆盖位于 `components.client.spec.tsx`（对话框在勾选确认前保持禁用、取消不抹除、拒绝仍为 console 诊断）与 `browser-plugin.client.spec.tsx`（注入的写入）。`pnpm run build` 编译两个 face。
+共享持久化契约套件（`runPersistenceContract`）承载 seam 级用例：抹除使已存储 Session 从 `stat`/`list`/`open` 消失并释放其 id 供重新创建；未知 id 或活跃写所有者拒绝且不抹除任何内容。注册表覆盖位于 `workspace.spec.ts`（账目移除、归档集合移除、拒绝、持久化失败传播、抹除宣告）；控制器覆盖位于 `workspace-controller.host.spec.ts`（稳定失败映射）与 `model.client.spec.ts`（成功时归档集合移除、失败时保留），会话列表转接在 `controller.host.spec.ts` 钉住；UI 覆盖位于 `components.client.spec.tsx`（对话框在勾选确认前保持禁用、取消不抹除、拒绝仍为 console 诊断）与 `browser-plugin.client.spec.tsx`（注入的写入）。`pnpm run build` 编译两个 face。
 
 ## 备选方案
 

@@ -1086,4 +1086,24 @@ describe('registry-global session deletion', () => {
     expect(workspace.sessionIds.map(String)).toEqual(['doomed'])
     expect(result.deleteSession).toHaveBeenCalledTimes(1)
   })
+
+  it('announces the durable erasure and stays silent on a refusal', async () => {
+    const dir = await makeDir('delete-announce')
+    const liveDir = await makeDir('delete-announce-live')
+    const result = await harness({
+      sessions: [header('stored', dir, 100)],
+      liveSessions: [header('active', liveDir, 200)],
+    })
+    const erased: string[] = []
+    result.ctx.on('workspace/session-erased', (sessionId) => { erased.push(String(sessionId)) })
+
+    await expect(result.registry.deleteSession(SessionId('active')))
+      .rejects.toThrow(/cannot delete live session 'active'/)
+    await expect(result.registry.deleteSession(SessionId('ghost')))
+      .rejects.toThrow(/neither live nor in session persistence/)
+    expect(erased).toEqual([])
+
+    await result.registry.deleteSession(SessionId('stored'))
+    expect(erased).toEqual(['stored'])
+  })
 })

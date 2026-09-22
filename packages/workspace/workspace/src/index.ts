@@ -82,6 +82,15 @@ declare module '@deepseek-ai/cordis' {
   interface Context {
     workspaceRegistry: WorkspaceRegistry
   }
+
+  interface Events {
+    /**
+     * One stored session and every durable artifact of it were erased.
+     * @mode emit
+     * @param sessionId - the erased session identity.
+     */
+    'workspace/session-erased'(sessionId: SessionId): void
+  }
 }
 
 interface BootstrapGroup {
@@ -325,6 +334,7 @@ export class WorkspaceRegistry extends Service {
       this.headers.delete(sessionId)
       this.sessionPaths.delete(sessionId)
       this.invalidSessionPaths.delete(sessionId)
+      this.ctx.emit('workspace/session-erased', sessionId)
     })
   }
 

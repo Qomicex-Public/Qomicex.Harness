@@ -149,6 +149,9 @@ export class SessionController extends TypertRemoteService {
     ctx.on('session/disposed', (session) => {
       ctx.emit('api-session/removed', session.id)
     })
+    ctx.on('workspace/session-erased', (sessionId) => {
+      ctx.emit('api-session/removed', sessionId)
+    })
     ctx.on('agent/status', ({ agent, status }) => {
       ctx.emit('api-session/status', agent.id, status === 'running')
     })
