@@ -23,6 +23,8 @@
 
 Electron 拥有 `$DSH_HOME/profiles/desktop`。其 `dependencies` 只包含已安装外部插件的精确版本；`dsh.profile.bundles` 包含内置 bundle，后接已启用插件。签名应用从 `resources/dsh` 提供 dsh、私有 Desktop Host 及其生产依赖。共享包链接解析到这些实际目录。宿主与插件在同一个内置上游 Node 进程中执行，使用正常的 realpath 解析；Desktop 不启用 `--preserve-symlinks`。CLI 不能启动或修改此 profile。
 
+按显式路径加载库的原生包整体进入解包平面：electron-builder 会解包每个原生二进制文件，而加载路径由模块解析推导的包——Cua Driver 平台包从解析出的 `package.json` 所在目录打开其 DLL——还会整体解包，使该目录成为真实路径。Host 在每个模块 URL 存在对应解包文件时把它重写到解包文件，从而让原生库拿到真实文件系统路径，同时所有打包模块仍从归档内读取。
+
 本地启动页提供启动状态和可用恢复操作；加载后的 dsh 渲染进程仅接收桌面协议标记。独立插件窗口接收结构化的列表、安装、删除、更新和更新检查操作；两个渲染进程都无法访问文件系统、原始 Electron IPC、shell 或任意 pnpm 参数。
 
 Electron 根据应用 locale 选择类型化的英文或中文桌面壳文案，并以英文作为 fallback。菜单、原生对话框、启动页与插件管理渲染进程使用同一 locale 数据；仓库的 Client UI i18n gate 会检查这些桌面源文件。

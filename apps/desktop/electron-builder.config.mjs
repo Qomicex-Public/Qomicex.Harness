@@ -72,6 +72,11 @@ export function createElectronBuilderConfig(
       '**/*.so.*',
       '**/spawn-helper',
       '**/@vscode/ripgrep/bin/rg',
+      // The Cua Driver platform package loads its DLL from the directory of its
+      // resolved package.json, so the whole package ships unpacked. Unpacking
+      // only the binaries leaves that directory virtual, and the host's asar
+      // rewrite then has no real path to map it onto.
+      '**/node_modules/@trycua/cua-driver-*/**',
     ],
     extraResources: [
       { from: buildPaths.runtime, to: 'runtime' },
