@@ -86,7 +86,17 @@ export interface CurrentTokenProcessSpawnOptions extends ProcessSpawnOptions {
   env: Readonly<Record<string, string>>
   /** Runner CRT descriptors carrying target stdin, stdout, and stderr. */
   stdio: CurrentTokenStdioFileDescriptors
+  /**
+   * Console delivery for the created process. `hidden` (the default) suppresses
+   * the child's own window with `CREATE_NO_WINDOW`; `inherit` omits that flag so
+   * the child, and every console process it later creates, shares the caller's
+   * console instead of the system allocating a new one for a grandchild.
+   */
+  console?: CurrentTokenConsoleMode
 }
+
+/** Console delivery modes for ordinary process creation. */
+export type CurrentTokenConsoleMode = 'hidden' | 'inherit'
 
 /** Runner CRT descriptors whose OS handles become the target standard handles. */
 export interface CurrentTokenStdioFileDescriptors {
@@ -542,9 +552,31 @@ export function spawnInheritedJobProcess(
 }
 
 /**
- * Spawn an ordinary process suspended, assign its Job, then resume it.
- * CREATE_NO_WINDOW keeps the child's console hidden (desktop hosts without a
- * visible console would otherwise flash a new window per spawn).
+ * Establish this process's own hidden console. A caller that runs without a
+ * console (a desktop host's child, or a runner spawned with suppressed stdio)
+ * must own one before creating a target in `inherit` mode: the system allocates
+ * a fresh console window for a console-mode grandchild whose parent chain has
+ * none, which is the window `CREATE_NO_WINDOW` cannot suppress because creation
+ * flags do not reach grandchildren. AllocConsole is idempotent — an existing
+ * console reports access-denied, which is the desired outcome — and the window
+ * is hidden immediately so the console never paints.
+ * @param api - active binding table.
+ */
+export function ensureHiddenConsole(api: CurrentTokenProcessBindings): void {
+  // ERROR_ACCESS_DENIED means this process already owns a console; hiding its
+  // window is still the caller's request, so the return value is not judged.
+  api.allocConsole()
+  const window = api.getConsoleWindow()
+  if (!isNullPtr(window)) api.showWindow(window, abi.SW_HIDE)
+}
+
+/**
+ * Spawn an ordinary process suspended, assign its Job, then resume it. The
+ * default `hidden` console mode suppresses the child's own window, which is all
+ * a leaf command needs; `inherit` omits that flag so the child and its own
+ * descendants share the caller's console — the mode a runner that established a
+ * hidden console selects so a console-mode grandchild (a `ping`) does not make
+ * the system allocate a new console window for it.
  * @param api - active binding table.
  * @param options - command, cwd, argv, and target carrier descriptors.
  * @returns caller-owned process and Job handles after successful resume.
@@ -555,6 +587,7 @@ export function spawnCurrentTokenJobProcess(
 ): SpawnedJobProcess {
   const commandLine = buildCommandLine(options.command, options.args)
   const environment = encodeWindowsEnvironment(options.env)
+  const consoleFlags = options.console === 'inherit' ? 0 : abi.CREATE_NO_WINDOW
   return spawnJobProcess(api, options, () => targetCarrierHandles(api, options.stdio), 'CreateProcessW', (startupInfo, processInfo) =>
     api.createProcessW(
       options.applicationName,
@@ -562,7 +595,7 @@ export function spawnCurrentTokenJobProcess(
       null,
       null,
       1,
-      abi.CREATE_SUSPENDED | abi.CREATE_UNICODE_ENVIRONMENT | abi.CREATE_NO_WINDOW,
+      abi.CREATE_SUSPENDED | abi.CREATE_UNICODE_ENVIRONMENT | consoleFlags,
       environment,
       options.cwd,
       startupInfo,

@@ -2,6 +2,7 @@ import koffi from 'koffi'
 import { describe, expect, it, vi } from 'vitest'
 import {
   closeHandleChecked,
+  ensureHiddenConsole,
   isJobEmpty,
   pollProcessExit,
   probeCurrentTokenJobSupport,
@@ -16,6 +17,7 @@ import {
   JOBOBJECT_BASIC_ACCOUNTING_ACTIVE_PROCESSES_OFFSET,
   JOBOBJECT_BASIC_ACCOUNTING_SIZE,
   JobObjectBasicAccountingInformation,
+  SW_HIDE,
   WAIT_TIMEOUT,
 } from '../src/abi.ts'
 import { processInformationType, startupInfoType } from '../src/ffi.ts'
@@ -284,5 +286,56 @@ describe('ordinary Job process operations', () => {
     for (const invalid of [null, 0n, 0xffff_ffff_ffff_ffffn, 0xffff_ffff_ffff_fffen]) {
       expectFailure(invalid as NativePtr | null)
     }
+  })
+
+  it("hides this process's own console window and tolerates an absent one", () => {
+    const events: string[] = []
+    const showWindow = vi.fn(() => 1)
+    ensureHiddenConsole(api({
+      allocConsole: vi.fn(() => { events.push('alloc'); return 1 }),
+      getConsoleWindow: vi.fn(() => { events.push('window'); return 777n as NativePtr }),
+      showWindow,
+    }))
+    expect(events).toEqual(['alloc', 'window'])
+    expect(showWindow).toHaveBeenCalledExactlyOnceWith(777n, SW_HIDE)
+
+    const hiddenWithoutWindow = vi.fn(() => 1)
+    const withoutWindow = api({
+      allocConsole: vi.fn(() => 0),
+      getConsoleWindow: vi.fn(() => 0n as NativePtr),
+      showWindow: hiddenWithoutWindow,
+    })
+    expect(() => { ensureHiddenConsole(withoutWindow) }).not.toThrow()
+    expect(hiddenWithoutWindow).not.toHaveBeenCalled()
+  })
+  it('omits CREATE_NO_WINDOW only in inherit console mode', () => {
+    const flags: number[] = []
+    const capture = api({
+      createProcessW: vi.fn((
+        _app: unknown,
+        _line: unknown,
+        _pa: unknown,
+        _ta: unknown,
+        _inherit: unknown,
+        creationFlags: number,
+        _env: unknown,
+        _cwd: unknown,
+        _startup: unknown,
+        info: NativePtr,
+      ) => {
+        flags.push(creationFlags)
+        koffi.encode(info, processInformationType(), {
+          hProcess: 60n,
+          hThread: 61n,
+          dwProcessId: 1234,
+          dwThreadId: 5678,
+        })
+        return 1
+      }),
+    })
+    spawnCurrentTokenJobProcess(capture, options({ console: 'inherit' }))
+    expect(flags[0]).toBe(CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT)
+    spawnCurrentTokenJobProcess(capture, options())
+    expect(flags[1]).toBe(CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW)
   })
 })

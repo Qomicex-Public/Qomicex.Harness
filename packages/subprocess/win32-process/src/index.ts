@@ -21,6 +21,7 @@ export type {
 export {
   closeHandleChecked,
   drainPipe,
+  ensureHiddenConsole,
   isJobEmpty,
   pollProcessExit,
   probeCurrentTokenJobSupport,
@@ -31,6 +32,7 @@ export {
   waitForProcessExit,
 } from './process.ts'
 export type {
+  CurrentTokenConsoleMode,
   CurrentTokenStdioFileDescriptors,
   CurrentTokenProcessSpawnOptions,
   SpawnedJobProcess,

@@ -16,6 +16,8 @@ export interface Win32BindingContext {
   readonly kernel32: ReturnType<Koffi['load']>
   /** Token and security APIs. */
   readonly advapi32: ReturnType<Koffi['load']>
+  /** Window presentation APIs used to hide an allocated console. */
+  readonly user32: ReturnType<Koffi['load']>
   /** Bind one stdcall function from a loaded Win32 library. */
   readonly bind: (
     library: ReturnType<Koffi['load']>,
@@ -120,6 +122,9 @@ export interface Win32ProcessBindings {
   terminateProcess(process: NativePtr, exitCode: number): number
   terminateJobObject(job: NativePtr, exitCode: number): number
   getStdHandle(stdHandle: number): NativePtr
+  allocConsole(): number
+  getConsoleWindow(): NativePtr
+  showWindow(window: NativePtr, commandShow: number): number
 }
 
 /** Generic Win32 calls plus Node's libuv descriptor-to-handle bridge. */
@@ -258,13 +263,14 @@ function bindingContext(): Win32BindingContext {
   const koffi = requireKoffi()
   const kernel32 = koffi.load('kernel32.dll')
   const advapi32 = koffi.load('advapi32.dll')
+  const user32 = koffi.load('user32.dll')
   const bind = (
     lib: ReturnType<typeof koffi.load>,
     name: string,
     result: Ptr | string,
     args: Array<Ptr | string>,
   ): unknown => lib.func('__stdcall', name, result, args)
-  cachedContext = { kernel32, advapi32, bind }
+  cachedContext = { kernel32, advapi32, user32, bind }
   return cachedContext
 }
 
@@ -272,7 +278,7 @@ function bindings(): CurrentTokenProcessBindings {
   if (cached !== undefined) return cached
   const koffi = requireKoffi()
   const { PVOID, PPVOID, STARTUPINFOW, PROCESS_INFORMATION } = win32Types()
-  const { kernel32, advapi32, bind } = bindingContext()
+  const { kernel32, advapi32, user32, bind } = bindingContext()
   const node = koffi.load(null)
   cached = {
     closeHandle: bind(kernel32, 'CloseHandle', 'int', [PVOID]),
@@ -307,6 +313,9 @@ function bindings(): CurrentTokenProcessBindings {
     terminateProcess: bind(kernel32, 'TerminateProcess', 'int', [PVOID, 'uint32']),
     terminateJobObject: bind(kernel32, 'TerminateJobObject', 'int', [PVOID, 'uint32']),
     getStdHandle: bind(kernel32, 'GetStdHandle', PVOID, ['int']),
+    allocConsole: bind(kernel32, 'AllocConsole', 'int', []),
+    getConsoleWindow: bind(kernel32, 'GetConsoleWindow', PVOID, []),
+    showWindow: bind(user32, 'ShowWindow', 'int', [PVOID, 'int']),
     uvGetOsfhandle: node.func('uv_get_osfhandle', PVOID, ['int']),
   } as unknown as CurrentTokenProcessBindings
   return cached

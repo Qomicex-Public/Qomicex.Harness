@@ -4,6 +4,7 @@ import { SUBPROCESS_CONTROL_FD } from '@deepseek-ai/dsh-subprocess/control'
 import { closeSync } from 'node:fs'
 import {
   closeHandleChecked,
+  ensureHiddenConsole,
   isJobEmpty,
   loadWin32ProcessBindings,
   pollProcessExit,
@@ -52,6 +53,7 @@ export interface SpawnRunnerInternals {
   isJobEmpty: typeof isJobEmpty
   terminateJob: typeof terminateJob
   closeHandleChecked: typeof closeHandleChecked
+  ensureHiddenConsole: (api: CurrentTokenProcessBindings) => void
 }
 
 const defaultInternals: SpawnRunnerInternals = {
@@ -65,6 +67,7 @@ const defaultInternals: SpawnRunnerInternals = {
   isJobEmpty,
   terminateJob,
   closeHandleChecked,
+  ensureHiddenConsole,
 }
 
 const NODE_SPAWN_DETAIL_CODES = new Set(['EACCES', 'ENOENT'])
@@ -307,6 +310,11 @@ class WindowsJobRunner {
         return
       }
       this.api = this.internals.loadWin32ProcessBindings()
+      // The target, and every console process it creates, share this runner's
+      // hidden console. Without it the system allocates a fresh console window
+      // for a console-mode grandchild (a `ping`), and that window blocks the
+      // command's completion in a desktop host.
+      this.internals.ensureHiddenConsole(this.api)
       const spawned = this.internals.spawnCurrentTokenJobProcess(this.api, {
         command: command as string,
         applicationName,
@@ -314,6 +322,7 @@ class WindowsJobRunner {
         cwd: request.cwd,
         env: request.env,
         stdio: { stdin: 4, stdout: 5, stderr: 6, ...request.control === 'pipe' ? { control: SUBPROCESS_CONTROL_FD } : {} },
+        console: 'inherit',
       })
       this.processHandle = spawned.process
       this.jobHandle = spawned.job

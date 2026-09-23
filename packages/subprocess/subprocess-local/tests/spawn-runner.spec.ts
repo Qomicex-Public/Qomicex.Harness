@@ -105,6 +105,7 @@ function internals(overrides: Partial<SpawnRunnerInternals> = {}): SpawnRunnerIn
     isJobEmpty: vi.fn(() => true),
     terminateJob: vi.fn(),
     closeHandleChecked: vi.fn(),
+    ensureHiddenConsole: vi.fn(),
     ...overrides,
   }
 }
@@ -631,6 +632,7 @@ describe('Windows Job runner protocol owner', () => {
     await runWindows(host, native)
     expect(loadWin32ProcessBindings).not.toHaveBeenCalled()
     expect(native.spawnCurrentTokenJobProcess).not.toHaveBeenCalled()
+    expect(native.ensureHiddenConsole).not.toHaveBeenCalled()
     expect(host.sent).toEqual([{
       type: 'error',
       error: {
@@ -703,7 +705,11 @@ describe('Windows Job runner protocol owner', () => {
   it('sends target-exit only after suspended Job launch and closes runner stdio', async () => {
     const host = new FakeRunnerHost()
     const closeFileDescriptor = vi.fn()
-    const native = internals({ closeFileDescriptor })
+    const loaded = {} as CurrentTokenProcessBindings
+    const native = internals({
+      closeFileDescriptor,
+      loadWin32ProcessBindings: vi.fn(() => loaded),
+    })
     await runWindows(host, native)
     expect(native.resolveWindowsExecutable).toHaveBeenCalledWith(
       'tool.exe',
@@ -712,10 +718,12 @@ describe('Windows Job runner protocol owner', () => {
       undefined,
       { SAFE: 'bootstrap' },
     )
+    expect(native.ensureHiddenConsole).toHaveBeenCalledExactlyOnceWith(loaded)
     expect(native.spawnCurrentTokenJobProcess).toHaveBeenCalledWith(expect.anything(), {
       command: 'tool.exe', applicationName: 'C:\\resolved\\tool.exe', args: ['literal arg'], cwd: 'C:\\target',
       env: { TARGET: 'yes', dsh_subprocess_runner: 'restored' },
       stdio: { stdin: 4, stdout: 5, stderr: 6 },
+      console: 'inherit',
     })
     expect(closeFileDescriptor).toHaveBeenCalledTimes(3)
     expect(closeFileDescriptor).toHaveBeenNthCalledWith(1, 4)
