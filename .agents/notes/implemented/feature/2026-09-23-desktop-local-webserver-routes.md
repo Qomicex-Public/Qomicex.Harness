@@ -12,14 +12,14 @@ The desktop composition (`apps/desktop-host/config/desktop.cordis.patch.yml`) di
 
 ## Decision
 
-The desktop composition re-enables the web server as a loopback-only listener on an OS-assigned port (`host: '127.0.0.1'`, `port: 0`; the row carries no `webStartup` inject, which the desktop composition disables). `apps/desktop-host` gained a local-route arm (`src/local-routes.ts`): after the RPC channel and before the static-asset fallback, the bridge forwards a request to `http://127.0.0.1:${webServer.port}${pathname}${search}` with the loopback origin declared, because the market's same-origin gate compares the Origin host to the Host. A 404 from the listener means no route claims the path, and the bridge falls through to the asset handler so SPA deep links behave; a composition without a web server falls through identically.
+The desktop composition re-enables the web server as a loopback-only listener on an OS-assigned port (`host: '127.0.0.1'`, `port: 0`). The row also sets `inject: []`: a patch field that is absent leaves the base row's value in place, so the inherited `inject: [webStartup]` — whose provider this composition disables — has to be cleared explicitly, or the row waits for a service that never activates and the whole tree fails to load. `apps/desktop-host` gained a local-route arm (`src/local-routes.ts`): after the RPC channel and before the static-asset fallback, the bridge forwards a request to `http://127.0.0.1:${webServer.port}${pathname}${search}` with the loopback origin declared, because the market's same-origin gate compares the Origin host to the Host. A 404 from the listener means no route claims the path, and the bridge falls through to the asset handler so SPA deep links behave; a composition without a web server falls through identically.
 
 ## Consequences
 
 - The desktop process now holds one loopback listener where it previously held none. The port is OS-assigned, so it is not enumerable from a fixed port scan, and loopback binding keeps off-machine clients out; the desktop bridge is the only in-product caller, and the web composition has always exposed this route table to the browser.
 - Every Host plugin that registers local web-server routes — not only the market — becomes reachable in the packaged application with no per-plugin work.
 - The market's host half activates, so its install and update routes participate in the desktop request path with the same same-origin gating the browser applies.
-- `apps/desktop/tests/profile-mcp.spec.ts` pinned the previous disabled row as the overlay contract; it now pins the loopback configuration instead.
+- `apps/desktop/tests/profile-mcp.spec.ts` pinned the previous disabled row as the overlay contract; it now pins the loopback configuration and the cleared injection, so a row that inherits `webStartup` again fails the suite.
 
 ## Alternatives considered
 

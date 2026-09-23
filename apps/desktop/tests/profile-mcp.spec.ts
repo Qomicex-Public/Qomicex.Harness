@@ -30,6 +30,10 @@ it('retains one shared resource consumer after the Desktop host overlay', () => 
     expect(rows.find(row => row.id === 'webserver')).toMatchObject({
       name: '@deepseek-ai/dsh-host-webserver',
       config: { host: '127.0.0.1', port: 0 },
+      // The disabled web-startup provider must not stay in this row's
+      // injections: the loopback listener configures literals and would
+      // otherwise wait forever for a service this composition never mounts.
+      inject: [],
     })
     expect(rows.find(row => row.id === 'webserver')?.disabled).toBeUndefined()
     expect(warnings).toEqual([])

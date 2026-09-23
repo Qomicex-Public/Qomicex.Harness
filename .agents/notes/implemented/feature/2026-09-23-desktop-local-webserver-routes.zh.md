@@ -12,14 +12,14 @@ Status: implemented
 
 ## 决策
 
-桌面组合以仅回环、OS 分配端口的监听器重新启用 web server（`host: '127.0.0.1'`、`port: 0`；该行不带 `webStartup` inject——桌面组合禁用了它）。`apps/desktop-host` 增加本地路由臂（`src/local-routes.ts`）：在 RPC 通道之后、静态 fallback 之前，桥把请求转发到 `http://127.0.0.1:${webServer.port}${pathname}${search}` 并声明回环 origin——市场的同源门比较 Origin host 与 Host。监听器返 404 表示没有路由认领该路径，桥于是落到资源 handler，SPA 深链行为不变；没有 web server 的组合同样直接落到资源 handler。
+桌面组合以仅回环、OS 分配端口的监听器重新启用 web server（`host: '127.0.0.1'`、`port: 0`）。该行同时设置 `inject: []`：patch 中缺失的字段会保留基础行的原值，因此继承来的 `inject: [webStartup]`——其提供方已被本组合禁用——必须显式清空，否则该行会永远等待一个不会激活的服务，整棵树随之加载失败。`apps/desktop-host` 增加本地路由臂（`src/local-routes.ts`）：在 RPC 通道之后、静态 fallback 之前，桥把请求转发到 `http://127.0.0.1:${webServer.port}${pathname}${search}` 并声明回环 origin——市场的同源门比较 Origin host 与 Host。监听器返 404 表示没有路由认领该路径，桥于是落到资源 handler，SPA 深链行为不变；没有 web server 的组合同样直接落到资源 handler。
 
 ## 后果
 
 - 桌面进程现在持有一个回环监听器，此前一个都没有。端口由 OS 分配，无法从固定端口扫描枚举；仅回环绑定挡掉非本机客户端。桌面桥是产品内唯一调用方，而 web 组合一直把这张路由表暴露给浏览器。
 - 每个注册本地 web server 路由的 Host 插件——不只市场——在打包应用中可达，且无需按插件施工。
 - 市场的 host 半因此激活，其安装与更新路由带着与浏览器一致的同源门进入桌面请求路径。
-- `apps/desktop/tests/profile-mcp.spec.ts` 曾把“禁用行”钉成 overlay 契约；现在改为钉回环配置。
+- `apps/desktop/tests/profile-mcp.spec.ts` 曾把“禁用行”钉成 overlay 契约；现在钉回环配置与被清空的注入，任何再次继承 `webStartup` 的行都会让该套件失败。
 
 ## 备选方案
 

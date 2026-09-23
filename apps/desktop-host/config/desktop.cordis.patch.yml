@@ -9,6 +9,10 @@
 # loopback listener. Loopback only, on an OS-assigned port.
 - id: webserver
   name: '@deepseek-ai/dsh-host-webserver'
+  # The web-app row injects the web-startup service this composition disables;
+  # this row configures literal loopback values, so it injects nothing and
+  # never waits for that provider.
+  inject: []
   config:
     host: '127.0.0.1'
     port: 0
