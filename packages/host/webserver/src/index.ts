@@ -1,9 +1,13 @@
 /**
  * @deepseek-ai/dsh-host-webserver — node:http route registration with optional
  * gzip, index injection, and one fallback seat. It knows no harness concepts
- * and serves no files; the composing application owns dist serving. Electron
- * uses file:// plus IPC instead, and this package never prints the URL.
- * Route handlers retain direct response ownership.
+ * and serves no files; the composing application owns dist serving. The Electron
+ * desktop transport carries the browser surface over its own protocol plus IPC
+ * and serves dist itself, but it still runs this listener on a loopback port so
+ * plugins' local routes stay reachable through the desktop bridge, and this
+ * package never prints the URL. Route handlers retain direct response
+ * ownership.
+ * @module @deepseek-ai/dsh-host-webserver
  */
 
 import { createServer } from 'node:http'
