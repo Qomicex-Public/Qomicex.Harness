@@ -84,9 +84,9 @@ describe('Firecrawl scrape mapping', () => {
 })
 
 describe('provider availability', () => {
-  it('is unavailable without a key', () => {
-    expect(new FirecrawlSearchProvider({ ...options, apiKey: '' }).available()).toBe(false)
-    expect(new FirecrawlFetchProvider({ ...options, apiKey: '' }).available()).toBe(false)
+  it('is available without a key — the rate-limited free tier serves both operations', () => {
+    expect(new FirecrawlSearchProvider({ ...options, apiKey: '' }).available()).toBe(true)
+    expect(new FirecrawlFetchProvider({ ...options, apiKey: '' }).available()).toBe(true)
   })
 
   it('is available with a key', () => {
@@ -121,6 +121,14 @@ describe('FirecrawlSearchProvider request mapping', () => {
     await new FirecrawlSearchProvider(options).search({ query: 'q' })
     const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
     expect(JSON.parse(init.body as string)).not.toHaveProperty('limit')
+  })
+
+  it('sends no Authorization header on the keyless free tier', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ data: { web: [] } }))
+    vi.stubGlobal('fetch', fetchMock)
+    await new FirecrawlSearchProvider({ ...options, apiKey: '' }).search({ query: 'q' })
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    expect(init.headers as Record<string, string>).not.toHaveProperty('authorization')
   })
 
   it('forwards the abort signal', async () => {
@@ -232,15 +240,18 @@ describe('web-firecrawl plugin registration', () => {
     expect('default' in firecrawlPlugin).toBe(false)
   })
 
-  it('is unavailable when neither config nor env supplies a key', async () => {
+  it('serves the rate-limited free tier when neither config nor env supplies a key', async () => {
     const prev = process.env.FIRECRAWL_API_KEY
     delete process.env.FIRECRAWL_API_KEY
     try {
+      const fetchMock = vi.fn(async () => jsonResponse({ data: { web: [] } }))
+      vi.stubGlobal('fetch', fetchMock)
       const ctx = new Context()
-      await ctx.plugin(WebRuntime, { searchProvider: FIRECRAWL_PROVIDER_ID, fetchProvider: FIRECRAWL_PROVIDER_ID })
+      await ctx.plugin(WebRuntime, { searchProvider: FIRECRAWL_PROVIDER_ID })
       await ctx.plugin(firecrawlPlugin, {})
-      await expect(ctx.web.search({ query: 'q' }))
-        .rejects.toThrow(expect.objectContaining({ code: 'WEB_PROVIDER_CONFIGURED_UNAVAILABLE' }))
+      await expect(ctx.web.search({ query: 'q' })).resolves.toMatchObject({ sources: [], truncated: false })
+      const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+      expect(init.headers as Record<string, string>).not.toHaveProperty('authorization')
     } finally {
       if (prev !== undefined) process.env.FIRECRAWL_API_KEY = prev
     }

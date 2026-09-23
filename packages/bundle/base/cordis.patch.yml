@@ -515,10 +515,11 @@
     # The shared base enables the stable model-facing web_search and web_fetch
     # tools. The Web app disables this host row and composes both tools per agent
     # preset; products with a stricter network policy override tool-web. The
-    # default search and fetch backend is Firecrawl, resolved from
-    # $FIRECRAWL_API_KEY at each call; the General settings
-    # page edits the selection, so a deployment without the key retargets search
-    # to the DeepSeek route — which resolves the same DEEPSEEK_API_KEY credential
+    # default search and fetch backend is Firecrawl, which serves search and
+    # scrape without an API key on a rate-limited free tier ($FIRECRAWL_API_KEY
+    # raises the limits when present); the General settings page edits the
+    # selection, so a deployment wanting a different backend retargets search to
+    # the DeepSeek route — which resolves the same DEEPSEEK_API_KEY credential
     # the Models page manages for chat, at each search; its Messages endpoint is
     # separate from the chat-completions endpoint, so it takes its own base-URL
     # override. Anonymous fetch accepts only public HTTP(S) destinations, resolves

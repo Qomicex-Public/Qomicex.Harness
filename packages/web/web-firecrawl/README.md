@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-With `dsh-web-firecrawl`, the harness searches the web and retrieves pages through Firecrawl: one plugin registers a search provider on `POST /v2/search` and a fetch provider on `POST /v2/scrape`, both under the id `firecrawl`. Search returns citeable sources with the engine description as `snippet` and no generated answer. Fetch returns the page as server-side markdown, reported as text, so the consumer skips HTML-to-markdown conversion and pages needing JavaScript rendering yield their content. Choose it when a deployment has a Firecrawl API key and wants one backend for both capabilities. The model-facing `web_search` and `web_fetch` tools live in `dsh-tool-web`.
+With `dsh-web-firecrawl`, the harness searches the web and retrieves pages through Firecrawl: one plugin registers a search provider on `POST /v2/search` and a fetch provider on `POST /v2/scrape`, both under the id `firecrawl`. Search returns citeable sources with the engine description as `snippet` and no generated answer. Fetch returns the page as server-side markdown, reported as text, so the consumer skips HTML-to-markdown conversion and pages needing JavaScript rendering yield their content. No API key is required — Firecrawl serves search and scrape on a rate-limited free tier, and a key raises the limits — so a deployment can adopt one backend for both capabilities without provisioning a credential. The model-facing `web_search` and `web_fetch` tools live in `dsh-tool-web`.
 
 ## Table of Contents
 
@@ -28,11 +28,11 @@ Mount the provider in a composition that already loads the web service; it regis
 
 ### When to choose it
 
-Choose this backend when a deployment holds a Firecrawl API key and wants one search plus scraping route, including pages whose content only appears after client-side rendering. Both providers are unavailable — and every call fails with a structured error — when the key is empty or the endpoint base does not parse.
+Choose this backend when a deployment wants one search plus scraping route, including pages whose content only appears after client-side rendering. No API key is required: Firecrawl serves both operations on a rate-limited free tier, and a key raises the limits. The providers are unavailable only when the configured endpoint base does not parse.
 
 ### Minimal configuration
 
-Load the web service and the provider; the API key falls back to `$FIRECRAWL_API_KEY` from the launch environment.
+Load the web service and the provider; no key is required — the API key only raises the rate limits when present, falling back to `$FIRECRAWL_API_KEY` from the launch environment.
 
 ```yaml
 - name: '@deepseek-ai/dsh-web'
@@ -46,7 +46,7 @@ Load the web service and the provider; the API key falls back to `$FIRECRAWL_API
 
 | Field | Default | Meaning |
 |---|---|---|
-| `apiKey` | `$FIRECRAWL_API_KEY` | Firecrawl API key; empty or absent makes both providers unavailable |
+| `apiKey` | `$FIRECRAWL_API_KEY` | Optional Firecrawl API key; without one both operations run on the rate-limited free tier and no `Authorization` header is sent |
 | `baseURL` | `https://api.firecrawl.dev` | Endpoint base; `/v2/search` and `/v2/scrape` are appended. An unparseable value makes both providers unavailable |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-firecrawl) is the exhaustive source for every accepted field and its JSDoc.
@@ -61,7 +61,7 @@ The scrape requests markdown and reports it as a text body, with the page's meta
 
 ### Failures and recovery
 
-Provider failures — HTTP errors (the response's `error` or `code` becomes the message), network failures, unparseable or wrong-shape bodies — surface as `WebError` `WEB_PROVIDER_ERROR`; an aborted request surfaces as `WEB_ABORTED`. HTTP redirects are rejected before the `Location` target is contacted and surface as `WEB_PROVIDER_ERROR`. A missing or empty key surfaces as `WEB_PROVIDER_CONFIGURED_UNAVAILABLE` at the seam. Callers route on the code; the model-facing tools surface failures to the model under their own error wrappers.
+Provider failures — HTTP errors (the response's `error` or `code` becomes the message), network failures, unparseable or wrong-shape bodies — surface as `WebError` `WEB_PROVIDER_ERROR`; an aborted request surfaces as `WEB_ABORTED`. HTTP redirects are rejected before the `Location` target is contacted and surface as `WEB_PROVIDER_ERROR`. A keyless request that outruns the free tier's rate limit surfaces as `WEB_PROVIDER_ERROR` carrying Firecrawl's rate-limit message; configuring an API key is the remedy. Callers route on the code; the model-facing tools surface failures to the model under their own error wrappers.
 
 -----
 
@@ -128,7 +128,7 @@ These limits define when the provider is a poor fit. They are current package co
 
 - **Search returns no generated answer** — `content` is omitted rather than fabricated, so a query with no web entries returns only sources.
 - **The scrape requests only markdown** — Firecrawl's other formats (summary, screenshot, links, actions, JSON extraction) wait on provider-neutral service fields ([seam Agent Note](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md)).
-- **The credential is launch-environment only** — no section-backed key management, so the key lives in the launch environment rather than the settings document.
+- **The API key is optional, so the free tier's limits apply without one** — search and scrape run without a credential on a rate-limited tier; a key raises the limits, and exceeding the free tier's rate fails the call with Firecrawl's rate-limit message as `WEB_PROVIDER_ERROR`.
 - **Abort classification is error-shape-based** — only a `DOMException` named `AbortError` maps to `WEB_ABORTED`; an abort carrying a custom reason (such as `dsh-timeout`'s `TimeoutReason`) surfaces as `WEB_PROVIDER_ERROR`.
 
 <a id="dev-note"></a>

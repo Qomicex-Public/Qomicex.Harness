@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-web-firecrawl` 让 harness 通过 Firecrawl 搜索网页并抓取页面：一个插件在 `POST /v2/search` 注册搜索 provider、在 `POST /v2/scrape` 注册抓取 provider，两者同用 `firecrawl` 这一个 id。搜索返回可引用来源，引擎描述作为 `snippet`，不生成答复正文。抓取返回服务端 markdown，以 text 体上报，消费侧无需再做 HTML 转 markdown，需要 JavaScript 渲染的页面也能取到内容。部署持有 Firecrawl API key 且希望一项后端同时覆盖两种能力时选它。模型侧的 `web_search` 与 `web_fetch` 工具在 `dsh-tool-web`。
+`dsh-web-firecrawl` 让 harness 通过 Firecrawl 搜索网页并抓取页面：一个插件在 `POST /v2/search` 注册搜索 provider、在 `POST /v2/scrape` 注册抓取 provider，两者同用 `firecrawl` 这一个 id。搜索返回可引用来源，引擎描述作为 `snippet`，不生成答复正文。抓取返回服务端 markdown，以 text 体上报，消费侧无需再做 HTML 转 markdown，需要 JavaScript 渲染的页面也能取到内容。无需 API key——Firecrawl 在限流的免费层提供搜索与抓取，配 key 则提升限额——部署因此无需预备凭据即可用一个后端覆盖两项能力。模型侧的 `web_search` 与 `web_fetch` 工具在 `dsh-tool-web`。
 
 ## 目录
 
@@ -28,11 +28,11 @@ kind: "package-reference"
 
 ### 何时选它
 
-部署持有 Firecrawl API key、且希望一条搜索加抓取路线（含客户端渲染后才出现内容的页面）时选此后端。key 为空或端点 base 无法解析时两个 provider 均不可用——每次调用以结构化错误失败。
+部署希望一条搜索加抓取路线（含客户端渲染后才出现内容的页面）时选此后端。无需 API key：Firecrawl 在限流的免费层提供两项操作，配 key 提升限额。只有配置的端点 base 无法解析时两个 provider 才不可用。
 
 ### 最小配置
 
-加载 web 服务与本 provider；API key 回退到启动环境的 `$FIRECRAWL_API_KEY`。
+加载 web 服务与本 provider；无需 key——API key 仅在存在时提升限额，回退到启动环境的 `$FIRECRAWL_API_KEY`。
 
 ```yaml
 - name: '@deepseek-ai/dsh-web'
@@ -46,7 +46,7 @@ kind: "package-reference"
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `apiKey` | `$FIRECRAWL_API_KEY` | Firecrawl API key；为空或缺失时两个 provider 均不可用 |
+| `apiKey` | `$FIRECRAWL_API_KEY` | 可选的 Firecrawl API key；没有它两项操作在限流的免费层运行，且不发 `Authorization` 头 |
 | `baseURL` | `https://api.firecrawl.dev` | 端点 base，其后追加 `/v2/search` 与 `/v2/scrape`；无法解析时两个 provider 均不可用 |
 
 生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-web-firecrawl) 是每个可接受字段及其 JSDoc 的穷尽来源。
@@ -61,7 +61,7 @@ kind: "package-reference"
 
 ### 失败与恢复
 
-provider 失败——HTTP 错误（响应的 `error` 或 `code` 成为消息）、网络失败、无法解析或形状不符的响应体——以 `WebError` `WEB_PROVIDER_ERROR` 浮出；请求中断以 `WEB_ABORTED` 浮出。HTTP 重定向在联系 `Location` 目标前即被拒绝，以 `WEB_PROVIDER_ERROR` 浮出。key 缺失或为空时由 seam 以 `WEB_PROVIDER_CONFIGURED_UNAVAILABLE` 浮出。调用方按 code 路由；模型侧工具在各自的错误包装下把失败呈现给模型。
+provider 失败——HTTP 错误（响应的 `error` 或 `code` 成为消息）、网络失败、无法解析或形状不符的响应体——以 `WebError` `WEB_PROVIDER_ERROR` 浮出；请求中断以 `WEB_ABORTED` 浮出。HTTP 重定向在联系 `Location` 目标前即被拒绝，以 `WEB_PROVIDER_ERROR` 浮出。无 key 的请求超出免费层限额时，以 Firecrawl 的限额消息经 `WEB_PROVIDER_ERROR` 浮出；配置 API key 即可解除。调用方按 code 路由；模型侧工具在各自的错误包装下把失败呈现给模型。
 
 -----
 
@@ -128,7 +128,7 @@ provider 失败——HTTP 错误（响应的 `error` 或 `code` 成为消息）�
 
 - **搜索不返回生成答复** —— 不编造 `content`，因此无 web 记录的查询只返回来源。
 - **抓取只请求 markdown** —— Firecrawl 的其他格式（summary、screenshot、links、actions、JSON 抽取）等待 provider 中立的服务字段（[seam Agent Note](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.zh.md)）。
-- **凭据只走启动环境** —— 无 section 托管的密钥管理，密钥位于启动环境而非设置文档。
+- **API key 可选，无 key 时受免费层限制** —— 搜索与抓取在无凭据的限流层运行；配 key 提升限额，超出免费层限额时调用以 Firecrawl 的限额消息经 `WEB_PROVIDER_ERROR` 失败。
 - **中断分类基于错误形状** —— 只有名为 `AbortError` 的 `DOMException` 映射为 `WEB_ABORTED`；携带自定义 reason（如 `dsh-timeout` 的 `TimeoutReason`）的中断以 `WEB_PROVIDER_ERROR` 浮出。
 
 <a id="dev-note"></a>
