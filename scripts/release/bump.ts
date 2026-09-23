@@ -392,7 +392,8 @@ function main(): void {
   const dryRun = values['dry-run']
   if (!dryRun) {
     for (const entry of planned) writeVersion(root, entry.manifestPath, entry.from, entry.to)
-    capture('pnpm', ['install', '--lockfile-only'])
+    // Windows exposes pnpm as a batch shim, which Node cannot execute without a shell.
+    capture('pnpm', ['install', '--lockfile-only'], { shell: process.platform === 'win32' })
   }
 
   const summary = sharedVersion

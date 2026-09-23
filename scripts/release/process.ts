@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url'
 export interface RunOptions {
   readonly cwd?: string
   readonly env?: NodeJS.ProcessEnv
+  /** Run through the system shell; required for Windows batch shims. */
+  readonly shell?: boolean
 }
 
 /** What a command produced, for a caller that decides what a failure means. */
@@ -29,7 +31,12 @@ export interface CommandResult {
  * @returns The exit status and captured streams.
  */
 export function attempt(command: string, args: readonly string[], options: RunOptions = {}): CommandResult {
-  const result = spawnSync(command, [...args], { cwd: options.cwd, env: options.env, encoding: 'utf8' })
+  const result = spawnSync(command, [...args], {
+    cwd: options.cwd,
+    env: options.env,
+    shell: options.shell,
+    encoding: 'utf8',
+  })
   if (result.error !== undefined) throw result.error
   return { status: result.status, stdout: result.stdout, stderr: result.stderr }
 }
@@ -46,6 +53,7 @@ export function attemptEchoed(command: string, args: readonly string[], options:
   const result = spawnSync(command, [...args], {
     cwd: options.cwd,
     env: options.env,
+    shell: options.shell,
     encoding: 'utf8',
     stdio: ['inherit', 'pipe', 'pipe'],
   })

@@ -71,7 +71,8 @@ function integrityOf(tarball: string): string {
  * @returns The registry state for that version.
  */
 function registryState(name: string, version: string): RegistryState {
-  const result = attempt('npm', ['view', `${name}@${version}`, 'dist.integrity', '--json'])
+  // Windows exposes npm as a batch shim, which Node cannot execute without a shell.
+  const result = attempt('npm', ['view', `${name}@${version}`, 'dist.integrity', '--json'], { shell: process.platform === 'win32' })
   if (result.status !== 0) {
     const output = `${result.stdout}${result.stderr}`
     if (output.includes('E404') || output.includes('404 Not Found')) return { kind: 'absent' }
