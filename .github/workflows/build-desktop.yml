@@ -112,6 +112,8 @@ jobs:
 
       # Only the installer and its blockmap reach the release: the updater
       # downloads the installer and uses the blockmap for differential updates.
+      # The installer name comes from electron-builder's artifactName template,
+      # so match every .exe and require exactly one.
       - name: Publish the installer to the GitHub Release
         shell: pwsh
         env:
@@ -120,8 +122,9 @@ jobs:
           $version = "${{ steps.version.outputs.next }}"
           $tag = "v$version"
           $artifacts = "apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts"
-          $installer = Get-ChildItem "$artifacts/*Setup*.exe" | Select-Object -First 1
-          if ($null -eq $installer) { throw "no installer under $artifacts" }
+          $installers = @(Get-ChildItem "$artifacts/*.exe" -File)
+          if ($installers.Count -ne 1) { throw "expected exactly one installer under $artifacts, found $($installers.Count)" }
+          $installer = $installers[0]
           $assets = @($installer.FullName)
           $blockmap = "$($installer.FullName).blockmap"
           if (Test-Path $blockmap) { $assets += $blockmap }
@@ -139,6 +142,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: qomicex-harness-setup-win-x64
-          path: apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*Setup*.exe
+          path: apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*.exe
           if-no-files-found: error
           retention-days: 7
