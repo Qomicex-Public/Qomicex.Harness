@@ -91,6 +91,14 @@ jobs:
           "current=$current" >> $env:GITHUB_OUTPUT
           "next=$next" >> $env:GITHUB_OUTPUT
 
+      # The bump commit stays local; a hosted runner carries no git identity,
+      # so configure one before the release script writes and commits versions.
+      - name: Configure the release commit identity
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
       # The bump stays local: publication uploads the bytes this dispatch
       # produced, and a human still owns every pushed version commit.
       - name: Write the release version
