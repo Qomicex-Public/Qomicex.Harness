@@ -66,7 +66,12 @@ export function detectUserStatement(message: string, mode: RuleEngineMode = 'rel
       ...(extracted === undefined ? {} : { extracted }),
     }
   }
-  if (STANDING_RE.test(text)) {
+  // A named project cancels a standing cue rather than creating a signal of its
+  // own: "这个项目一律用 pnpm" is a fact about one working directory that uses
+  // the same 一律 a persistent rule uses, and promoting it would tell every
+  // other project something false about itself. It falls through to whatever
+  // rule below matches, or to the generic candidate, which is the narrower tier.
+  if (STANDING_RE.test(text) && !PROJECT_SCOPED_RE.test(text)) {
     return {
       type: 'user_statement',
       strength: 0.95,
@@ -121,11 +126,34 @@ const CORRECTION_RE = /(?:不对|错了|不是|搞错|纠正|actually|correction
 /** Preference: a stated personal preference. */
 const PREFERENCE_RE = /(?:我(?:更)?(?:喜欢|偏好|倾向|习惯)|I\s+(?:prefer|like|tend\s+to)|my\s+preference)/i
 
-/** Standing instruction: a rule the user sets going forward. */
-const STANDING_RE = /(?:以后(?:都)?|从此|接下来都|一直用|always|from\s+now\s+on|henceforth|going\s+forward)/i
+/**
+ * Standing instruction: a rule the user sets going forward.
+ *
+ * `以后` alone is not one. "以后给插件商店加骨架图" schedules a single task,
+ * not a rule, and matching it would hand that task the user tier, where every
+ * later project reads it. A standing instruction constrains *how* something is
+ * done, so `以后` must be followed by a quantifier or a modal — 都, 一律, 每次,
+ * 不要 — before it counts.
+ *
+ * The asymmetry decides the strictness: a standing instruction demoted to the
+ * project tier is recoverable through an explicit `memory_promote`, while one
+ * promoted to the user tier is already readable everywhere and cannot be
+ * recalled. So a borderline phrase falls to the narrower tier on purpose.
+ */
+const STANDING_RE = /(?:以后(?:都|一律|每次|任何|所有|默认|不要|别|禁止|必须|只能|只)|从今以后|从此|接下来都|一直用|always|from\s+now\s+on|henceforth|going\s+forward)/i
 
 /** Project fact: a description of what the working project uses. */
 const PROJECT_FACT_RE = /(?:我们(?:项目)?(?:使用|采用|用)|we\s+use|our\s+project|the\s+project\s+uses)/i
+
+/**
+ * An explicit project reference, which outranks every standing-instruction cue.
+ *
+ * "这个项目一律用 pnpm" is a fact about one working directory that happens to
+ * use the same 一律 a persistent rule uses. Reading it as standing would put it
+ * at the user tier, where every other project is told something false about
+ * itself. Naming the project is the user saying where the fact lives.
+ */
+const PROJECT_SCOPED_RE = /(?:这个项目|本项目|这个仓库|本仓库|此项目|这项目|当前项目|we\s+use|our\s+project|the\s+project|this\s+project|this\s+repo)/i
 
 /** Strength of the generic statement a message receives when no specific rule fires. */
 export const GENERIC_STATEMENT_STRENGTH = 0.6
