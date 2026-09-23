@@ -4,7 +4,7 @@
  * @module @deepseek-ai/dsh-desktop-host
  */
 
-import { createRequire } from 'node:module'
+import { createRequire, registerHooks } from 'node:module'
 import { closeSync, createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { once } from 'node:events'
 import { readFile } from 'node:fs/promises'
@@ -24,6 +24,7 @@ import {
 } from '@deepseek-ai/dsh-app-boot'
 import { provideCmdline } from '@deepseek-ai/dsh-cmdline'
 import { DSH_LAUNCH_ENVIRONMENT_KEY } from '@deepseek-ai/dsh-launch-environment'
+import { unpackedModuleUrl } from './asar-modules.ts'
 import type {} from '@deepseek-ai/dsh-api-gateway'
 import type { ConnectionFetchHandler } from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-client-modules'
@@ -301,6 +302,15 @@ export async function runDesktopHost(
   mkdirSync(absoluteProject, { recursive: true })
   const rootConfig = join(absoluteProject, ROOT_CONFIG_FILENAME)
   writeFileSync(rootConfig, ROOT_CONFIG)
+  // Modules resolve inside the packaged archive; a native library loaded from a
+  // resolved path needs the unpacked file beside it.
+  registerHooks({
+    resolve(specifier, context, nextResolve) {
+      const resolved = nextResolve(specifier, context)
+      const unpacked = unpackedModuleUrl(resolved.url)
+      return unpacked === undefined ? resolved : { ...resolved, url: unpacked }
+    },
+  })
   const environment = loadLayeredEnv('dsh desktop')
   const composition = desktopComposition(absoluteRuntime, absoluteProject, options.allowLinkedPackages === true)
   const resolution = await createProfileResolutionGeneration({

@@ -86,6 +86,7 @@
     "@deepseek-ai/dsh-client-ui-settings-unarchive-sessions": "workspace:^",
     "@deepseek-ai/dsh-client-ui-settings-memory": "workspace:^",
     "@deepseek-ai/dsh-client-ui-settings-security-review": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-settings-automation": "workspace:^",
     "@deepseek-ai/dsh-client-ui-personalization": "workspace:^",
     "@deepseek-ai/dsh-client-ui-sidebar": "workspace:^",
     "@deepseek-ai/dsh-client-ui-sidebar-files": "workspace:^",

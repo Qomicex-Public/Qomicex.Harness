@@ -10,14 +10,21 @@ vi.mock('@deepseek-ai/dsh-browser-use-runtime/mcp', async importOriginal => ({
 }))
 afterEach(() => vi.clearAllMocks())
 
+/** The static arguments one mount call would start its server with. */
+function mountedArgs(call: number): string[] {
+  const args = vi.mocked(mountSessionMcp).mock.calls[call]![1].args
+  expect(typeof args).not.toBe('function')
+  return args as string[]
+}
+
 it('resolves the installed DevTools CLI and explicitly selects isolated headed or headless launch', () => {
   Provider.apply(new Context(), Provider.Config({ mode: 'launch', executablePath: '/custom/chrome', toolCallTimeoutMs: 456 }))
   const options = vi.mocked(mountSessionMcp).mock.calls[0]![1]
-  expect(existsSync(options.args[0]!)).toBe(true)
+  expect(existsSync(mountedArgs(0)[0]!)).toBe(true)
   expect(options).toMatchObject({ name: 'chrome-devtools-mcp', exclusive: false, command: process.execPath, toolCallTimeoutMs: 456 })
-  expect(options.args.slice(1)).toEqual(['--no-usage-statistics', '--isolated', '--headless=true', '--executable-path', '/custom/chrome'])
+  expect(mountedArgs(0).slice(1)).toEqual(['--no-usage-statistics', '--isolated', '--headless=true', '--executable-path', '/custom/chrome'])
   Provider.apply(new Context(), Provider.Config({ mode: 'launch', headless: false }))
-  expect(vi.mocked(mountSessionMcp).mock.calls[1]![1].args.slice(1)).toEqual(['--no-usage-statistics', '--isolated', '--headless=false'])
+  expect(mountedArgs(1).slice(1)).toEqual(['--no-usage-statistics', '--isolated', '--headless=false'])
   expect('default' in Provider).toBe(false)
 })
 
@@ -28,7 +35,7 @@ it.each([
   Provider.apply(new Context(), Provider.Config({ mode: 'attach', endpoint }))
   const options = vi.mocked(mountSessionMcp).mock.calls[0]![1]
   expect(options.exclusive).toBe(true)
-  expect(options.args.slice(1)).toEqual(['--no-usage-statistics', flag, endpoint])
+  expect(mountedArgs(0).slice(1)).toEqual(['--no-usage-statistics', flag, endpoint])
 })
 
 it('rejects trailing endpoint garbage before mounting any browser resources', () => {

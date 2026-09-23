@@ -70,7 +70,7 @@ async function load(exclusive = false, mode?: string, toolCallTimeoutMs?: number
     ['sessions', Sessions], ['agents', Agents], ['loop', AgentLoop], ['projections', Projections],
     ['model', { inject: ['llm'], apply(ctx: Context) { ctx.effect(() => ctx.llm.registerAdapter(['fixture'], model)) } }],
     ['browser', { inject: ['browserUse', 'agents', 'tools', 'systemPrompt'], apply(ctx: Context) {
-      mountSessionMcp(ctx, { name: 'browser-fixture', exclusive, command: process.execPath, args: [fixture, root, ...mode === undefined ? [] : [mode]], ...toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs, env: {} } })
+      mountSessionMcp(ctx, { name: 'browser-fixture', exclusive, command: process.execPath, args: () => [fixture, root, ...mode === undefined ? [] : [mode]], ...toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs, env: {} } })
     } }],
   ])
   const configPath = join(root, 'cordis.yml')
@@ -129,7 +129,7 @@ async function events(root: string) {
 }
 
 it('requires a browser mode and validates launch and attachment settings', () => {
-  expect(BrowserMcpConfig({ mode: 'launch' })).toEqual({ mode: 'launch', headless: true })
+  expect(BrowserMcpConfig({ mode: 'launch' })).toEqual({ mode: 'launch', headless: true, browser: 'chromium' })
   expect(BrowserMcpConfig({ mode: 'launch', headless: false, executablePath: '/chromium', toolCallTimeoutMs: 12 })).toMatchObject({ headless: false, toolCallTimeoutMs: 12 })
   expect(BrowserMcpConfig({ mode: 'attach', endpoint: 'wss://browser.example/devtools/browser/id' })).toMatchObject({ mode: 'attach' })
   for (const invalid of [{}, { mode: 'attach' }, { mode: 'attach', endpoint: 'file:///tmp/browser' }, { mode: 'launch', toolCallTimeoutMs: 0 }, { mode: 'launch', executablePath: '' }]) {

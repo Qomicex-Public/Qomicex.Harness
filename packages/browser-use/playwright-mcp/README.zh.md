@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-通过 Playwright MCP 的上游工具检查网页并操作 Chromium。提供方在 Session 创建或恢复完成前初始化其 MCP 连接，并跨轮次保留连接。可以启动独立浏览器，也可以让一个 Session 接入已有浏览器，使用其现有标签页和登录状态。本包以实验状态发布，仅在显式挂载后启用。
+通过 Playwright MCP 的上游工具检查网页并操作 Chromium。提供方在 Session 创建或恢复完成前初始化其 MCP 连接，并跨轮次保留连接。可以启动独立浏览器，也可以让一个 Session 接入已有浏览器，使用其现有标签页和登录状态。启动模式在每次浏览器启动时读取 `automation` 设置命名空间，用户在设置页选择的浏览器类型、可执行路径与无头选项会对之后打开的每个浏览器生效。本包以实验状态发布，仅在显式挂载后启用。
 
 ## 目录
 
@@ -32,6 +32,7 @@ kind: "package-reference"
 - name: '@deepseek-ai/dsh-browser-use-playwright-mcp'
   config:
     mode: launch
+    browser: chromium
     headless: true
 ```
 
@@ -40,12 +41,17 @@ kind: "package-reference"
 | 字段 | 默认值 | 含义 |
 |---|---|---|
 | `mode` | 必填 | `launch` 或 `attach`，在本次提供方激活期间固定 |
+| `browser` | `chromium` | `chromium`、`chrome` 或 `msedge`，启动解析的通道 |
 | `headless` | `true` | 启动时不显示窗口 |
-| `executablePath` | 上游发现 | 启动使用的 Chromium 可执行文件 |
+| `executablePath` | 通道发现 | 启动使用的浏览器可执行文件 |
 | `endpoint` | attach 时必填 | 已有浏览器调试端点 |
 | `toolCallTimeoutMs` | MCP 客户端默认值 | 单次调用超时，单位为毫秒 |
 
 [配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-browser-use-playwright-mcp)列出接受的字段。浏览器模式由 profile 或 preset 选择。子进程会清空继承的 `PLAYWRIGHT_MCP_*` 选项，避免其替换该配置。
+
+### 自动化设置命名空间
+
+启动模式以组合配置为基底层注册 `automation` 设置命名空间，因此 `browser`、`executablePath` 与 `headless` 字段同样会从 `settings.yaml` 的用户段解析——由「通用设置」中的[自动化设置行](../../client/ui-settings-automation/README.zh.md)编辑。用户层值解析在组合配置之上；清除该值即回到组合配置。提供方在每次浏览器启动时读取命名空间，因此设置更改对之后打开的浏览器生效，而运行中的浏览器保持其启动时的选择。未挂载设置提供方时应用 schema 默认值，行为不变。附加模式不注册命名空间。
 
 为整个进程配置系统提示词的 `toolOrder` 时，将浏览器工具留在 `<unlisted-tools>` 中。显式列出浏览器工具名称可能导致未获得浏览器连接的 Session 无法组装提示词。
 
@@ -97,7 +103,8 @@ kind: "package-reference"
 
 本集成保留固定版本服务器的浏览器与工具限制。
 
-- 仅支持 Chromium；不可选择 Firefox 或 WebKit。
+- 可通过通道选择 Chromium、Chrome 与 Edge；不支持其他浏览器。
+- 运行中的浏览器不会被重新配置：设置更改在下次启动时生效，附加模式完全忽略启动选择。
 - 启动失败或取消会拒绝 Session 创建或恢复，并触发客户端清理。断开的客户端不会重试；修复原因后，创建新 Session，或卸载并恢复已有 Session。
 - 连接独占仅在此提供方实例内有效。其他进程与浏览器用户仍可修改相同页面。
 - 共享资源服务器目录可以显示继承的服务器名称，但不会授予对其他 Session 浏览器的访问权限。
