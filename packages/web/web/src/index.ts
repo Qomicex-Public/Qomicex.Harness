@@ -8,6 +8,8 @@
 
 import { Context, Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
+// Type-only: pulls the ctx.settings Context merge this service's selection section needs.
+import type {} from '@deepseek-ai/dsh-settings'
 import type {
   WebFetchProvider,
   WebFetchRequest,
@@ -60,6 +62,13 @@ export interface WebRuntimeConfig {
 }
 
 /**
+ * Settings namespace carrying this service's provider selection. The shipped
+ * General settings surface edits it, so a deployment can switch the search or
+ * fetch backend without a configuration file.
+ */
+export const WEB_SETTINGS_NAMESPACE = 'web'
+
+/**
  * The web access service. Registered as `ctx.web` (one instance per context).
  *
  * Selection semantics (resolved at execution time, never order-dependent):
@@ -73,9 +82,13 @@ export interface WebRuntimeConfig {
  */
 export class WebRuntime extends Service {
   /**
-   * Provider selection config. Operational env overrides feed the SAME fields:
+   * Provider selection config. The settings section under
+   * {@link WEB_SETTINGS_NAMESPACE} layers user values over the composition
+   * entry, and operational env overrides feed the SAME fields:
    * `$DSH_WEB_SEARCH_PROVIDER` / `$DSH_WEB_FETCH_PROVIDER` are equivalent to
    * `searchProvider` / `fetchProvider` and are NOT a hidden priority chain.
+   * Selection is re-read at every search and fetch, so a settings change takes
+   * effect on the next call.
    */
   static Config: z<WebRuntimeConfig> = z.object({
     searchProvider: z.string(),
@@ -84,13 +97,32 @@ export class WebRuntime extends Service {
 
   private searchProviders = new Map<string, WebSearchProvider>()
   private fetchProviders = new Map<string, WebFetchProvider>()
-  private readonly searchProviderId: string | undefined
-  private readonly fetchProviderId: string | undefined
+  /** The currently authoritative selection config; starts at the composition entry. */
+  private configSource: () => WebRuntimeConfig
 
   constructor(ctx: Context, config: WebRuntimeConfig = {}) {
     super(ctx, 'web')
-    this.searchProviderId = config.searchProvider ?? process.env.DSH_WEB_SEARCH_PROVIDER
-    this.fetchProviderId = config.fetchProvider ?? process.env.DSH_WEB_FETCH_PROVIDER
+    this.configSource = () => config
+    ctx.inject(['settings'], (settingsCtx) => {
+      settingsCtx.settings.installSection(ctx, WEB_SETTINGS_NAMESPACE, WebRuntime.Config, config, {
+        setSource: (source) => {
+          this.configSource = source
+        },
+        // The registration carries no resolved value: selection is re-read per
+        // call, so a committed change needs no re-registration.
+        onChange: () => {},
+      })
+    })
+  }
+
+  /** The configured search provider id, or the operational env override of the same field. */
+  private searchProviderId(): string | undefined {
+    return this.configSource().searchProvider ?? process.env.DSH_WEB_SEARCH_PROVIDER
+  }
+
+  /** The configured fetch provider id, or the operational env override of the same field. */
+  private fetchProviderId(): string | undefined {
+    return this.configSource().fetchProvider ?? process.env.DSH_WEB_FETCH_PROVIDER
   }
 
   /**
@@ -140,7 +172,7 @@ export class WebRuntime extends Service {
   async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult> {
     const provider = resolveProvider({
       providers: this.searchProviders,
-      ...this.searchProviderId !== undefined ? { configuredId: this.searchProviderId } : {},
+      ...withConfiguredId(this.searchProviderId()),
     })
     const result = await provider.search(request, signal)
     return capSources(result, request.maxResults)
@@ -157,7 +189,7 @@ export class WebRuntime extends Service {
   async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {
     const provider = resolveProvider({
       providers: this.fetchProviders,
-      ...this.fetchProviderId !== undefined ? { configuredId: this.fetchProviderId } : {},
+      ...withConfiguredId(this.fetchProviderId()),
     })
     return provider.fetch(request, signal)
   }
@@ -166,6 +198,11 @@ export class WebRuntime extends Service {
 interface ResolvableProvider {
   readonly id: string
   available(): boolean
+}
+
+/** Spread a configured id into a {@link Selection}, or nothing when none is configured. */
+function withConfiguredId(configuredId: string | undefined): { configuredId?: string } {
+  return configuredId !== undefined ? { configuredId } : {}
 }
 
 /** Resolve the selected provider or throw the matching {@link WebError}. */

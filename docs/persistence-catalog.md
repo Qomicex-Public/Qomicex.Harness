@@ -24,7 +24,7 @@ The [format references](persistence-changes/historical-formats/README.md) cover 
 | `event:agent/inbox/spliced` | event | `646c2f1d243d3a78c5bc9305786fb340f5209c48a97e65f2a186cc5195491f3f` | [`event:agent/inbox/spliced`](#persistence-type-eventagentinboxspliced) |
 | `event:approval/asked` | event | `3bfeb47b58606f4661904bc723da612782214c463d01e6d61cd6d6193d7374e1` | [`event:approval/asked`](#persistence-type-eventapprovalasked) |
 | `event:approval/decided` | event | `bb1ab3d08f49a9f3b265f844cd78d5c49813062a7b34b54904b426f85d0ff6e3` | [`event:approval/decided`](#persistence-type-eventapprovaldecided) |
-| `event:approval/policy` | event | `26718e15e7e395bce9642dba5bbe09b3b1a4ce2213d20d566cd9207d7fc5fb78` | [`event:approval/policy`](#persistence-type-eventapprovalpolicy) |
+| `event:approval/policy` | event | `df0897d75c5fda23013f4b3c5bbd0ae9e753cfe7f7e3dc4990b894f76df755bd` | [`event:approval/policy`](#persistence-type-eventapprovalpolicy) |
 | `event:assistant/attempt` | event | `c80c89da83c46db7a454f034c10f969e03cfb574859c7316e5bff683f5a14b0e` | [`event:assistant/attempt`](#persistence-type-eventassistantattempt) |
 | `event:assistant/message` | event | `1169b301aaabcd992657b93ec93750c43175dda81ada5cac086f14f2eaaeed6d` | [`event:assistant/message`](#persistence-type-eventassistantmessage) |
 | `event:command/done` | event | `15196447222782e773eb943c92b18316ce96b9af0f0cfddb6e57ba8274ecc5ff` | [`event:command/done`](#persistence-type-eventcommanddone) |
@@ -2029,7 +2029,7 @@ Sources: [`packages/interaction/user-approval/src/types.ts:55`](../packages/inte
 
 ### `event:approval/policy`
 
-SHA-256: `26718e15e7e395bce9642dba5bbe09b3b1a4ce2213d20d566cd9207d7fc5fb78`
+SHA-256: `df0897d75c5fda23013f4b3c5bbd0ae9e753cfe7f7e3dc4990b894f76df755bd`
 
 | Property | Presence | Type |
 |---|---|---|
@@ -2043,7 +2043,7 @@ SHA-256: `26718e15e7e395bce9642dba5bbe09b3b1a4ce2213d20d566cd9207d7fc5fb78`
 
 ### `event:approval/policy.data`
 
-SHA-256: `11f70b595aa76897fc4e25a352bfa718c659f44b799e5aa14e84e5a38fe72912`
+SHA-256: `410873493adcc7673e1d50ff1dc85cd16af442d5cc2642814048b0b19c94d2ca`
 
 Sources: [`packages/interaction/user-approval/src/index.ts:33`](../packages/interaction/user-approval/src/index.ts)
 
@@ -4988,12 +4988,13 @@ One of:
 
 ### `packages/interaction/user-approval/src/index.ts#ApprovalPolicy`
 
-SHA-256: `05d2ae1e0c7f8770f83f9a09047afb39a335d8ac986df3193659aa1e581472cf`
+SHA-256: `0b3908a4bf31f4acd8c66477499742923cbf3c557df2853baabcc53ed4bcec7b`
 
-Sources: [`packages/interaction/user-approval/src/index.ts:60`](../packages/interaction/user-approval/src/index.ts)
+Sources: [`packages/interaction/user-approval/src/index.ts:63`](../packages/interaction/user-approval/src/index.ts)
 
 One of:
 
+- `"always"`
 - `"ask"`
 - `"never"`
 

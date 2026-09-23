@@ -3,6 +3,14 @@
     - id: web-search-error-fixture
       name: './web-search-error-fixture.mjs'
 
+# The scenario pins the DeepSeek search route: the shipped default backend is
+# not what this failure record exercises.
+- id: web
+  name: '@deepseek-ai/dsh-web'
+  config:
+    searchProvider: deepseek-official
+    fetchProvider: http
+
 - id: web-search-deepseek
   name: '@deepseek-ai/dsh-web-search-deepseek'
   config:
