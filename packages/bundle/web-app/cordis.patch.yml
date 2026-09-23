@@ -330,6 +330,11 @@
     - id: ui-settings-security-review
       name: '@deepseek-ai/dsh-client-ui-settings-security-review'
 
+    # Automation: the browser channel, executable path, and headless switch
+    # over the `automation` namespace the Playwright MCP provider registers.
+    - id: ui-settings-automation
+      name: '@deepseek-ai/dsh-client-ui-settings-automation'
+
     # Personalization: the background, theme-colour scale, glass surfaces, and
     # corner decoration, over the `personalization` namespace.
     - id: ui-personalization

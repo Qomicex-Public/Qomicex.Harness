@@ -406,7 +406,7 @@ export type Config = BrowserMcpConfig
 
 Depends on: `BrowserMcpConfig` (`@deepseek-ai/dsh-browser-use-runtime/mcp`)
 
-Source: [`packages/browser-use/playwright-mcp/src/index.ts:15`](../packages/browser-use/playwright-mcp/src/index.ts)
+Source: [`packages/browser-use/playwright-mcp/src/index.ts:19`](../packages/browser-use/playwright-mcp/src/index.ts)
 
 <a id="deepseek-aidsh-browser-use-stagehand-native"></a>
 
@@ -2420,7 +2420,7 @@ export interface Config {
 export type JsonlCompression = 'zstd' | 'none'
 ```
 
-Source: [`packages/session/session-persistence-jsonl/src/index.ts:88`](../packages/session/session-persistence-jsonl/src/index.ts)
+Source: [`packages/session/session-persistence-jsonl/src/index.ts:89`](../packages/session/session-persistence-jsonl/src/index.ts)
 
 <a id="deepseek-aidsh-session-projection-cache"></a>
 
@@ -3973,6 +3973,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-ui-schedule` ([`packages/client/ui-schedule/src/index.ts`](../packages/client/ui-schedule/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-session` ([`packages/client/ui-session/src/index.ts`](../packages/client/ui-session/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-settings` ([`packages/client/ui-settings/src/index.ts`](../packages/client/ui-settings/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-settings-automation` ([`packages/client/ui-settings-automation/src/index.ts`](../packages/client/ui-settings-automation/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-settings-general` ([`packages/client/ui-settings-general/src/index.ts`](../packages/client/ui-settings-general/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-settings-memory` ([`packages/client/ui-settings-memory/src/index.ts`](../packages/client/ui-settings-memory/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-settings-models` ([`packages/client/ui-settings-models/src/index.ts`](../packages/client/ui-settings-models/src/index.ts))

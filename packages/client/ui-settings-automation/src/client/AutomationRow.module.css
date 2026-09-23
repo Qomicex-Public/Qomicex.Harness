@@ -1,0 +1,86 @@
+/* Automation settings rows.
+ *
+ * Visual language follows the General section's 'Setting-Cell' contract
+ * (packages/client/locale/.../LanguageRow.module.css is the reference row):
+ * rows are `gap 8 / padding 16px 0 / 0.5px hairline`, titles are 14px/400, and
+ * controls are 36px rounded pills. */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 48px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.hint {
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.error {
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-error);
+}
+
+.rowControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Selector pill: the same 36px / r18 fill the General rows use. */
+.input {
+  width: 132px;
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 18px;
+  background: var(--dsw-alias-bg-module-platform);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.input::placeholder {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.input:disabled {
+  color: var(--dsw-alias-label-dimmed);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: 1px;
+}
+
+.pathInput {
+  width: 260px;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--dsw-alias-brand-primary);
+}

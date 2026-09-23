@@ -255,6 +255,8 @@
       // page: they carry the client- prefix, so these stay hand-written.
       "@deepseek-ai/dsh-client-ui-settings-security-review": ["./packages/client/ui-settings-security-review/src"],
       "@deepseek-ai/dsh-client-ui-settings-security-review/client": ["./packages/client/ui-settings-security-review/src/client"],
+      "@deepseek-ai/dsh-client-ui-settings-automation": ["./packages/client/ui-settings-automation/src"],
+      "@deepseek-ai/dsh-client-ui-settings-automation/client": ["./packages/client/ui-settings-automation/src/client"],
       "@deepseek-ai/dsh-client-ui-personalization": ["./packages/client/ui-personalization/src"],
       "@deepseek-ai/dsh-client-ui-personalization/client": ["./packages/client/ui-personalization/src/client"],
       "@deepseek-ai/dsh-client-locale": ["./packages/client/locale/src"],

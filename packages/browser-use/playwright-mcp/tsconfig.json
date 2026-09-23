@@ -12,7 +12,13 @@
       "path": "../../../vendor/cordis"
     },
     {
+      "path": "../../../vendor/schemastery"
+    },
+    {
       "path": "../runtime"
+    },
+    {
+      "path": "../../settings/settings"
     }
   ]
 }

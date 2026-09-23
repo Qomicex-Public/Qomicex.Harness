@@ -12,13 +12,18 @@ import type {} from '@deepseek-ai/dsh-browser-use'
 import type {} from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 
+/** Browser channels an MCP provider can select, in the upstream servers' terms. */
+export type BrowserChannel = 'chromium' | 'chrome' | 'msedge'
+
 /** Browser launch settings shared by the MCP integrations. */
 export interface BrowserMcpLaunchConfig {
   /** Launch a new isolated Chromium browser for each live Session. */
   mode: 'launch'
+  /** Which browser binary family the upstream server resolves; defaults to Chromium. */
+  browser?: BrowserChannel
   /** Whether Chromium runs without a visible window; defaults to true. */
   headless: boolean
-  /** Chromium executable; omission uses the upstream server's installation discovery. */
+  /** Browser executable; omission uses the selection's own installation discovery. */
   executablePath?: string
   /** Per-call timeout override in milliseconds; omission uses the MCP client default. */
   toolCallTimeoutMs?: number
@@ -37,10 +42,14 @@ export interface BrowserMcpAttachConfig {
 /** Fixed launch or attachment choice for one MCP browser provider. */
 export type BrowserMcpConfig = BrowserMcpLaunchConfig | BrowserMcpAttachConfig
 
+/** Channels the launch selects from; the settings page offers the same list. */
+export const BROWSER_CHANNELS: readonly BrowserChannel[] = ['chromium', 'chrome', 'msedge']
+
 /** Validate the browser mode before the provider reserves browser use. */
 export const BrowserMcpConfig: Schema<BrowserMcpAttachConfig | (Omit<BrowserMcpLaunchConfig, 'headless'> & { headless?: boolean }), BrowserMcpConfig> = Schema.union([
   Schema.object({
     mode: Schema.const('launch').required(),
+    browser: Schema.union([...BROWSER_CHANNELS]).default('chromium'),
     headless: Schema.boolean().default(true),
     executablePath: Schema.string().pattern(/\S/u),
     toolCallTimeoutMs: Schema.number().min(1),
@@ -77,8 +86,13 @@ export interface SessionMcpOptions {
   exclusive: boolean
   /** Executable used to start the installed MCP server. */
   command: string
-  /** Arguments passed directly without a shell. */
-  args: string[]
+  /**
+   * Arguments passed directly without a shell, or a factory producing them per
+   * Session start: a provider whose launch options follow the settings document
+   * resolves the arguments when the browser starts, so a later change reaches
+   * every browser opened afterwards.
+   */
+  args: string[] | (() => string[])
   /** Explicit overrides merged into the MCP client's scrubbed child environment. */
   env?: Record<string, string>
   /** Per-call timeout override; omission retains the MCP client default. */
@@ -145,7 +159,7 @@ export function mountSessionMcp(ctx: Context, options: SessionMcpOptions): void 
             transport: 'stdio',
             serverName: options.name,
             command: options.command,
-            args: options.args,
+            args: typeof options.args === 'function' ? options.args() : options.args,
             ...options.env === undefined ? {} : { env: options.env },
             ...agent.session.header.cwd === undefined ? {} : { cwd: agent.session.header.cwd },
             ...options.toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs: options.toolCallTimeoutMs },
