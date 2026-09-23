@@ -57,10 +57,14 @@
 
 # ── skills ──────────────────────────────────────────────────────────────────
 
-# Skills are bundled under this preset's `skills/` directory and discovered by
-# `skill-filesystem`; no `customSkillDirs` is needed.
+# The preset's own `skills/` directory, resolved against the preset's install
+# location: `baseUrl` is the preset's own directory, so the root resolves
+# wherever the preset is installed (workspace source or bundled package).
 - id: skill-filesystem
   name: '@deepseek-ai/dsh-skill-filesystem'
+  config:
+    customSkillDirs:
+      - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('skills/', baseUrl))"
 
 - id: tool-skill
   name: '@deepseek-ai/dsh-tool-skill'
