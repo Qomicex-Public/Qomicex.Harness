@@ -1,4 +1,8 @@
-# Manual builder for the unsigned Windows x64 Desktop installer.
+# Manual builder for the unsigned Windows x64 Desktop installer and its GitHub
+# Release. The version is an input because the release, not the tree, is the
+# published artifact: the dispatched commit keeps its committed version, the
+# build rewrites it locally, and the tag marks the source state that produced
+# the installer.
 #
 # Scope is deliberately narrow. macOS Desktop packaging resolves its Developer
 # ID certificate and notary credentials while electron-builder.config.mjs loads,
@@ -10,6 +14,11 @@ name: Build Desktop
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: '版本号，如 0.1.6-alpha.2（不得低于当前版本；含 "-" 自动标为预发布）'
+        type: string
+        required: true
+        default: '0.1.6-alpha.2'
       app_id:
         description: Reverse-DNS application identifier for the Desktop package.
         type: string
@@ -17,7 +26,7 @@ on:
         default: com.qomicex.harness
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -36,6 +45,9 @@ jobs:
     timeout-minutes: 120
     env:
       DSH_DESKTOP_APP_ID: ${{ inputs.app_id }}
+      # The update feed the packaged application reads: releases published in
+      # this repository. Without it the build carries no updater metadata.
+      DSH_DESKTOP_GITHUB_REPOSITORY: ${{ github.repository }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -66,12 +78,59 @@ jobs:
       - name: Install (immutable)
         run: pnpm install --frozen-lockfile
 
+      # A release tag must never move backwards: the updater compares versions
+      # and would otherwise offer a downgrade.
+      - name: Resolve the release version
+        id: version
+        working-directory: apps/desktop
+        shell: pwsh
+        run: |
+          $current = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $next = "${{ inputs.version }}"
+          node -e "const s=require('semver');const next=process.argv[1],current=process.argv[2];if(s.valid(next)===null)throw new Error('invalid version: '+next);if(s.lt(next,current))throw new Error(next+' is older than '+current);console.log(current+' -> '+next)" $next $current
+          "current=$current" >> $env:GITHUB_OUTPUT
+          "next=$next" >> $env:GITHUB_OUTPUT
+
+      # The bump stays local: publication uploads the bytes this dispatch
+      # produced, and a human still owns every pushed version commit.
+      - name: Write the release version
+        if: steps.version.outputs.next != steps.version.outputs.current
+        shell: pwsh
+        run: pnpm release:dsh ${{ steps.version.outputs.next }}
+
       - name: Build the unsigned Windows x64 installer
+        shell: pwsh
         run: pnpm run package:desktop:win:x64:unsigned
+
+      # Only the installer and its blockmap reach the release: the updater
+      # downloads the installer and uses the blockmap for differential updates.
+      - name: Publish the installer to the GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = "${{ steps.version.outputs.next }}"
+          $tag = "v$version"
+          $artifacts = "apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts"
+          $installer = Get-ChildItem "$artifacts/*Setup*.exe" | Select-Object -First 1
+          if ($null -eq $installer) { throw "no installer under $artifacts" }
+          $assets = @($installer.FullName)
+          $blockmap = "$($installer.FullName).blockmap"
+          if (Test-Path $blockmap) { $assets += $blockmap }
+          $create = @($tag, $assets, '--title', "Qomicex Harness $version", '--target', $env:GITHUB_SHA, '--generate-notes')
+          if ($version -match '-') { $create += '--prerelease' }
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $assets --clobber
+          }
+          else {
+            gh release create @create
+          }
+          gh release view $tag --json tagName,isPrerelease,url
 
       - uses: actions/upload-artifact@v7
         with:
-          name: qomicex-harness-win-x64
-          path: apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*
+          name: qomicex-harness-setup-win-x64
+          path: apps/desktop/.desktop-build/targets/win-x64/unsigned-artifacts/*Setup*.exe
           if-no-files-found: error
           retention-days: 7

@@ -4,7 +4,9 @@ import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
 import { parseDesktopRelease } from '../src/release.ts'
 import type { DesktopUpdateState } from '../src/ipc.ts'
 
-vi.mock('electron', () => ({ app: { isPackaged: false } }))
+const application = vi.hoisted(() => ({ version: '1.2.3' }))
+
+vi.mock('electron', () => ({ app: { isPackaged: false, getVersion: () => application.version } }))
 vi.mock('electron-updater', () => ({
   default: { autoUpdater: { autoDownload: true, autoInstallOnAppQuit: true } },
 }))
@@ -98,5 +100,18 @@ describe('desktop update coordinator', () => {
     await expect(checking).resolves.toEqual({ phase: 'available', version: '1.2.0' })
     await expect(installing).resolves.toEqual({ phase: 'ready', version: '1.2.0' })
     expect(downloadUpdate).toHaveBeenCalledOnce()
+  })
+
+  it('offers a prerelease build the prerelease channel and a stable build none', async () => {
+    const checkForUpdates = vi.fn(async () => ({ isUpdateAvailable: false, updateInfo: { version: '1.2.4' } }))
+    const updater = { checkForUpdates } as unknown as AppUpdater
+
+    application.version = '1.2.3'
+    await new DesktopUpdateCoordinator(state => state, async () => {}, updater, () => true).check()
+    expect(updater.allowPrerelease).toBe(false)
+
+    application.version = '1.3.0-alpha.2'
+    await new DesktopUpdateCoordinator(state => state, async () => {}, updater, () => true).check()
+    expect(updater.allowPrerelease).toBe(true)
   })
 })

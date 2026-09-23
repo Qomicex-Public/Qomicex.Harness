@@ -94,6 +94,12 @@ The macOS arm64 command requires Apple Silicon. The macOS x64 command runs on In
 
 Each target owns its packed package inputs, prepared runtime, package set, dsh tree, pnpm preparation state, unpacked application, update metadata, and final artifacts under `apps/desktop/.desktop-build/targets/<target>/`. The Node.js archive cache remains shared under `.desktop-build/downloads` because every archive name includes its version, platform, and architecture and is verified before extraction. A target build never consumes another target's mutable preparation state.
 
+### GitHub Release pipeline
+
+`build-desktop.yml` is the unsigned Windows installer's release path. A `workflow_dispatch` takes the version as an input, writes it locally with `pnpm release:dsh <version>`, builds the unsigned installer, and publishes it to a GitHub Release. The version commit stays local because the release, not the tree, is the published artifact; the tag `v<version>` points at the dispatched commit, and a version containing `-` publishes as a prerelease. Only the installer and its `.blockmap` are attached, so the updater downloads the installer and applies differential updates from the blockmap. A version older than the current manifest fails the run, and re-dispatching the same version replaces the release assets instead of creating a second release.
+
+`DSH_DESKTOP_GITHUB_REPOSITORY` selects the update feed the packaged application reads; the workflow sets it from `github.repository`. With it, an unsigned installer carries the GitHub feed in `app-update.yml`, and the application offers updates from that repository's releases. Writing a release requires write access to the repository, which is the same authority that published the installer. A stable install is never offered a prerelease: [update-coordinator.ts](src/update-coordinator.ts) derives its channel from the current version.
+
 ### Runtime file selection
 
 Production packages first pass through npm's publication rules and dependency installation. [Desktop's file policy](scripts/runtime-file-policy.ts) then filters the immutable `resources/dsh/node_modules` copy before signing and integrity sealing. It omits TypeScript declarations, recognized JavaScript/CSS/TypeScript source maps, TypeScript build caches, Domino's test directory, selected native compiler outputs, and node-pty prebuilds for other platforms. It preserves runtime JavaScript, native modules and their DLL/EXE helpers, WASM, unknown assets, licenses, and notices. The policy does not alter npm tarballs, the bundled package manager, or user-installed plugin files.
@@ -145,7 +151,7 @@ On Windows x64, use the complete unsigned packaging command for local installati
 pnpm run package:desktop:win:x64:unsigned
 ```
 
-The command requires `DSH_DESKTOP_APP_ID` and the normal build dependencies, including Python and Visual C++ build tools for native modules. Set `PYTHON` to the Python executable when it is absent from `PATH`. It writes the installer to `.desktop-build/targets/win-x64/unsigned-artifacts/`, omits automatic-update configuration, strips signing credentials, and creates no release completion record. It does not require EV credentials or an update origin. The signed packaging and upload commands retain their release requirements.
+The command requires `DSH_DESKTOP_APP_ID` and the normal build dependencies, including Python and Visual C++ build tools for native modules. Set `PYTHON` to the Python executable when it is absent from `PATH`. It writes the installer to `.desktop-build/targets/win-x64/unsigned-artifacts/`, omits automatic-update configuration unless `DSH_DESKTOP_GITHUB_REPOSITORY` selects the GitHub feed, strips signing credentials, and creates no release completion record. It does not require EV credentials or an update origin. The signed packaging and upload commands retain their release requirements.
 
 ### Windows EV signing
 

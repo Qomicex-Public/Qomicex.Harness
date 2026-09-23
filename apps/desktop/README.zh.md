@@ -94,6 +94,12 @@ macOS arm64 命令要求 Apple Silicon。macOS x64 命令可以在 Intel macOS �
 
 每个目标都在 `apps/desktop/.desktop-build/targets/<target>/` 下持有自己的打包输入、已准备运行时、包集合、dsh 依赖树、pnpm 准备状态、未打包应用、更新元数据和最终产物。Node.js 归档缓存继续由 `.desktop-build/downloads` 共享，因为每个归档文件名都包含版本、平台和架构，并且在解包前经过验证。目标构建绝不读取其他目标的可变准备状态。
 
+### GitHub Release 流水线
+
+`build-desktop.yml` 是未签名 Windows 安装包的发布路径。`workflow_dispatch` 将版本号作为输入，用 `pnpm release:dsh <version>` 本地写入版本，构建未签名安装包，并发布到 GitHub Release。版本提交只留在本地，因为被发布的产物是 Release 而不是代码树；标签 `v<version>` 指向被派发的提交，版本号含 `-` 时发布为预发布。Release 只附带安装包及其 `.blockmap`，更新时下载安装包并依据 blockmap 应用差量更新。低于当前清单版本的输入会使运行失败，用相同版本号重新派发则替换 Release 资源而不是新建第二个 Release。
+
+`DSH_DESKTOP_GITHUB_REPOSITORY` 选择打包应用读取的更新源，工作流将其设为 `github.repository`。设置了它，未签名安装包的 `app-update.yml` 就携带 GitHub 源，应用从该仓库的 Release 获取更新。写入 Release 需要仓库写权限，这与发布安装包本身所需的权限相同。稳定版安装永远不会被提供预发布更新：[update-coordinator.ts](src/update-coordinator.ts) 从当前版本推导自己的频道。
+
 ### 运行时文件筛选
 
 生产包首先经过 npm 发布规则和依赖安装。[桌面文件规则](scripts/runtime-file-policy.ts)随后在签名和完整性封存之前过滤不可变的 `resources/dsh/node_modules` 副本。它排除 TypeScript 声明、明确属于 JavaScript/CSS/TypeScript 的 source map、TypeScript 构建缓存、Domino 测试目录、指定的原生编译产物，以及其他平台的 node-pty 预构建文件。它保留运行时 JavaScript、原生模块及其 DLL/EXE 辅助程序、WASM、未知资源、许可证和声明。规则不会修改 npm tarball、内置包管理器或用户安装的插件文件。
@@ -145,7 +151,7 @@ macOS 签名遍历真实文件，不跟随 Framework 的软链接别名。PAK �
 pnpm run package:desktop:win:x64:unsigned
 ```
 
-该命令要求设置 `DSH_DESKTOP_APP_ID` 并具备常规构建依赖，包括编译原生模块所需的 Python 和 Visual C++ 构建工具。Python 不在 `PATH` 中时，将 `PYTHON` 设置为其可执行文件路径。命令将安装包写入 `.desktop-build/targets/win-x64/unsigned-artifacts/`，省略自动更新配置，清除签名凭据，且不生成发布完成记录。它不需要 EV 凭据或更新源地址。签名打包和上传命令仍遵循正式发布要求。
+该命令要求设置 `DSH_DESKTOP_APP_ID` 并具备常规构建依赖，包括编译原生模块所需的 Python 和 Visual C++ 构建工具。Python 不在 `PATH` 中时，将 `PYTHON` 设置为其可执行文件路径。命令将安装包写入 `.desktop-build/targets/win-x64/unsigned-artifacts/`，除 `DSH_DESKTOP_GITHUB_REPOSITORY` 选择 GitHub 源外省略自动更新配置，清除签名凭据，且不生成发布完成记录。它不需要 EV 凭据或更新源地址。签名打包和上传命令仍遵循正式发布要求。
 
 ### Windows EV 签名
 

@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import electronUpdater, { type AppUpdater } from 'electron-updater'
+import { prerelease } from 'semver'
 import type { DesktopUpdateState } from './ipc.ts'
 const { autoUpdater } = electronUpdater
 
@@ -56,6 +57,10 @@ export class DesktopUpdateCoordinator {
         this.availableVersion = undefined
         return this.publish({ phase: 'idle' })
       }
+      // A prerelease build follows its own channel (alpha, beta); a stable build
+      // is never offered one. Without this, the GitHub feed offers a stable
+      // build nothing while only prereleases are published.
+      this.updater.allowPrerelease = prerelease(app.getVersion()) !== null
       const result = await this.updater.checkForUpdates()
       const version = result?.isUpdateAvailable === true ? result.updateInfo.version : undefined
       this.availableVersion = version

@@ -11,7 +11,7 @@ import {
   createWindowsTokenSigner,
   installWindowsNsisBootstrapSigner,
 } from './scripts/windows-sign.mjs'
-import { resolveDesktopAutoUpdateConfig } from './scripts/desktop-auto-update-environment.mjs'
+import { resolveDesktopReleaseFeed } from './scripts/desktop-release-feed.mjs'
 import { desktopTargetBuildPaths, resolveDesktopBuildTarget } from './scripts/desktop-build-paths.mjs'
 
 /**
@@ -50,7 +50,7 @@ export function createElectronBuilderConfig(
   if (windowsSigner !== undefined) {
     installWindowsNsisBootstrapSigner({ sign: windowsSigner })
   }
-  const update = unsigned ? undefined : resolveDesktopAutoUpdateConfig(env, resolvedPlatform, resolvedArch)
+  const updateFeed = resolveDesktopReleaseFeed(env, { unsigned, platform: resolvedPlatform, arch: resolvedArch })
   const buildPaths = desktopTargetBuildPaths(resolveDesktopBuildTarget(env, hostPlatform, hostArch))
   return {
     appId,
@@ -129,7 +129,7 @@ export function createElectronBuilderConfig(
       differentialPackage: true,
       shortcutName: 'Qomicex Harness',
     },
-    publish: update === undefined ? null : [{ provider: 'generic', url: update.publicUrl }],
+    publish: updateFeed ?? null,
   }
 }
 
