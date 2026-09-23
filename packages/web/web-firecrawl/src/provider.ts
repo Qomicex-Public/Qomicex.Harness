@@ -40,7 +40,11 @@ const USER_AGENT = 'deepseek-harness/0.0.1'
 
 /** Resolved provider options (the plugin's `apply` supplies env-var and constant defaults). */
 export interface FirecrawlProviderOptions {
-  /** Firecrawl API key. Empty/absent makes the providers unavailable. */
+  /**
+   * Firecrawl API key. Optional: Firecrawl serves search and scrape without a
+   * key on a rate-limited free tier, and a key raises the limits. An empty key
+   * still sends no `Authorization` header.
+   */
   apiKey: string
   /** Endpoint base; `/v2/search` and `/v2/scrape` are appended. */
   baseURL: string
@@ -52,8 +56,13 @@ export class FirecrawlSearchProvider implements WebSearchProvider {
 
   constructor(private readonly options: FirecrawlProviderOptions) {}
 
+  /**
+   * Usable whenever the endpoint base parses: Firecrawl serves search and
+   * scrape without a key on a rate-limited free tier, so a missing key is a
+   * rate concern, not an availability one.
+   */
   available(): boolean {
-    return this.options.apiKey.length > 0 && URL.canParse(this.options.baseURL)
+    return URL.canParse(this.options.baseURL)
   }
 
   async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult> {
@@ -76,8 +85,9 @@ export class FirecrawlFetchProvider implements WebFetchProvider {
 
   constructor(private readonly options: FirecrawlProviderOptions) {}
 
+  /** @see FirecrawlSearchProvider.available */
   available(): boolean {
-    return this.options.apiKey.length > 0 && URL.canParse(this.options.baseURL)
+    return URL.canParse(this.options.baseURL)
   }
 
   async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {
@@ -171,7 +181,9 @@ async function postFirecrawl<T extends { success?: boolean; error?: string; code
       method: 'POST',
       redirect: 'error',
       headers: {
-        'authorization': `Bearer ${options.apiKey}`,
+        // Without a key the request simply carries no Authorization header;
+        // Firecrawl serves search and scrape on a rate-limited free tier.
+        ...options.apiKey.length > 0 ? { 'authorization': `Bearer ${options.apiKey}` } : {},
         'content-type': 'application/json',
         'accept': 'application/json',
         'user-agent': USER_AGENT,

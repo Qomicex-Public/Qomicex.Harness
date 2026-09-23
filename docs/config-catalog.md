@@ -3819,7 +3819,11 @@ Requires: `web`
 ```ts config-catalog
 /** Plugin config (all optional — `apply` fills env-var and constant defaults). */
 export interface Config {
-  /** Firecrawl API key. Falls back to `$FIRECRAWL_API_KEY`. Empty → providers unavailable. */
+  /**
+   * Firecrawl API key, optional: search and scrape work without a key on a
+   * rate-limited free tier, and a key raises the limits. Falls back to
+   * `$FIRECRAWL_API_KEY` from the launch environment.
+   */
   apiKey?: string
   /** Endpoint base; `/v2/search` and `/v2/scrape` are appended. Defaults to the public API. */
   baseURL?: string

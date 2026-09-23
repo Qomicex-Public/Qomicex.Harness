@@ -12,7 +12,7 @@ Status: implemented
 
 `packages/bundle/base/cordis.patch.yml` 现在挂载 `dsh-web-firecrawl`，并指定 `searchProvider: firecrawl` 与 `fetchProvider: firecrawl`。`dsh-web-search-deepseek` 与 `dsh-web-fetch-http` 保持挂载，指名任一 id 的选择仍可运行。[Web 能力 seam 决策](../architecture/2026-06-24-web-capability-seam.zh.md) 不变：新包以共享 id `firecrawl` 注册一个 `WebSearchProvider` 和一个 `WebFetchProvider`，不拥有服务。
 
-新包 `@deepseek-ai/dsh-web-firecrawl` 以 bearer 认证调用 `POST /v2/search` 与 `POST /v2/scrape`，并设 `redirect: 'error'`，重定向响应在联系其 `Location` 目标前即失败。搜索把每条 `data.web[]` 记录映射为来源，引擎描述作为 `snippet`，不产出 `content`——Firecrawl 不生成答复正文。抓取请求 `formats: ['markdown']`，并以 text 体类型上报 markdown；仅当响应没有 markdown 时才把 HTML 转 markdown 留给消费侧。metadata 提供状态码与最终 URL。没有非空 `$FIRECRAWL_API_KEY`（或字面 `apiKey`）、或 base URL 无法解析时两个 provider 均不可用，缺凭据的调用以 `WEB_PROVIDER_CONFIGURED_UNAVAILABLE` 失败而不回退到别的后端——seam 按设计没有回退链。
+新包 `@deepseek-ai/dsh-web-firecrawl` 在配置了 key 时以 bearer 认证调用 `POST /v2/search` 与 `POST /v2/scrape`，并设 `redirect: 'error'`，重定向响应在联系其 `Location` 目标前即失败。搜索把每条 `data.web[]` 记录映射为来源，引擎描述作为 `snippet`，不产出 `content`——Firecrawl 不生成答复正文。抓取请求 `formats: ['markdown']`，并以 text 体类型上报 markdown；仅当响应没有 markdown 时才把 HTML 转 markdown 留给消费侧。metadata 提供状态码与最终 URL。无需 API key：Firecrawl 在限流的免费层提供搜索与抓取，因此无凭据时两个 provider 仍可用，只是不发 `Authorization` 头；`$FIRECRAWL_API_KEY`（或字面 `apiKey`）提升限额，只有 base URL 无法解析时 provider 才不可用。无 key 请求超出免费层限额时，调用以 Firecrawl 的限额消息经 `WEB_PROVIDER_ERROR` 失败——seam 按设计没有回退链。
 
 提供方选择成为可由设置编辑的产品界面。`WebRuntime` 的构造函数以命名空间 `web` 安装设置 section，承载同样的 `searchProvider`/`fetchProvider` 字段，层叠于组合层条目之上；`search()` 与 `fetch()` 在调用时从该 section 解析配置 id，提交后的更改在下一次操作生效。`$DSH_WEB_SEARCH_PROVIDER` 与 `$DSH_WEB_FETCH_PROVIDER` 继续提供相同字段，不是优先级链。浏览器插件 `@deepseek-ai/dsh-client-ui-settings-web` 在通用设置区注册两行——网页搜索工具与网页抓取工具——镜像该命名空间并通过设置 scope 写回选择。候选列表明自带 provider 包注册的 id；列表之外的值仍会渲染，以其 id 本身作标签，设置文档也接受它。
 
@@ -26,7 +26,7 @@ Status: implemented
 
 ## 后果
 
-没有 `$FIRECRAWL_API_KEY` 的部署现在首次调用 `web_search` 与 `web_fetch` 即失败，而不是使用可用的 DeepSeek 搜索；修复是设置该 key 或切换后端，失败不会悄无声息。默认路线上 DeepSeek 搜索不再为每次查询花费一次辅助模型请求。抓取路线能到达匿名 HTTP 抓取不到的 JavaScript 渲染页面，而需要登录的页面对两个后端都不可达。两项能力现在都依赖一项付费第三方服务的配额与可用性。
+没有 `$FIRECRAWL_API_KEY` 的部署在 Firecrawl 限流的免费层运行搜索与抓取；超出该层限额时调用以 Firecrawl 的限额消息经 `WEB_PROVIDER_ERROR` 失败，配置 API key 后限额提升。默认路线上 DeepSeek 搜索不再为每次查询花费一次辅助模型请求。抓取路线能到达匿名 HTTP 抓取不到的 JavaScript 渲染页面，而需要登录的页面对两个后端都不可达。两项能力现在都依赖一项付费第三方服务的配额与可用性。
 
 ## 验证
 

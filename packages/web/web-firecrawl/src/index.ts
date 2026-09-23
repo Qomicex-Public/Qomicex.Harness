@@ -36,7 +36,11 @@ export const inject = ['web']
 
 /** Plugin config (all optional — `apply` fills env-var and constant defaults). */
 export interface Config {
-  /** Firecrawl API key. Falls back to `$FIRECRAWL_API_KEY`. Empty → providers unavailable. */
+  /**
+   * Firecrawl API key, optional: search and scrape work without a key on a
+   * rate-limited free tier, and a key raises the limits. Falls back to
+   * `$FIRECRAWL_API_KEY` from the launch environment.
+   */
   apiKey?: string
   /** Endpoint base; `/v2/search` and `/v2/scrape` are appended. Defaults to the public API. */
   baseURL?: string
@@ -51,7 +55,8 @@ export const Config: z<Config> = z.object({
 export function apply(ctx: Context, config: Config): void {
   const options: FirecrawlProviderOptions = {
     // The product trusts the project it is launched in: every environment layer
-    // may name this key, and the managed store is not involved here.
+    // may name this key, and the managed store is not involved here. No key is
+    // a supported state — the rate-limited free tier serves both operations.
     apiKey: config.apiKey ?? launchEnvironmentOf(ctx).get(FIRECRAWL_API_KEY_ENV)?.value ?? '',
     baseURL: config.baseURL ?? FIRECRAWL_DEFAULT_BASE_URL,
   }
