@@ -307,6 +307,11 @@
     - id: ui-settings-general
       name: '@deepseek-ai/dsh-client-ui-settings-general'
 
+    # General settings rows selecting the web search / fetch backend over the
+    # Host `web` settings namespace.
+    - id: ui-settings-web
+      name: '@deepseek-ai/dsh-client-ui-settings-web'
+
     - id: ui-settings-models
       name: '@deepseek-ai/dsh-client-ui-settings-models'
 

@@ -3757,7 +3757,7 @@ export interface WebRuntimeConfig {
 }
 ```
 
-Source: [`packages/web/web/src/index.ts:55`](../packages/web/web/src/index.ts)
+Source: [`packages/web/web/src/index.ts:57`](../packages/web/web/src/index.ts)
 
 <a id="deepseek-aidsh-web-app"></a>
 
@@ -3809,6 +3809,24 @@ export interface Config {
 ```
 
 Source: [`packages/web/web-fetch-http/src/index.ts:32`](../packages/web/web-fetch-http/src/index.ts)
+
+<a id="deepseek-aidsh-web-firecrawl"></a>
+
+## `@deepseek-ai/dsh-web-firecrawl`
+
+Requires: `web`
+
+```ts config-catalog
+/** Plugin config (all optional — `apply` fills env-var and constant defaults). */
+export interface Config {
+  /** Firecrawl API key. Falls back to `$FIRECRAWL_API_KEY`. Empty → providers unavailable. */
+  apiKey?: string
+  /** Endpoint base; `/v2/search` and `/v2/scrape` are appended. Defaults to the public API. */
+  baseURL?: string
+}
+```
+
+Source: [`packages/web/web-firecrawl/src/index.ts:38`](../packages/web/web-firecrawl/src/index.ts)
 
 <a id="deepseek-aidsh-web-search-deepseek"></a>
 
@@ -3981,6 +3999,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-client-ui-settings-plugins` ([`packages/client/ui-settings-plugins/src/index.ts`](../packages/client/ui-settings-plugins/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-settings-security-review` ([`packages/client/ui-settings-security-review/src/index.ts`](../packages/client/ui-settings-security-review/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-settings-unarchive-sessions` ([`packages/client/ui-settings-unarchive-sessions/src/index.ts`](../packages/client/ui-settings-unarchive-sessions/src/index.ts))
+- `@deepseek-ai/dsh-client-ui-settings-web` ([`packages/client/ui-settings-web/src/index.ts`](../packages/client/ui-settings-web/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-sidebar` ([`packages/client/ui-sidebar/src/index.ts`](../packages/client/ui-sidebar/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-sidebar-documentpreview` ([`packages/client/ui-sidebar-documentpreview/src/index.ts`](../packages/client/ui-sidebar-documentpreview/src/index.ts))
 - `@deepseek-ai/dsh-client-ui-sidebar-files` ([`packages/client/ui-sidebar-files/src/index.ts`](../packages/client/ui-sidebar-files/src/index.ts))

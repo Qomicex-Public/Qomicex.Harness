@@ -33,7 +33,7 @@ Choose the service when a plugin or tool must search or fetch without hard-codin
 
 ### Minimal configuration
 
-Load the service and let a single mounted backend auto-select, or pin a provider id with `searchProvider`/`fetchProvider`. The environment variables `$DSH_WEB_SEARCH_PROVIDER` and `$DSH_WEB_FETCH_PROVIDER` feed the same fields and are not a separate priority chain.
+Load the service and let a single mounted backend auto-select, or pin a provider id with `searchProvider`/`fetchProvider`. The environment variables `$DSH_WEB_SEARCH_PROVIDER` and `$DSH_WEB_FETCH_PROVIDER` feed the same fields and are not a separate priority chain. The same two fields also live in the `web` settings namespace, so the shipped General settings page can switch either backend without a configuration file; selection is re-read on every call, so a committed change takes effect on the next search or fetch.
 
 ```yaml
 - name: '@deepseek-ai/dsh-web'
@@ -125,8 +125,9 @@ At call time the service resolves the provider — configured id first, then the
 Read these pages when the package-level contract is not enough. They move from the shared vocabulary to the shipped backends, the model-facing tools, and the design rationale.
 
 - [Web subsystem](../../../docs/subsystems/web.md) — the exhaustive search/fetch requests and results, provider availability, and error codes.
-- [Web package map](../README.md) — the six-package family and each role.
+- [Web package map](../README.md) — the seven-package family and each role.
 - [dsh-tool-web](../tool-web/README.md) — the model-facing `web_search` and `web_fetch` tools over this service.
+- [dsh-web-firecrawl](../web-firecrawl/README.md) — the shipped search-and-scrape backend selected by default.
 - [dsh-web-fetch-http](../web-fetch-http/README.md) — the shipped anonymous HTTP(S) fetch backend.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web) — every accepted config field and its source declaration.
 - [Web capability seam decision](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md) — why search and fetch share one provider-selection service.

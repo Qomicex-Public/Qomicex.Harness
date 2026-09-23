@@ -33,7 +33,7 @@ kind: "package-reference"
 
 ### 最小配置
 
-加载服务并让唯一挂载的后端自动选择，或用 `searchProvider`／`fetchProvider` 固定提供方 id。环境变量 `$DSH_WEB_SEARCH_PROVIDER` 与 `$DSH_WEB_FETCH_PROVIDER` 提供相同字段，不是另一条优先级链。
+加载服务并让唯一挂载的后端自动选择，或用 `searchProvider`／`fetchProvider` 固定提供方 id。环境变量 `$DSH_WEB_SEARCH_PROVIDER` 与 `$DSH_WEB_FETCH_PROVIDER` 提供相同字段，不是另一条优先级链。同样两个字段也位于 `web` 设置命名空间中，因此自带的通用设置页无需配置文件即可切换任一项后端；选择在每次调用时重新读取，提交后的更改在下一次搜索或抓取生效。
 
 ```yaml
 - name: '@deepseek-ai/dsh-web'
@@ -125,8 +125,9 @@ const page = await ctx.web.fetch({ url: 'https://example.com' })
 当包级约定不够用时阅读以下页面。它们从共享词汇逐步进入已交付后端、面向模型的工具与设计依据。
 
 - [web 子系统](../../../docs/subsystems/web.zh.md)——穷尽式的搜索／抓取请求与结果、提供方可用性与错误码。
-- [web 包映射](../README.zh.md)——六包家族与各角色。
+- [web 包映射](../README.zh.md)——七包家族与各角色。
 - [dsh-tool-web](../tool-web/README.zh.md)——构建于本服务之上的面向模型 `web_search` 与 `web_fetch` 工具。
+- [dsh-web-firecrawl](../web-firecrawl/README.zh.md)——默认选中的搜索与抓取一体后端。
 - [dsh-web-fetch-http](../web-fetch-http/README.zh.md)——已交付的匿名 HTTP(S) 抓取后端。
 - [生成配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-web)——每个受支持配置字段及其源声明。
 - [web 能力 seam 决策](../../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.zh.md)——搜索与抓取为何共用一项提供方选择服务。
