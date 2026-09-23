@@ -27,7 +27,11 @@ it('retains one shared resource consumer after the Desktop host overlay', () => 
       { id: 'mcp-resources', name: '@deepseek-ai/dsh-mcp-resources' },
     ])
     expect(rows.filter(row => row.name === '@deepseek-ai/dsh-mcp-client')).toEqual([])
-    expect(rows.find(row => row.id === 'webserver')?.disabled).toBe(true)
+    expect(rows.find(row => row.id === 'webserver')).toMatchObject({
+      name: '@deepseek-ai/dsh-host-webserver',
+      config: { host: '127.0.0.1', port: 0 },
+    })
+    expect(rows.find(row => row.id === 'webserver')?.disabled).toBeUndefined()
     expect(warnings).toEqual([])
   } finally {
     rmSync(home, { recursive: true, force: true })

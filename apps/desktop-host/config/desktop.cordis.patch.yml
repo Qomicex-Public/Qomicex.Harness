@@ -3,8 +3,15 @@
 - id: web-startup
   disabled: true
 
+# The desktop transport carries the browser surface over IPC, but Host plugins
+# that register local REST routes on the web server (the plugin market) need the
+# route table to exist: the desktop bridge forwards those routes to this
+# loopback listener. Loopback only, on an OS-assigned port.
 - id: webserver
-  disabled: true
+  name: '@deepseek-ai/dsh-host-webserver'
+  config:
+    host: '127.0.0.1'
+    port: 0
 
 - id: web-runtime
   disabled: true

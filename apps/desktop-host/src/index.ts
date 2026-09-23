@@ -25,6 +25,7 @@ import {
 import { provideCmdline } from '@deepseek-ai/dsh-cmdline'
 import { DSH_LAUNCH_ENVIRONMENT_KEY } from '@deepseek-ai/dsh-launch-environment'
 import { unpackedModuleUrl } from './asar-modules.ts'
+import { localRouteHandler } from './local-routes.ts'
 import type {} from '@deepseek-ai/dsh-api-gateway'
 import type { ConnectionFetchHandler } from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-client-modules'
@@ -335,6 +336,7 @@ export async function runDesktopHost(
   const api = connection.createSharedFetchHandler('/api')
   const assets = assetHandler(ctx, absoluteRuntime)
   const streams = remoteStreamHandler(ctx)
+  const local = localRouteHandler(ctx)
   const requests = new Map<number, AbortController>()
   let disposing: Promise<void> | undefined
 
@@ -370,7 +372,10 @@ export async function runDesktopHost(
           ? await streams.fetch(request)
           : url.pathname.startsWith('/api/')
             ? await api.fetch(request)
-            : await assets.fetch(request)
+            // Local plugin routes (the plugin market's `/dsh-market/*`) answer
+            // before the static-asset fallback; a request no route claims, or a
+            // composition without a web server, falls through to the SPA index.
+            : (await local(request)) ?? await assets.fetch(request)
         await writeResponse(encodeDesktopResponseStart(command.streamId, {
           status: response.status,
           headers: [...response.headers.entries()],
