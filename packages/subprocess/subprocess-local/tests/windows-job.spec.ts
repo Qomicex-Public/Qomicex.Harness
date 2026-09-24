@@ -182,6 +182,7 @@ describe('Windows parent runner contract', () => {
       'C:\\runner.js', '--', 'tool.exe', 'literal arg',
     ], expect.objectContaining({
       cwd: process.cwd(),
+      windowsHide: true,
       stdio: ['ignore', 'ignore', 'ignore', 'ipc', 'pipe', 'pipe', 2],
       windowsHide: true,
     }))

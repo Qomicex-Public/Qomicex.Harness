@@ -51,9 +51,9 @@ describe('desktop release feed', () => {
 
   it('keeps the upstream COS feed for a signed build without a repository', () => {
     expect(resolveDesktopReleaseFeed(
-      { DOWNLOAD_TEST_ORIGIN: 'https://download.example.com' },
+      { DOWNLOAD_TEST_ORIGIN: 'https://download.example.com', DOWNLOAD_TEST_RELEASE_ID: '0123456789abcdef0123456789abcdef' },
       { unsigned: false, platform: 'darwin', arch: 'arm64' },
-    )).toEqual([{ provider: 'generic', url: 'https://download.example.com/_/harness/desktop/stable/mac-arm64/' }])
+    )).toEqual([{ provider: 'generic', url: 'https://download.example.com/dsh-desk/0123456789abcdef0123456789abcdef/feeds/mac-arm64/' }])
   })
 
   it('rejects a malformed repository before packaging starts', () => {
