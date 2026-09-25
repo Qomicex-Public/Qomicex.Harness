@@ -22,7 +22,7 @@ kind: "package-reference"
 
 -----
 
-<a id="使用本包"></a>
+<a id="use-this-package"></a>
 ## 使用本包
 
 打开「设置」，在**通用设置**下可见**浏览器**、**浏览器路径**、**无头运行**三行。在已提供设置面板外壳的 Web 组合中挂载 `@deepseek-ai/dsh-client-ui-settings-automation`；这些行自行注册，无需配置。
@@ -33,7 +33,7 @@ kind: "package-reference"
 
 -----
 
-<a id="了解实现"></a>
+<a id="understand-the-implementation"></a>
 ## 了解实现
 
 <details>
@@ -61,7 +61,7 @@ kind: "package-reference"
 
 -----
 
-<a id="延伸阅读"></a>
+<a id="further-exploration"></a>
 ## 延伸阅读
 
 - [浏览器使用](../../../docs/subsystems/browser-use.zh.md) — 提供方选择与会话所有权。
@@ -69,7 +69,7 @@ kind: "package-reference"
 
 -----
 
-<a id="模型体验"></a>
+<a id="model-experience"></a>
 ## 模型体验
 
 通过这些设置行写入的选择所启动的新 Session 浏览器间接影响模型；浏览器提供方拥有浏览器工具及其模型可见行为。
@@ -86,7 +86,7 @@ kind: "package-reference"
 - 运行中的浏览器不会被重新配置；更改在下次启动时生效。
 - 附加模式（`mode: attach`）完全忽略该选择；被附加浏览器的所有权在外部。
 
-<a id="开发备注"></a>
+<a id="dev-note"></a>
 ### 开发备注
 
 <details>

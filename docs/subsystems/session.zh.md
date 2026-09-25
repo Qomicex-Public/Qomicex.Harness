@@ -1154,11 +1154,12 @@ Source: [`packages/api/session-controller/src/types.ts`](../../packages/api/sess
 
 #### `api-session/removed` — emit
 
-A Session left the live Host registry.
+A Session left the live Host registry, or its durable artifacts were erased, so Session list consumers drop its row.
 
 ```ts cordis-catalog
 /**
- * A Session left the live Host registry.
+ * A Session left the live Host registry, or its durable artifacts were
+ * erased, so Session list consumers drop its row.
  * @mode emit
  * @param sessionId - removed Session identity.
  */

@@ -308,6 +308,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Owns Workspace commands and reconnect-safe Workspace state delivery through the generated Remote namespace.',
   },
   {
+    key: 'memoryController',
+    pkg: 'api-memory-controller',
+    title: 'Host memory Remote controller',
+    mode: 'core',
+    note: 'Projects the memory store into the `memory` Remote namespace the Settings page draws, answering unavailable instead of throwing while the plugin is unmounted.',
+  },
+  {
     key: 'directoryPickerController',
     pkg: 'api-workspace-controller',
     title: 'Host directory-picking Remote controller',

@@ -81,10 +81,8 @@ Captured bytes decode as UTF-8 first and fall back to GBK/CP936 when a replaceme
 Read these pages when the package-level contract is not enough. They move from the preset to the tools and sandbox subsystems.
 
 - [junsi group map](../README.md) — the sibling group page and its package table.
-- [Junsi preset composition](../../../preset/agent-presets/presets/junsi) — where this package is mounted and its skills live.
 - [Tools subsystem reference](../../../docs/subsystems/tools.md) — the tool-registration contract.
 - [Sandbox subsystem reference](../../../docs/subsystems/sandbox.md) — the process-confinement stack this tool bypasses.
-- [Generated tool catalog](../../../docs/tool-catalog.md#deepseek-aidsh-tool-git) — the exact `git` schema.
 
 -----
 

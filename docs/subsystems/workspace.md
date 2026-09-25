@@ -389,6 +389,13 @@ Host service backing the generated `ctx.remote.workspace` namespace.
 @Remote('unarchiveSession') unarchiveSession(request: WorkspaceUnarchiveSessionRequest): Promise<WorkspaceArchiveValue>
 
 /**
+ * Permanently erase one Session and its durable log.
+ * @param request - Session identity to erase.
+ * @returns deletion confirmation.
+ */
+@Remote('deleteSession') deleteSession(request: WorkspaceDeleteSessionRequest): Promise<WorkspaceDeleteSessionValue>
+
+/**
  * Surface one known unarchived Session ahead of unpinned Sessions.
  * @param request - Session identity to pin.
  * @returns the complete resulting pin set, most recently pinned first.
@@ -569,6 +576,22 @@ archiveSession(sessionId: SessionId, options: ArchiveSessionOptions = {}): Promi
 unarchiveSession(sessionId: SessionId): Promise<void>
 
 /**
+/**
+ * Permanently delete one session: erase its durable persistence artifacts,
+ * then drop it from every durable account — the workspace `sessionIds` slot
+ * and the registry-global archive set — and from the header index. The erase
+ * runs first, so an interrupted delete leaves a ghost session the next start
+ * filters out instead of a session the user believes is gone while its log
+ * still occupies storage.
+ *
+ * A live session refuses: its owning agent holds a write handle over the log
+ * being erased.
+ * @param sessionId - The session to delete.
+ * @returns resolution after durability.
+ */
+deleteSession(sessionId: SessionId): Promise<void>
+
+/**
  * Pin one session durably, prepending it to the registry-global pin set.
  * The session must exist (live or in session persistence) and must not be
  * archived. An already pinned id resolves without writing or reordering.
@@ -624,6 +647,26 @@ Ask the composed providers what still runs for a session before it is archived. 
  */
 'workspace/session-activity'( request: SessionActivityRequest, next: () => Promise<readonly SessionActivity[]>, ): Promise<readonly SessionActivity[]>
 ```
+
+Source: [`packages/workspace/workspace/src/index.ts`](../../packages/workspace/workspace/src/index.ts)
+
+<a id="workspacesession-erased--emit"></a>
+
+#### `workspace/session-erased` — emit
+
+/** One stored session and every durable artifact of it were erased.
+
+```ts cordis-catalog
+/**
+/**
+ * One stored session and every durable artifact of it were erased.
+ * @mode emit
+ * @param sessionId - the erased session identity.
+ */
+'workspace/session-erased'(sessionId: SessionId): void
+```
+
+Types: [SessionId](core.md)
 
 Source: [`packages/workspace/workspace/src/index.ts`](../../packages/workspace/workspace/src/index.ts)
 

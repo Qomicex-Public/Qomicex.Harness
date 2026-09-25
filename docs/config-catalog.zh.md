@@ -420,6 +420,7 @@ export type Config = LocalConfig
 Depends on: [`LocalConfig`](#deepseek-aidsh-bash-local)
 
 来源： [`packages/shell/bash-sandbox/src/index.ts:36`](../packages/shell/bash-sandbox/src/index.ts)
+
 <a id="deepseek-aidsh-browser-use-chrome-devtools-mcp"></a>
 
 ## `@deepseek-ai/dsh-browser-use-chrome-devtools-mcp`
@@ -739,6 +740,7 @@ export interface ToolResultPruneConfig {
 ```
 
 来源： [`packages/compaction/compaction-tool-result-pruner/src/types.ts:5`](../packages/compaction/compaction-tool-result-pruner/src/types.ts)
+
 <a id="deepseek-aidsh-computer-use-cua-driver-mcp"></a>
 
 ## `@deepseek-ai/dsh-computer-use-cua-driver-mcp`
@@ -2027,6 +2029,7 @@ export interface ReconnectConfig {
 ```
 
 来源： [`packages/mcp/mcp-client/src/index.ts:104`](../packages/mcp/mcp-client/src/index.ts)
+
 <a id="deepseek-aidsh-memory"></a>
 
 ## `@deepseek-ai/dsh-memory`
@@ -3053,6 +3056,7 @@ export type Config = SessionTitleLlmConfig
 Depends on: [`SessionTitleLlmConfig`](../packages/session/session-title-llm/src/index.ts)
 
 来源： [`packages/session/session-title-first-prompt-llm/src/index.ts:15`](../packages/session/session-title-first-prompt-llm/src/index.ts)
+
 <a id="deepseek-aidsh-shell-command-guard"></a>
 
 ## `@deepseek-ai/dsh-shell-command-guard`
@@ -4378,6 +4382,7 @@ export interface Config {
 ```
 
 来源： [`packages/web/web-fetch-http/src/index.ts:32`](../packages/web/web-fetch-http/src/index.ts)
+
 <a id="deepseek-aidsh-web-firecrawl"></a>
 
 ## `@deepseek-ai/dsh-web-firecrawl`

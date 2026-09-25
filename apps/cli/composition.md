@@ -88,7 +88,7 @@ flowchart LR
   cfg --> plugin_dsh_base_pwsh_sandbox
   plugin_dsh_base_approval["approval<br/>@deepseek-ai/dsh-user-approval"]
   cfg --> plugin_dsh_base_approval
-  plugin_dsh_base_permission["permission<br/>@deepseek-ai/dsh-permission-presets"]
+  plugin_dsh_base_permission["permission<br/>YOLO"]
   cfg --> plugin_dsh_base_permission
   plugin_dsh_base_shell_env["shell-env<br/>@deepseek-ai/dsh-shell-env"]
   cfg --> plugin_dsh_base_shell_env
@@ -154,6 +154,8 @@ flowchart LR
   cfg --> plugin_dsh_base_tool_workflow
   plugin_dsh_base_timeout_policy["timeout-policy<br/>@deepseek-ai/dsh-tool-call-timeout-policy"]
   cfg --> plugin_dsh_base_timeout_policy
+  plugin_dsh_base_shell_command_guard["shell-command-guard<br/>@deepseek-ai/dsh-shell-command-guard"]
+  cfg --> plugin_dsh_base_shell_command_guard
   plugin_dsh_base_spill_local["spill-local<br/>@deepseek-ai/dsh-spill-local"]
   cfg --> plugin_dsh_base_spill_local
   plugin_dsh_base_spill_policy["spill-policy<br/>@deepseek-ai/dsh-spill-policy"]
@@ -176,6 +178,8 @@ flowchart LR
   cfg --> plugin_dsh_base_repeat_tool_reminder
   plugin_dsh_base_web["web<br/>@deepseek-ai/dsh-web"]
   cfg --> plugin_dsh_base_web
+  plugin_dsh_base_web_firecrawl["web-firecrawl<br/>@deepseek-ai/dsh-web-firecrawl"]
+  cfg --> plugin_dsh_base_web_firecrawl
   plugin_dsh_base_web_search_deepseek["web-search-deepseek<br/>@deepseek-ai/dsh-web-search-deepseek"]
   cfg --> plugin_dsh_base_web_search_deepseek
   plugin_dsh_base_web_fetch_http["web-fetch-http<br/>@deepseek-ai/dsh-web-fetch-http"]
@@ -184,6 +188,14 @@ flowchart LR
   cfg --> plugin_dsh_base_tool_web
   plugin_dsh_base_mcp_resources["mcp-resources<br/>@deepseek-ai/dsh-mcp-resources"]
   cfg --> plugin_dsh_base_mcp_resources
+  plugin_dsh_base_browser_use["browser-use<br/>@deepseek-ai/dsh-browser-use"]
+  cfg --> plugin_dsh_base_browser_use
+  plugin_dsh_base_browser_use_playwright_mcp["browser-use-playwright-mcp<br/>@deepseek-ai/dsh-browser-use-playwright-mcp"]
+  cfg --> plugin_dsh_base_browser_use_playwright_mcp
+  plugin_dsh_base_computer_use["computer-use<br/>@deepseek-ai/dsh-computer-use"]
+  cfg --> plugin_dsh_base_computer_use
+  plugin_dsh_base_computer_use_cua_driver_native["computer-use-cua-driver-native<br/>@deepseek-ai/dsh-computer-use-cua-driver-native"]
+  cfg --> plugin_dsh_base_computer_use_cua_driver_native
   plugin_dsh_base_tools["tools<br/>@deepseek-ai/dsh-tools"]
   cfg --> plugin_dsh_base_tools
   plugin_dsh_base_system_prompt["system-prompt<br/>@deepseek-ai/dsh-system-prompt"]
@@ -238,7 +250,7 @@ flowchart LR
 | `bash-sandbox` | `@deepseek-ai/dsh-bash-sandbox` |
 | `pwsh-sandbox` | `@deepseek-ai/dsh-pwsh-sandbox` |
 | `approval` | `@deepseek-ai/dsh-user-approval` |
-| `permission` | `@deepseek-ai/dsh-permission-presets` |
+| `permission` | `YOLO` |
 | `shell-env` | `@deepseek-ai/dsh-shell-env` |
 | `tool-bash` | `@deepseek-ai/dsh-tool-bash` |
 | `tool-pwsh` | `@deepseek-ai/dsh-tool-pwsh` |
@@ -271,6 +283,7 @@ flowchart LR
 | `workflow-ptc` | `@deepseek-ai/dsh-workflow-ptc` |
 | `tool-workflow` | `@deepseek-ai/dsh-tool-workflow` |
 | `timeout-policy` | `@deepseek-ai/dsh-tool-call-timeout-policy` |
+| `shell-command-guard` | `@deepseek-ai/dsh-shell-command-guard` |
 | `spill-local` | `@deepseek-ai/dsh-spill-local` |
 | `spill-policy` | `@deepseek-ai/dsh-spill-policy` |
 | `session-checkpoint-policy` | `@deepseek-ai/dsh-session-checkpoint-policy` |
@@ -282,10 +295,15 @@ flowchart LR
 | `tool-ralph` | `@deepseek-ai/dsh-tool-ralph` |
 | `repeat-tool-reminder` | `@deepseek-ai/dsh-repeat-tool-reminder` |
 | `web` | `@deepseek-ai/dsh-web` |
+| `web-firecrawl` | `@deepseek-ai/dsh-web-firecrawl` |
 | `web-search-deepseek` | `@deepseek-ai/dsh-web-search-deepseek` |
 | `web-fetch-http` | `@deepseek-ai/dsh-web-fetch-http` |
 | `tool-web` | `@deepseek-ai/dsh-tool-web` |
 | `mcp-resources` | `@deepseek-ai/dsh-mcp-resources` |
+| `browser-use` | `@deepseek-ai/dsh-browser-use` |
+| `browser-use-playwright-mcp` | `@deepseek-ai/dsh-browser-use-playwright-mcp` |
+| `computer-use` | `@deepseek-ai/dsh-computer-use` |
+| `computer-use-cua-driver-native` | `@deepseek-ai/dsh-computer-use-cua-driver-native` |
 | `tools` | `@deepseek-ai/dsh-tools` |
 | `system-prompt` | `@deepseek-ai/dsh-system-prompt` |
 | `agent-loop` | `@deepseek-ai/dsh-agent-loop` |

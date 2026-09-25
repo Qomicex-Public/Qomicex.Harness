@@ -3673,7 +3673,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: 'deleteSession(sessionId: SessionId): Promise<void>',
-        description: 'Permanently delete one session: erase its durable persistence artifacts, then drop it from every durable account — the workspace `sessionIds` slot and the registry-global archive set — and from the header index. The erase runs first, so an interrupted delete leaves a ghost session the next start filters out instead of a session the user believes is gone while its log still occupies storage.\n\nA live session refuses: its owning agent holds a write handle over the log being erased.',
+        description: '/** Permanently delete one session: erase its durable persistence artifacts, then drop it from every durable account — the workspace `sessionIds` slot and the registry-global archive set — and from the header index. The erase runs first, so an interrupted delete leaves a ghost session the next start filters out instead of a session the user believes is gone while its log still occupies storage.\n\nA live session refuses: its owning agent holds a write handle over the log being erased.',
         parameters: [{ name: 'sessionId', description: 'The session to delete.' }],
         returns: 'resolution after durability.',
       },
@@ -3841,8 +3841,8 @@ export const EVENT_API: readonly EventApiEntry[] = [
     name: 'api-session/removed',
     mode: 'emit',
     signature: '\'api-session/removed\'(sessionId: SessionId): void',
-    summary: 'A Session left the live Host registry.',
-    description: 'A Session left the live Host registry.',
+    summary: 'A Session left the live Host registry, or its durable artifacts were erased, so Session list consumers drop its row.',
+    description: 'A Session left the live Host registry, or its durable artifacts were erased, so Session list consumers drop its row.',
     parameters: [{ name: 'sessionId', description: 'removed Session identity.' }],
   },
   {
@@ -4308,6 +4308,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     summary: 'Ask the composed providers what still runs for a session before it is archived.',
     description: 'Ask the composed providers what still runs for a session before it is archived. A listener prepends its own SessionActivity entries to the result of `next()`; the registry\'s innermost callback returns an empty list, so a composition without providers archives freely. Any non-empty result refuses the archive without a write.',
     parameters: [{ name: 'request', description: 'the session about to be archived.' }, { name: 'next', description: 'delegate to the remaining providers.' }],
+  },
+  {
+    name: 'workspace/session-erased',
+    mode: 'emit',
+    signature: '\'workspace/session-erased\'(sessionId: SessionId): void',
+    summary: '/** One stored session and every durable artifact of it were erased.',
+    description: '/** One stored session and every durable artifact of it were erased.',
+    parameters: [{ name: 'sessionId', description: 'the erased session identity.' }],
   },
   {
     name: 'workspace/session-stop',
@@ -4888,10 +4896,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'DeveloperMessage',
     declaration: 'export interface DeveloperMessage extends MessageBase {\n    readonly role: \'developer\';\n}',
-  },
-  {
-    name: 'DiffCallView',
-    declaration: 'export interface DiffCallView {\n    card: \'diff\';\n    title: string;\n    diffs: FileDiff[];\n    locations?: FileLocation[];\n}',
   },
   {
     name: 'DiffResultView',
@@ -7336,14 +7340,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ToolCallId',
     declaration: 'export type ToolCallId = Branded<\'ToolCallId\'>;',
-  },
-  {
-    name: 'ToolCallKind',
-    declaration: 'export type ToolCallKind = \'read\' | \'edit\' | \'delete\' | \'move\' | \'search\' | \'execute\' | \'fetch\' | \'other\';',
-  },
-  {
-    name: 'ToolCallView',
-    declaration: 'export type ToolCallView = GenericCallView | TerminalCallView | DiffCallView;',
   },
   {
     name: 'ToolDefinition',

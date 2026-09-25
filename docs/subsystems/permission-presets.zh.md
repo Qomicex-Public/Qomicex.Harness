@@ -8,7 +8,7 @@
 
 ## 预设表
 
-预设把一个稳定 key 映射到一组沙箱／审批组合，外加可选的客户端展示信息。默认配置表自带 `workspace-write`（`workspace-write` + `ask`）和 `danger-full-access`（`danger-full-access` + `never`）；`custom` 与 `auto` 是保留名称，不能配置。
+预设把一个稳定 key 映射到一组沙箱／审批组合，外加可选的客户端展示信息。默认配置表自带 `workspace-write`（`workspace-write` + `ask`）、`danger-full-access`（`danger-full-access` + `never`）和 `yolo`（`danger-full-access` + `always`）；`custom` 与 `auto` 是保留名称，不能配置。
 
 ```ts type-equiv
 /** One preset's sandbox/approval bundle and optional client presentation. */
@@ -29,9 +29,9 @@ interface PresetSpec {
 interface Config {
   /**
    * The preset table: name → knob bundle. Defaults to `workspace-write`
-   * (workspace-write + ask) and `danger-full-access` (danger-full-access +
-   * never). The names `custom` and `auto` are reserved for derived state and
-   * the Auto review integration respectively.
+   * (workspace-write + ask), `danger-full-access` (danger-full-access + never),
+   * and `yolo` (danger-full-access + always). The names `custom` and `auto` are
+   * reserved for derived state and the Auto review integration respectively.
    */
   presets: Record<string, PresetSpec>
   /**

@@ -74,7 +74,6 @@ kind: "package-reference"
 当包级约定不够用时阅读以下页面。它们从预置包进入系统提示词与技能子系统。
 
 - [junsi 组映射](../README.zh.md)——同级组页面及其包表格。
-- [Junsi 预置包组合](../../../preset/agent-presets/presets/junsi)——本包被挂载的位置及其技能。
 - [Skills 子系统参考](../../../docs/subsystems/skills.zh.md)——路由背后的 `skill` 工具与技能加载。
 - [Tools 子系统参考](../../../docs/subsystems/tools.zh.md)——路由所指向的工具注册约定。
 

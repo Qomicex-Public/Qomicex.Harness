@@ -74,7 +74,6 @@ This section explains the design decisions behind the package and points at the 
 Read these pages when the package-level contract is not enough. They move from the preset to the system-prompt and skills subsystems.
 
 - [junsi group map](../README.md) — the sibling group page and its package table.
-- [Junsi preset composition](../../../preset/agent-presets/presets/junsi) — where this package is mounted and its skills live.
 - [Skills subsystem reference](../../../docs/subsystems/skills.md) — the `skill` tool and skill loading behind the routing.
 - [tools subsystem reference](../../../docs/subsystems/tools.md) — the tool-registration contract the routing targets.
 

@@ -87,9 +87,7 @@ kind: "package-reference"
 当包级约定不够用时阅读以下页面。它们从预置包进入工具子系统。
 
 - [junsi 组映射](../README.zh.md)——同级组页面及其包表格。
-- [Junsi 预置包组合](../../../preset/agent-presets/presets/junsi)——本包被挂载的位置及其技能。
 - [Tools 子系统参考](../../../docs/subsystems/tools.zh.md)——工具注册约定。
-- [生成的工具目录](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-memory)——全部七个工具的确切 schema。
 
 -----
 
