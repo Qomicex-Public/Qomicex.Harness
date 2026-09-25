@@ -595,6 +595,64 @@ describe('provider profile lifecycle', () => {
     })
   })
 
+  it('preselects the model default over the route default and drops an unoffered one', async () => {
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(LlmPiAi, {
+      providers: {
+        'acme-gateway': {
+          apiKeyEnv: 'PI_TEST_KEY',
+          api: 'openai-completions',
+          baseURL: 'https://acme.test/v1',
+          reasoning: 'high',
+          models: [{
+            id: 'acme-think',
+            contextWindow: 65_536,
+            maxTokens: 4096,
+            reasoningEfforts: { off: null, low: 'low', high: 'high', max: 'max' },
+            defaultReasoningEffort: 'low',
+          }, {
+            id: 'acme-stranded',
+            contextWindow: 65_536,
+            maxTokens: 4096,
+            reasoningEfforts: { off: null, low: 'low' },
+            // The route default still applies: a model that names no default
+            // defers to it, and an unoffered one is dropped without taking the
+            // route's answer down with it.
+            defaultReasoningEffort: 'max',
+          }],
+        },
+      },
+    })
+
+    await expect(ctx.llm.resolveModelInfo('acme-gateway', 'acme-think'))
+      .resolves.toMatchObject({ reasoning: { defaultEffort: ReasoningEffortId('low') } })
+
+    // A non-reasoning model carries no reasoning at all, so a default written
+    // beside `reasoningEfforts: false` cannot describe anything.
+    const disabled = new Context()
+    await disabled.plugin(LlmRuntime)
+    await disabled.plugin(LlmPiAi, {
+      providers: {
+        'acme-gateway': {
+          apiKeyEnv: 'PI_TEST_KEY',
+          api: 'openai-completions',
+          baseURL: 'https://acme.test/v1',
+          reasoning: 'high',
+          models: [{
+            id: 'acme-quiet',
+            contextWindow: 65_536,
+            maxTokens: 4096,
+            reasoningEfforts: false,
+            defaultReasoningEffort: 'low',
+          }],
+        },
+      },
+    })
+    await expect(disabled.llm.resolveModelInfo('acme-gateway', 'acme-quiet').then(info => info.reasoning))
+      .resolves.toBeUndefined()
+  })
+
   it('sends the declared wire spelling and refuses undeclared levels before network I/O', async () => {
     vi.stubEnv('PI_TEST_KEY', 'test-key')
     const server = await mockServer([{ events: textEvents }])

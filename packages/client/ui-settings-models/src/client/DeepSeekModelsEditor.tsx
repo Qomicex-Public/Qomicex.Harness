@@ -65,7 +65,7 @@ export interface DeepSeekModelsValidationFailure {
   index: number
   /** Message key owned by the Models settings section. */
   key: 'modelIdRequired' | 'modelIdDuplicate' | 'modelNameInvalid' | 'modelContextInvalid'
-  | 'modelMaxTokensInvalid' | 'modelEffortWireRequired'
+  | 'modelMaxTokensInvalid' | 'modelEffortWireRequired' | 'modelEffortDefaultInvalid'
 }
 
 /** Convert a schema-validated catalog value into records without dropping hidden fields. */
@@ -117,6 +117,13 @@ export function validateDeepSeekModels(value: unknown): DeepSeekModelsValidation
         ([level, wire]) => level !== 'off' && (typeof wire !== 'string' || wire.length === 0),
       )) {
       return { index, key: 'modelEffortWireRequired' }
+    }
+    // The default level is a level name, nothing more: the host drops one the
+    // model does not offer, so an unknown spelling is a type question, not a
+    // reachable disagreement worth a second diagnostic.
+    const defaultEffort = model['defaultReasoningEffort']
+    if (defaultEffort !== undefined && (typeof defaultEffort !== 'string' || defaultEffort.length === 0)) {
+      return { index, key: 'modelEffortDefaultInvalid' }
     }
   }
   return undefined

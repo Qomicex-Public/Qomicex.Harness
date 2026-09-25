@@ -33,9 +33,17 @@ const openaiCopy = (template: string): string => providerCopy(template, OPENAI_T
 const DEEPSEEK_TARGET = { provider: 'deepseek-official', displayName: 'DeepSeek' }
 const deepSeekCopy = (template: string): string => providerCopy(template, DEEPSEEK_TARGET)
 
+/**
+ * The model chips, scoped to the catalog listbox. The effort dropdown's own
+ * options answer the bare role query, so every chip read goes through here.
+ */
+function modelOptions(): HTMLElement[] {
+  return within(screen.getByRole('listbox', { name: en.models })).getAllByRole('option')
+}
+
 /** Select one model chip by its 1-based position, as the list reads. */
 function selectChip(position: number): void {
-  fireEvent.click(screen.getAllByRole('option')[position - 1] as HTMLElement)
+  fireEvent.click(modelOptions()[position - 1] as HTMLElement)
 }
 
 /** Add a model by id through the panel's add row; the new row is selected. */
@@ -51,7 +59,7 @@ function capacityInput(label: string, position: number): HTMLInputElement {
 
 /** The visible text of every model chip, in list order. */
 function chips(): string[] {
-  return screen.getAllByRole('option').map(chip => chip.textContent ?? '')
+  return modelOptions().map(chip => chip.textContent ?? '')
 }
 
 const PiAiConfig = Schema.object({
@@ -757,6 +765,11 @@ describe('ModelsSection', () => {
     expect(validateDeepSeekModels([{ id: 'model', reasoningEfforts: { off: '', high: 'high' } }]))
       .toBeUndefined()
     expect(validateDeepSeekModels([{ id: 'model', reasoningEfforts: false }])).toBeUndefined()
+    // A default level is a level name; an unoffered one is the host's business
+    // to drop, and a non-string is nothing a selector can send.
+    expect(validateDeepSeekModels([{ id: 'model', defaultReasoningEffort: 'high' }])).toBeUndefined()
+    expect(validateDeepSeekModels([{ id: 'model', defaultReasoningEffort: 42 }]))
+      .toEqual({ index: 0, key: 'modelEffortDefaultInvalid' })
   })
 
   it('reads context windows written as counts, thousands, or millions', () => {

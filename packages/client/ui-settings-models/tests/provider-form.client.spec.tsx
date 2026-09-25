@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /** Model-list editing, endpoint interrogation, and hand-declared provider creation. */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Schema from '@deepseek-ai/schemastery'
 import { bindSnapshotSelector, RemoteError } from '@deepseek-ai/dsh-client-test-runtime'
@@ -37,6 +37,7 @@ const PiAiConfig = Schema.object({
       contextWindow: Schema.number(),
       maxTokens: Schema.number(),
       reasoningEfforts: Schema.union([Schema.const(false), Schema.dict(Schema.union([Schema.string(), Schema.const(null)]))]),
+      defaultReasoningEffort: Schema.union(['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']),
     })),
     reasoning: Schema.union(['off', 'high']),
   })),
@@ -232,9 +233,17 @@ function openCustomMode(): void {
   fireEvent.click(screen.getByRole('tab', { name: en.addCustom }))
 }
 
+/**
+ * The model chips, scoped to the catalog listbox. The effort dropdown's own
+ * options answer the bare role query, so every chip read goes through here.
+ */
+function modelOptions(): HTMLElement[] {
+  return within(screen.getByRole('listbox', { name: en.models })).getAllByRole('option')
+}
+
 /** Open one model row's advanced fold, where the capacities live. */
 function expandModel(index: number): void {
-  fireEvent.click(screen.getAllByRole('option')[index - 1] as HTMLElement)
+  fireEvent.click(modelOptions()[index - 1] as HTMLElement)
 }
 
 /** The button carrying `label`, typed so its disabled/title state is readable. */
@@ -265,7 +274,7 @@ describe('protocolChoices', () => {
 describe('model list editing', () => {
   /** Select one model chip by its visible name. */
   const selectChip = (name: string): void => {
-    fireEvent.click(screen.getByRole('option', { name: new RegExp(name) }))
+    fireEvent.click(within(screen.getByRole('listbox', { name: en.models })).getByRole('option', { name: new RegExp(name) }))
   }
 
   it('changes image input without rewriting a neighboring model declaration', async () => {
@@ -361,21 +370,37 @@ describe('model list editing', () => {
     expect(mutate).not.toHaveBeenCalled()
   })
 
-  it('selects one reasoning level as the model default and clears it back to inheritance', async () => {
+  it('declares the offered levels and the default level for one model', async () => {
     const { mutate } = await mountSection({
       providers: { openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'm' }] } },
     })
     openEditor('openai')
     selectChip('m')
 
-    // A level chip selects the level the model offers, sending the level name.
-    fireEvent.click(screen.getByRole('button', { name: en.effortLow }))
+    // An untouched row leaves the installed catalog to decide; the hint says
+    // so rather than reading as an empty selection.
+    expect(screen.getByText(en.modelEffortsInherited)).toBeTruthy()
+
+    // The offered track writes each level as a record key sending the level
+    // name, and the dropdown names the default among them.
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortLow} 1` }))
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortHigh} 1` }))
+    // Offered but undefaulted: the provider default stands in.
+    expect(screen.getByText(en.effortDefaultInherited)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText(`${en.effortDefault} 1`), { target: { value: 'high' } })
+    expect(screen.getByText(en.modelEffortsHint)).toBeTruthy()
+    // Unchecking a non-default level keeps the default preselection.
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortLow} 1` }))
+    expect(screen.getByLabelText<HTMLSelectElement>(`${en.effortDefault} 1`).value).toBe('high')
     fireEvent.click(screen.getByText(en.apply))
+
     await waitFor(() => { expect(mutate).toHaveBeenCalled() })
-    expect(firstMutate(mutate).ops[0]?.value).toEqual([{ id: 'm', reasoningEfforts: { low: 'low' } }])
+    expect(firstMutate(mutate).ops[0]?.value).toEqual([{
+      id: 'm', reasoningEfforts: { high: 'high' }, defaultReasoningEffort: 'high',
+    }])
   })
 
-  it('clears a stored level selection back to inheritance', async () => {
+  it('writes a non-reasoning model when no level beyond off stays offered', async () => {
     const { mutate } = await mountSection({
       providers: {
         openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'm', reasoningEfforts: { low: 'low' } }] },
@@ -384,15 +409,84 @@ describe('model list editing', () => {
     openEditor('openai')
     selectChip('m')
 
-    // The stored declaration reads as the selected level chip.
-    expect(screen.getByRole('button', { name: en.effortLow }).getAttribute('aria-pressed')).toBe('true')
-    // Clicking the selected level again clears the field: the installed
-    // catalog decides again.
-    fireEvent.click(screen.getByRole('button', { name: en.effortLow }))
+    // Clearing the only thinking level — or offering off alone — declares a
+    // model that cannot reason, which is what the host schema spells `false`.
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortLow} 1` }))
+    expect(screen.getByText(en.modelEffortsDisableHint)).toBeTruthy()
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortOff} 1` }))
     fireEvent.click(screen.getByText(en.apply))
 
     await waitFor(() => { expect(mutate).toHaveBeenCalled() })
-    expect(firstMutate(mutate).ops[0]?.value).toEqual([{ id: 'm' }])
+    expect(firstMutate(mutate).ops[0]?.value).toEqual([{ id: 'm', reasoningEfforts: false }])
+  })
+
+  it('reads a stored default on the dropdown and clears it when its level leaves the offered set', async () => {
+    const { mutate } = await mountSection({
+      providers: {
+        openai: {
+          baseURL: 'https://proxy.example/v1',
+          models: [{ id: 'm', reasoningEfforts: { low: 'low', high: 'high' }, defaultReasoningEffort: 'high' }],
+        },
+      },
+    })
+    openEditor('openai')
+    selectChip('m')
+
+    expect(screen.getByLabelText<HTMLSelectElement>(`${en.effortDefault} 1`).value).toBe('high')
+    expect(screen.getByText(en.modelEffortsHint)).toBeTruthy()
+
+    // A default outside the offered set is dropped at resolution, so
+    // unchecking the defaulted level clears the field rather than stranding it.
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortHigh} 1` }))
+    fireEvent.click(screen.getByText(en.apply))
+
+    await waitFor(() => { expect(mutate).toHaveBeenCalled() })
+    expect(firstMutate(mutate).ops[0]?.value).toEqual([{ id: 'm', reasoningEfforts: { low: 'low' } }])
+  })
+
+  it('returns the default level to the provider default', async () => {
+    const { mutate } = await mountSection({
+      providers: {
+        openai: {
+          baseURL: 'https://proxy.example/v1',
+          models: [{ id: 'm', reasoningEfforts: { low: 'low' }, defaultReasoningEffort: 'low' }],
+        },
+      },
+    })
+    openEditor('openai')
+    selectChip('m')
+
+    // The stored default reads back on the dropdown, and the hint names it as
+    // the preselect.
+    expect(screen.getByLabelText<HTMLSelectElement>(`${en.effortDefault} 1`).value).toBe('low')
+    expect(screen.getByText(en.modelEffortsHint)).toBeTruthy()
+
+    // Inherit defers to the route-level default, so the field itself leaves.
+    fireEvent.change(screen.getByLabelText(`${en.effortDefault} 1`), { target: { value: '' } })
+    expect(screen.getByText(en.effortDefaultInherited)).toBeTruthy()
+    fireEvent.click(screen.getByText(en.apply))
+
+    await waitFor(() => { expect(mutate).toHaveBeenCalled() })
+    expect(firstMutate(mutate).ops[0]?.value).toEqual([{ id: 'm', reasoningEfforts: { low: 'low' } }])
+  })
+
+  it('reads a non-reasoning model as an empty track and re-enables it on one check', async () => {
+    const { mutate } = await mountSection({
+      providers: {
+        openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'm', reasoningEfforts: false }] },
+      },
+    })
+    openEditor('openai')
+    selectChip('m')
+
+    // The dropdown names only offered levels, so it stays locked while none
+    // is offered.
+    expect(screen.getByLabelText<HTMLSelectElement>(`${en.effortDefault} 1`).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortMedium} 1` }))
+    fireEvent.click(screen.getByText(en.apply))
+
+    await waitFor(() => { expect(mutate).toHaveBeenCalled() })
+    expect(firstMutate(mutate).ops[0]?.value).toEqual([{ id: 'm', reasoningEfforts: { medium: 'medium' } }])
   })
 
   it('filters the chips by id or display name', async () => {
@@ -407,13 +501,13 @@ describe('model list editing', () => {
     openEditor('openai')
 
     fireEvent.change(screen.getByLabelText(en.modelFilter), { target: { value: 'alpha' } })
-    expect(screen.getAllByRole('option').map(chip => chip.textContent)).toEqual(['Alpha Model'])
+    expect(modelOptions().map(chip => chip.textContent)).toEqual(['Alpha Model'])
     fireEvent.change(screen.getByLabelText(en.modelFilter), { target: { value: 'alpha-id' } })
-    expect(screen.getAllByRole('option').map(chip => chip.textContent)).toEqual(['Alpha Model'])
+    expect(modelOptions().map(chip => chip.textContent)).toEqual(['Alpha Model'])
     fireEvent.change(screen.getByLabelText(en.modelFilter), { target: { value: 'beta' } })
-    expect(screen.getAllByRole('option').map(chip => chip.textContent)).toEqual(['Beta Model'])
+    expect(modelOptions().map(chip => chip.textContent)).toEqual(['Beta Model'])
     fireEvent.change(screen.getByLabelText(en.modelFilter), { target: { value: 'nothing' } })
-    expect(screen.queryByRole('option')).toBeNull()
+    expect(within(screen.getByRole('listbox', { name: en.models })).queryByRole('option')).toBeNull()
   })
 
   it('settles a pasted id with surrounding whitespace on blur', async () => {
@@ -447,7 +541,7 @@ describe('model list editing', () => {
     expect(firstMutate(mutate).ops[0]?.value).toEqual([{ id: 'm', maxTokens: 32_000 }])
   })
 
-  it('disables reasoning for one model without disturbing its neighbor', async () => {
+  it('declares levels for one model without disturbing its neighbor', async () => {
     const neighbor = { id: 'kept', reasoningEfforts: { low: 'low' } }
     const { mutate } = await mountSection({
       providers: { openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'm' }, neighbor] } },
@@ -455,39 +549,39 @@ describe('model list editing', () => {
     openEditor('openai')
     selectChip('m')
 
-    fireEvent.click(screen.getByRole('checkbox', { name: `${en.modelEffortsDisable} 1` }))
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortLow} 1` }))
     fireEvent.click(screen.getByText(en.apply))
 
     await waitFor(() => { expect(mutate).toHaveBeenCalled() })
     expect(firstMutate(mutate).ops[0]?.value)
-      .toEqual([{ id: 'm', reasoningEfforts: false }, neighbor])
+      .toEqual([{ id: 'm', reasoningEfforts: { low: 'low' } }, neighbor])
   })
 
-  it('spells a stored effort selection back on its chip and re-enables a disabled model', async () => {
+  it('spells a stored offered set back on its track', async () => {
     const { mutate } = await mountSection({
       providers: {
         openai: {
           baseURL: 'https://proxy.example/v1',
-          models: [{ id: 'm', reasoningEfforts: { low: 'low' } }, { id: 'off', reasoningEfforts: false }],
+          models: [{ id: 'm', reasoningEfforts: { off: null, low: 'low' } }, { id: 'quiet', reasoningEfforts: false }],
         },
       },
     })
     openEditor('openai')
 
-    // The stored declaration shows as the selected level chip.
-    expect(screen.getByRole('button', { name: en.effortLow }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText(en.modelEffortsHint)).toBeTruthy()
+    // Every stored key reads back checked, off included.
+    expect(screen.getByRole<HTMLInputElement>('checkbox', { name: `${en.effortOff} 1` }).checked).toBe(true)
+    expect(screen.getByRole<HTMLInputElement>('checkbox', { name: `${en.effortLow} 1` }).checked).toBe(true)
+    expect(screen.getByRole<HTMLInputElement>('checkbox', { name: `${en.effortHigh} 1` }).checked).toBe(false)
+    expect(screen.getByText(en.effortDefaultInherited)).toBeTruthy()
 
-    // A disabled model reads as disabled and un-disables into inheritance.
-    selectChip('off')
-    expect(screen.getByRole('checkbox', { name: `${en.modelEffortsDisable} 2` })).toBeTruthy()
-    expect(screen.getByText(en.modelEffortsDisableHint)).toBeTruthy()
-    fireEvent.click(screen.getByRole('checkbox', { name: `${en.modelEffortsDisable} 2` }))
+    // A stored wire spelling survives untouched: the track only adds and
+    // removes keys, so a gateway's rename keeps its spelling.
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortHigh} 1` }))
     fireEvent.click(screen.getByText(en.apply))
 
     await waitFor(() => { expect(mutate).toHaveBeenCalled() })
     expect(firstMutate(mutate).ops[0]?.value).toEqual([
-      { id: 'm', reasoningEfforts: { low: 'low' } }, { id: 'off' },
+      { id: 'm', reasoningEfforts: { off: null, low: 'low', high: 'high' } }, { id: 'quiet', reasoningEfforts: false },
     ])
   })
 
@@ -502,8 +596,8 @@ describe('model list editing', () => {
 
     // A non-string id is not a model identity: the chip shows no name and the
     // settings panel addresses the well-formed row.
-    expect(screen.getAllByRole('option').map(chip => chip.textContent)).toEqual(['', 'ok'])
-    fireEvent.click(screen.getAllByRole('option')[1] as HTMLElement)
+    expect(modelOptions().map(chip => chip.textContent)).toEqual(['', 'ok'])
+    fireEvent.click(modelOptions()[1] as HTMLElement)
     expect(screen.getByLabelText<HTMLInputElement>(`${en.modelId} 2`).value).toBe('ok')
 
     // The interrogation tolerates the malformed row: its id never matches a
@@ -511,7 +605,7 @@ describe('model list editing', () => {
     fireEvent.click(screen.getByText(en.fetchModels))
     await screen.findByRole('dialog')
     fireEvent.click(screen.getByText(en.fetchAdopt))
-    expect(screen.getAllByRole('option').map(chip => chip.textContent)).toEqual(['', 'ok', 'fresh'])
+    expect(modelOptions().map(chip => chip.textContent)).toEqual(['', 'ok', 'fresh'])
 
     // Blurring an already-trimmed id writes nothing; the malformed row keeps
     // the save refused, so the host never sees it.
@@ -761,7 +855,7 @@ describe('endpoint interrogation', () => {
     expect(screen.getByLabelText<HTMLInputElement>(`${en.maxTokens} 2`).value).toBe('2048')
     expect(screen.getByRole<HTMLInputElement>('checkbox', { name: `${en.modelInputImage} 2` }).checked).toBe(true)
 
-    fireEvent.click(screen.getAllByRole('option')[0] as HTMLElement)
+    fireEvent.click(modelOptions()[0] as HTMLElement)
     expect(screen.getByLabelText<HTMLInputElement>(`${en.modelId} 1`).value).toBe('kept')
     expect(screen.getByLabelText<HTMLInputElement>(`${en.contextWindow} 1`).value).toBe('111')
 
@@ -847,7 +941,7 @@ describe('endpoint interrogation', () => {
     // The selected row carries its settings; the other chip carries none.
     expect(screen.getByLabelText(`${en.contextWindow} 1`)).toBeTruthy()
     expect(screen.queryByLabelText(`${en.contextWindow} 2`)).toBeNull()
-    fireEvent.click(screen.getAllByRole('option')[1] as HTMLElement)
+    fireEvent.click(modelOptions()[1] as HTMLElement)
     expect(screen.getByLabelText(`${en.contextWindow} 2`)).toBeTruthy()
     expect(screen.queryByLabelText(`${en.contextWindow} 1`)).toBeNull()
   })

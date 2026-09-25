@@ -605,6 +605,13 @@ export interface PiAiModelProfile {
    * declares the offered levels and their wire spellings.
    */
   reasoningEfforts?: false | PiAiReasoningEfforts
+  /**
+   * The offered level a new session preselects. Absent defers to the route's
+   * `reasoning`; a level the model does not offer is dropped at resolution
+   * rather than refused, so tightening `reasoningEfforts` never leaves a
+   * stranded default behind.
+   */
+  defaultReasoningEffort?: ModelThinkingLevel
   /** pi-ai wire-compatibility switches for this model, winning over the route's per field; one its protocol does not declare is refused. */
   compat?: PiAiCompatProfile
 }
@@ -814,6 +821,15 @@ export interface RouteCatalog {
    * picked, so only an explicit configuration lands here.
    */
   configuredMaxTokens: ReadonlyMap<string, number>
+  /**
+   * Per-model preselect levels this profile explicitly configured, by model id.
+   *
+   * Parallel to {@link configuredMaxTokens}: only a level someone wrote is a
+   * request default. A level the model does not offer never lands here — the
+   * adapter drops it when describing the model — and an installed catalog
+   * entry carries no default of its own.
+   */
+  configuredDefaultEffort: ReadonlyMap<string, ModelThinkingLevel>
 }
 
 /**
@@ -879,6 +895,7 @@ export function resolveRouteModels(
   assertOfferedCompatFields(provider, 'route', request.compat)
   const seen = new Set<string>()
   const configuredMaxTokens = new Map<string, number>()
+  const configuredDefaultEffort = new Map<string, ModelThinkingLevel>()
   const resolveEntry = (entry: PiAiModelProfile): Model<Api> => {
     assertOfferedCompatFields(provider, `model "${entry.id}"`, entry.compat)
     if (entry.id.length === 0) invalid(provider, 'has a model with an empty id')
@@ -909,6 +926,12 @@ export function resolveRouteModels(
     // Only a value the profile named is a deployment choice; the catalog's is
     // the model's capability and stays out of request defaults.
     if (entry.maxTokens !== undefined) configuredMaxTokens.set(entry.id, entry.maxTokens)
+    // A preselect level rides the offered set: with `reasoningEfforts: false`
+    // the model cannot reason at all, so describing it drops the adapter's
+    // default anyway; with the field absent the route's `reasoning` answers.
+    if (entry.defaultReasoningEffort !== undefined) {
+      configuredDefaultEffort.set(entry.id, entry.defaultReasoningEffort)
+    }
     return {
       // The installed entry lays the floor, and the fields below override it.
       // Enumerating instead would silently drop every `Model` field this
@@ -953,5 +976,5 @@ export function resolveRouteModels(
     invalid(provider, `sets compat "${field}", but no model on the route speaks a protocol that takes it;`
       + ` it exists on ${takers.join(', ')}`)
   }
-  return { models: serviceableModels, configuredMaxTokens, modelErrors }
+  return { models: serviceableModels, configuredMaxTokens, configuredDefaultEffort, modelErrors }
 }

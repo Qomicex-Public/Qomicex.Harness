@@ -216,6 +216,12 @@ export interface ResolvedPiAiProviderProfile
    * own, so a catalog capability must not appear here.
    */
   configuredMaxTokens: ReadonlyMap<string, number>
+  /**
+   * Per-model preselect levels this profile explicitly configured, by model id.
+   * Only a level the model offers survives into the adapter's model
+   * description; an absent entry defers to the route-level `reasoning`.
+   */
+  configuredDefaultEffort: ReadonlyMap<string, ModelThinkingLevel>
 }
 
 /** Plugin configuration: the provider routes this instance owns. */
@@ -312,6 +318,10 @@ const modelFields = {
   // `{}`, and absent must stay distinguishable — it means "inherit the
   // installed catalog's capability", while `false` disables reasoning.
   reasoningEfforts: z.union([z.const(false), reasoningEfforts]),
+  // The level a new session preselects for this model. Resolution reads it
+  // only through the offered set — a level `reasoningEfforts` omits is dropped
+  // rather than refused, mirroring the route-level `reasoning` fallback below.
+  defaultReasoningEffort: z.union(THINKING_LEVELS),
   compat: compatProfile,
 }
 
@@ -501,6 +511,7 @@ export function resolveProfiles(
       ...rest.headers === undefined ? {} : { headers: { ...rest.headers } },
       ...rest.thinkingBudgets === undefined ? {} : { thinkingBudgets: { ...rest.thinkingBudgets } },
       configuredMaxTokens: catalog?.configuredMaxTokens ?? new Map(),
+      configuredDefaultEffort: catalog?.configuredDefaultEffort ?? new Map(),
       modelErrors: catalog?.modelErrors ?? new Map(),
       ...piProvider === undefined ? {} : { piProvider },
       ...catalogError === undefined ? {} : { catalogError },

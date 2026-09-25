@@ -2,10 +2,14 @@
  * Compact model catalog panel shared by both adapter editors.
  *
  * The reference design replaces the per-row disclosure with one panel: models
- * are chips (name, capacity summary, remove), the selected chip's settings sit
- * inline below, capacities offer preset chips beside the exact number inputs,
- * and reasoning effort is a single-select chip row. Effort writes the level
- * name as its wire value — the page exposes no per-level wire editing, so a
+ * are tiles (name, capacity summary, remove), the selected tile's settings sit
+ * inline below, capacities offer a preset segment track above the exact number
+ * input, and reasoning effort pairs an offered-level multi-select track with a
+ * default-level dropdown. Every option group speaks the app's
+ * segmented-control language — one rounded-rectangle track holding its options
+ * side by side, the chosen segment raised on the layer-1 surface. A newly
+ * offered effort level sends the level name as its wire value and a kept level
+ * keeps its stored spelling — the page exposes no per-level wire editing, so a
  * gateway that wants a different spelling stays a `cordis.patch.yml` edit.
  */
 
@@ -180,7 +184,7 @@ export function ModelCatalogPanel(props: ModelCatalogPanelProps): ReactNode {
                 key={index}
                 role="option"
                 aria-selected={index === clamped}
-                className={index === clamped ? styles['modelChipActive'] : styles['modelChip']}
+                className={index === clamped ? `${styles['modelChip']} ${styles['modelChipActive']}` : styles['modelChip']}
                 disabled={disabled}
                 onClick={() => { setSelected(index) }}
               >
@@ -249,67 +253,27 @@ export function ModelCatalogPanel(props: ModelCatalogPanelProps): ReactNode {
                 />
               </label>
             </div>
-            <div className={styles['modelChipRow']} role="group" aria-label={t('contextPresets')}>
-              {CONTEXT_PRESETS.map(preset => (
-                <button
-                  type="button"
-                  key={preset}
-                  aria-pressed={numberOf(current, 'contextWindow') === preset}
-                  className={styles['modelChip']}
-                  disabled={disabled}
-                  onClick={() => { props.onPatchRow(clamped, { contextWindow: preset }) }}
-                >
-                  {formatCapacity(preset)}
-                </button>
-              ))}
-            </div>
-            <div className={styles['modelChipRow']} role="group" aria-label={t('maxPresets')}>
-              {MAX_PRESETS.map(preset => (
-                <button
-                  type="button"
-                  key={preset}
-                  aria-pressed={numberOf(current, 'maxTokens') === preset}
-                  className={styles['modelChip']}
-                  disabled={disabled}
-                  onClick={() => { props.onPatchRow(clamped, { maxTokens: preset }) }}
-                >
-                  {formatCapacity(preset)}
-                </button>
-              ))}
-            </div>
-            <div className={styles['modelFieldRow']}>
-              <label className={styles['modelField']}>
-                <span className={styles['modelFieldLabel']}>{t('contextWindow')}</span>
-                <input
-                  className={styles['input']}
-                  type="text"
-                  inputMode="numeric"
-                  value={capacityInput('contextWindow', props.defaultContextWindow).value}
-                  placeholder={capacityInput('contextWindow', props.defaultContextWindow).placeholder}
-                  aria-label={`${t('contextWindow')} ${String(clamped + 1)}`}
-                  disabled={disabled}
-                  onChange={(event) => { capacityInput('contextWindow', props.defaultContextWindow).onChange(event.target.value) }}
-                  onBlur={capacityInput('contextWindow', props.defaultContextWindow).onBlur}
-                />
-              </label>
-              <label className={styles['modelField']}>
-                <span className={styles['modelFieldLabel']}>{t('maxTokens')}</span>
-                <input
-                  className={styles['input']}
-                  type="text"
-                  inputMode="numeric"
-                  value={capacityInput('maxTokens', props.defaultMaxTokens).value}
-                  placeholder={capacityInput('maxTokens', props.defaultMaxTokens).placeholder}
-                  aria-label={`${t('maxTokens')} ${String(clamped + 1)}`}
-                  disabled={disabled}
-                  onChange={(event) => { capacityInput('maxTokens', props.defaultMaxTokens).onChange(event.target.value) }}
-                  onBlur={capacityInput('maxTokens', props.defaultMaxTokens).onBlur}
-                />
-              </label>
-            </div>
+            <CapacityGroup
+              title={t('contextWindow')}
+              presets={CONTEXT_PRESETS}
+              value={numberOf(current, 'contextWindow')}
+              position={clamped + 1}
+              input={capacityInput('contextWindow', props.defaultContextWindow)}
+              disabled={disabled}
+              onPick={(preset) => { props.onPatchRow(clamped, { contextWindow: preset }) }}
+            />
+            <CapacityGroup
+              title={t('maxTokens')}
+              presets={MAX_PRESETS}
+              value={numberOf(current, 'maxTokens')}
+              position={clamped + 1}
+              input={capacityInput('maxTokens', props.defaultMaxTokens)}
+              disabled={disabled}
+              onPick={(preset) => { props.onPatchRow(clamped, { maxTokens: preset }) }}
+            />
             {props.efforts === true
               ? (
-                <ModelEffortChips
+                <ModelEffortEditor
                   model={current}
                   position={clamped + 1}
                   disabled={disabled}
@@ -318,39 +282,103 @@ export function ModelCatalogPanel(props: ModelCatalogPanelProps): ReactNode {
                 />
               )
               : null}
-            <div className={styles['modelChipRow']} role="group" aria-label={`${t('modelInputTypes')} ${String(clamped + 1)}`}>
-              {(['text', 'image'] as const).map((modality) => {
-                const active = inputTypes(current, props.inputField, props.inputDefaults?.get(textOf(current, 'id')) ?? props.routeDefaultInput).includes(modality)
-                return (
-                  <label className={styles['modelChipToggle']} key={modality}>
-                    <input
-                      type="checkbox"
-                      checked={active}
-                      aria-label={`${t(modality === 'text' ? 'modelInputText' : 'modelInputImage')} ${String(clamped + 1)}`}
-                      disabled={disabled || props.inputLoading === true}
-                      onChange={(event) => {
-                        const inherited = inputTypes(current, props.inputField, props.inputDefaults?.get(textOf(current, 'id')) ?? props.routeDefaultInput)
-                        const next = event.target.checked
-                          ? [...inherited, modality]
-                          : inherited.filter(kind => kind !== modality)
-                        const row: DeepSeekModelDraft = { ...current, [props.inputField]: next }
-                        // DeepSeek rejects image request limits on a text-only model.
-                        if (props.inputField === 'inputModalities' && !next.includes('image')) {
-                          Reflect.deleteProperty(row, 'imagePixelBudget')
-                          Reflect.deleteProperty(row, 'imageMaxBytes')
-                        }
-                        props.onReplaceRow(clamped, row)
-                      }}
-                    />
-                    <span>{t(modality === 'text' ? 'modelInputText' : 'modelInputImage')}</span>
-                  </label>
-                )
-              })}
+            <div className={styles['modelGroup']} role="group" aria-label={`${t('modelInputTypes')} ${String(clamped + 1)}`}>
+              <div className={styles['modelGroupTitle']}>{t('modelInputTypes')}</div>
+              <div className={styles['segmentTrack']}>
+                {(['text', 'image'] as const).map((modality) => {
+                  const active = inputTypes(current, props.inputField, props.inputDefaults?.get(textOf(current, 'id')) ?? props.routeDefaultInput).includes(modality)
+                  return (
+                    <label className={styles['segmentToggle']} key={modality}>
+                      <input
+                        type="checkbox"
+                        checked={active}
+                        aria-label={`${t(modality === 'text' ? 'modelInputText' : 'modelInputImage')} ${String(clamped + 1)}`}
+                        disabled={disabled || props.inputLoading === true}
+                        onChange={(event) => {
+                          const inherited = inputTypes(current, props.inputField, props.inputDefaults?.get(textOf(current, 'id')) ?? props.routeDefaultInput)
+                          const next = event.target.checked
+                            ? [...inherited, modality]
+                            : inherited.filter(kind => kind !== modality)
+                          const row: DeepSeekModelDraft = { ...current, [props.inputField]: next }
+                          // DeepSeek rejects image request limits on a text-only model.
+                          if (props.inputField === 'inputModalities' && !next.includes('image')) {
+                            Reflect.deleteProperty(row, 'imagePixelBudget')
+                            Reflect.deleteProperty(row, 'imageMaxBytes')
+                          }
+                          props.onReplaceRow(clamped, row)
+                        }}
+                      />
+                      <span>{t(modality === 'text' ? 'modelInputText' : 'modelInputImage')}</span>
+                    </label>
+                  )
+                })}
+              </div>
             </div>
           </div>
         )}
     </div>
   )
+}
+
+/**
+ * Render one labeled capacity block: title, preset chips, exact value input.
+ *
+ * The group follows the Appearance-row pattern (ui-theme) — a visible title
+ * above the chips — so the capacity presets read as settings rather than bare
+ * numbers. The exact input accepts any value the presets do not list.
+ * @param props - the field's title, presets, stored value and edit surface.
+ * @returns the labeled capacity group.
+ */
+function CapacityGroup(props: CapacityGroupProps): ReactNode {
+  const { title, presets, value, position, input, disabled } = props
+  return (
+    <div className={styles['modelGroup']}>
+      <div className={styles['modelGroupTitle']}>{title}</div>
+      <div className={styles['segmentTrack']} role="group" aria-label={title}>
+        {presets.map(preset => (
+          <button
+            type="button"
+            key={preset}
+            aria-pressed={value === preset}
+            className={styles['segment']}
+            disabled={disabled}
+            onClick={() => { props.onPick(preset) }}
+          >
+            {formatCapacity(preset)}
+          </button>
+        ))}
+      </div>
+      <input
+        className={styles['input']}
+        type="text"
+        inputMode="numeric"
+        value={input.value}
+        placeholder={input.placeholder}
+        aria-label={`${title} ${String(position)}`}
+        disabled={disabled}
+        onChange={(event) => { input.onChange(event.target.value) }}
+        onBlur={input.onBlur}
+      />
+    </div>
+  )
+}
+
+/** Props of {@link CapacityGroup}. */
+interface CapacityGroupProps {
+  /** Group title, also the exact input's accessible-name stem. */
+  title: string
+  /** Presets in escalation order. */
+  presets: readonly number[]
+  /** The row's stored count; undefined leaves the chips unselected. */
+  value: number | undefined
+  /** Row position in the list, for accessible names. */
+  position: number
+  /** The exact value's editable text surface. */
+  input: CapacityInput
+  /** Disable every mutation. */
+  disabled: boolean
+  /** Apply one preset for this field. */
+  onPick: (preset: number) => void
 }
 
 /** Every level a pi-ai model may declare, in the host's escalation order. */
@@ -365,78 +393,114 @@ const LEVEL_KEY: Readonly<Record<EffortLevel, ModelsKey>> = {
   high: 'effortHigh', xhigh: 'effortXhigh', max: 'effortMax',
 }
 
-/** Props of {@link ModelEffortChips}. */
-interface ModelEffortChipsProps {
-  /** The drafted model row; `reasoningEfforts` is the value edited here. */
+/** Props of {@link ModelEffortEditor}. */
+interface ModelEffortEditorProps {
+  /** The drafted model row; the effort fields are edited here. */
   model: DeepSeekModelDraft
   /** Row position in the list, for accessible names. */
   position: number
   /** Disable writes (read-only settings provider). */
   disabled: boolean
   t: (key: ModelsKey) => string
-  /** Receive the row with its `reasoningEfforts` rewritten. */
+  /** Receive the row with its effort fields rewritten. */
   onChange: (model: DeepSeekModelDraft) => void
 }
 
 /**
- * Render the single-select reasoning-effort chips.
+ * Render the reasoning-effort editor: an offered-level multi-select track and
+ * a default-level dropdown.
  *
- * A chip selects the level the model offers and sends the level name as its
- * wire value; clicking the selected chip again clears the field so the
- * installed catalog decides again. `reasoningEfforts: false` disables
- * reasoning outright.
+ * The offered levels are the `reasoningEfforts` keys; a newly offered level
+ * sends the level name as its wire spelling and a kept level keeps the
+ * spelling the row already carries, so the page exposes no per-level wire
+ * editing and a gateway's rename survives an edit. An offered set with no
+ * level beyond `off` cannot reason, so it is written as `false`, the host
+ * schema's non-reasoning declaration. The default level rides
+ * `defaultReasoningEffort` and only ever names an offered level: unchecking
+ * the defaulted level clears it, because the host drops a default the model
+ * does not offer.
  * @param props - the drafted row and its actions.
- * @returns the effort chip row.
+ * @returns the effort editor.
  */
-function ModelEffortChips(props: ModelEffortChipsProps): ReactNode {
+function ModelEffortEditor(props: ModelEffortEditorProps): ReactNode {
   const { model, position, t, disabled } = props
   const stored = model['reasoningEfforts']
-  const levels = typeof stored === 'object' && stored !== null
-    ? EFFORT_LEVELS.filter(level => (stored as Record<string, unknown>)[level] !== undefined)
-    : []
-  const write = (next: DeepSeekModelDraft['reasoningEfforts']): void => {
-    props.onChange(next === undefined
-      ? Object.fromEntries(Object.entries(model).filter(([key]) => key !== 'reasoningEfforts'))
-      : { ...model, reasoningEfforts: next })
+  const offered = stored === false || typeof stored !== 'object' || stored === null
+    ? []
+    : EFFORT_LEVELS.filter(level => (stored as Record<string, unknown>)[level] !== undefined)
+  const storedDefault = model['defaultReasoningEffort']
+  const defaultLevel = typeof storedDefault === 'string' && offered.includes(storedDefault as EffortLevel)
+    ? storedDefault as EffortLevel
+    : undefined
+  /** The stored `reasoningEfforts` shapes this editor can write. */
+  type EffortsValue = false | Record<string, unknown>
+  /** Rewrite both effort fields, dropping whichever this edit leaves unset. */
+  const write = (efforts: EffortsValue, nextDefault: EffortLevel | undefined): void => {
+    props.onChange({
+      ...Object.fromEntries(Object.entries(model).filter(([key]) =>
+        key !== 'reasoningEfforts' && key !== 'defaultReasoningEffort')),
+      reasoningEfforts: efforts,
+      ...nextDefault === undefined ? {} : { defaultReasoningEffort: nextDefault },
+    })
   }
+  const toggle = (level: EffortLevel, next: boolean): void => {
+    // A kept level keeps the wire spelling the row already carries, so an edit
+    // never rewrites a gateway's rename; a newly offered level sends the level
+    // name, which is all this page exposes.
+    const storedRecord = typeof stored === 'object' && stored !== null
+      ? stored as Record<string, unknown>
+      : {}
+    const levels = EFFORT_LEVELS.filter(candidate => candidate === level ? next : offered.includes(candidate))
+    const efforts: EffortsValue = levels.some(candidate => candidate !== 'off')
+      ? Object.fromEntries(levels.map(candidate => [
+        candidate,
+        offered.includes(candidate) ? storedRecord[candidate] : candidate,
+      ]))
+      : false
+    write(efforts, efforts !== false && defaultLevel !== undefined && levels.includes(defaultLevel)
+      ? defaultLevel
+      : undefined)
+  }
+  const hint = stored === false
+    ? t('modelEffortsDisableHint')
+    : stored === undefined
+      ? t('modelEffortsInherited')
+      : defaultLevel === undefined ? t('effortDefaultInherited') : t('modelEffortsHint')
   return (
-    <div className={styles['effortBlock']} role="group" aria-label={`${t('effortDefault')} ${String(position)}`}>
-      <div className={styles['effortHead']}>
-        <span className={styles['modelFieldLabel']}>{t('effortDefault')}</span>
-        <label className={styles['effortDisable']}>
-          <input
-            type="checkbox"
-            checked={stored === false}
-            aria-label={`${t('modelEffortsDisable')} ${String(position)}`}
-            disabled={disabled}
-            onChange={(event) => { write(event.target.checked ? false : undefined) }}
-          />
-          <span>{t('modelEffortsDisable')}</span>
-        </label>
+    <div className={styles['effortBlock']}>
+      <div className={styles['modelGroupTitle']}>{t('modelEfforts')}</div>
+      <div className={styles['segmentTrack']} role="group" aria-label={`${t('modelEfforts')} ${String(position)}`}>
+        {EFFORT_LEVELS.map(level => (
+          <label className={styles['segmentToggle']} key={level}>
+            <input
+              type="checkbox"
+              checked={offered.includes(level)}
+              aria-label={`${t(LEVEL_KEY[level])} ${String(position)}`}
+              disabled={disabled}
+              onChange={(event) => { toggle(level, event.target.checked) }}
+            />
+            <span>{t(LEVEL_KEY[level])}</span>
+          </label>
+        ))}
       </div>
-      {stored === false
-        ? <p className={styles['effortHint']}>{t('modelEffortsDisableHint')}</p>
-        : (
-          <>
-            <div className={styles['modelChipRow']}>
-              {EFFORT_LEVELS.map(level => (
-                <button
-                  type="button"
-                  key={level}
-                  aria-pressed={levels.includes(level)}
-                  className={levels.includes(level) ? styles['modelChipActive'] : styles['modelChip']}
-                  disabled={disabled}
-                  onClick={() => { write(levels.includes(level) ? undefined : { [level]: level }) }}
-                >
-                  {t(LEVEL_KEY[level])}
-                </button>
-              ))}
-            </div>
-            <p className={styles['effortHint']}>
-              {levels.length === 0 ? t('modelEffortsInherited') : t('modelEffortsHint')}
-            </p>
-          </>
-        )}
+      <div className={styles['effortDefaultRow']}>
+        <span className={styles['modelGroupTitle']}>{t('effortDefault')}</span>
+        <select
+          className={`${styles['input']} ${styles['selectInput']}`}
+          value={defaultLevel ?? ''}
+          disabled={disabled || offered.length === 0}
+          aria-label={`${t('effortDefault')} ${String(position)}`}
+          onChange={(event) => {
+            // Only offered levels reach the dropdown, so `stored` is a record
+            // whenever this handler can fire.
+            write(stored as EffortsValue, event.target.value === '' ? undefined : event.target.value as EffortLevel)
+          }}
+        >
+          <option value="">{t('effortInherit')}</option>
+          {offered.map(level => <option key={level} value={level}>{t(LEVEL_KEY[level])}</option>)}
+        </select>
+      </div>
+      <p className={styles['effortHint']}>{hint}</p>
     </div>
   )
 }

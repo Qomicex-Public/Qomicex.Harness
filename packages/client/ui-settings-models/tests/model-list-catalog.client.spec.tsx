@@ -18,6 +18,14 @@ function operations(discoverModels: ModelsOperations['discoverModels']): ModelsO
   }
 }
 
+/**
+ * The model chips, scoped to the catalog listbox. The effort dropdown's own
+ * options answer the bare role query, so every chip read goes through here.
+ */
+function modelOptions(): HTMLElement[] {
+  return within(screen.getByRole('listbox', { name: en.models })).getAllByRole('option')
+}
+
 it('ignores a late catalog response after the provider changes', async () => {
   const oldCatalog = Promise.withResolvers<ModelDiscoveryOutcome>()
   const newCatalog = Promise.withResolvers<ModelDiscoveryOutcome>()
@@ -30,7 +38,7 @@ it('ignores a late catalog response after the provider changes', async () => {
     disabled: false, t: (key: keyof typeof en) => en[key], onBusyChange: () => {},
   }
   const { rerender } = render(<ModelListEditor {...props} catalogProvider="old" probe={{ settingsNs: 'llm-pi-ai', provider: 'old' }} />)
-  fireEvent.click(screen.getAllByRole('option')[0] as HTMLElement)
+  fireEvent.click(modelOptions()[0] as HTMLElement)
   expect(screen.getByRole<HTMLInputElement>('checkbox', { name: `${en.modelInputImage} 1` }).disabled).toBe(true)
   rerender(<ModelListEditor {...props} catalogProvider="new" probe={{ settingsNs: 'llm-pi-ai', provider: 'new' }} />)
   await act(async () => { newCatalog.resolve({ kind: 'found', models: [{ id: 'm', inputModalities: ['text', 'image'] }] }) })
@@ -47,7 +55,7 @@ it('uses provider input defaults for a model absent from the installed catalog',
     probe={{ settingsNs: 'llm-pi-ai', provider: 'openai' }} disabled={false} t={key => en[key]} onBusyChange={() => {}}
     operations={operations(() => Promise.resolve({ kind: 'found', models: [] }))}
   />)
-  fireEvent.click(screen.getAllByRole('option')[0] as HTMLElement)
+  fireEvent.click(modelOptions()[0] as HTMLElement)
   const text = screen.getByRole<HTMLInputElement>('checkbox', { name: `${en.modelInputText} 1` })
   await waitFor(() => { expect(text.disabled).toBe(false) })
   expect(text.checked).toBe(false)
@@ -67,7 +75,7 @@ it('inherits catalog inputs once an incomplete draft has a model id', async () =
     })),
   }
   const { rerender } = render(<ModelListEditor {...props} models={[{}]} />)
-  fireEvent.click(screen.getAllByRole('option')[0] as HTMLElement)
+  fireEvent.click(modelOptions()[0] as HTMLElement)
   const image = screen.getByRole<HTMLInputElement>('checkbox', { name: `${en.modelInputImage} 1` })
   await waitFor(() => { expect(image.disabled).toBe(false) })
   expect(screen.getByRole<HTMLInputElement>('checkbox', { name: `${en.modelInputText} 1` }).checked).toBe(true)
@@ -94,7 +102,7 @@ it('restores inherited image input after a failed catalog read is retried manual
     operations={operations(discover)}
   />)
   await screen.findByText('Catalog unavailable')
-  fireEvent.click(screen.getAllByRole('option')[0] as HTMLElement)
+  fireEvent.click(modelOptions()[0] as HTMLElement)
   const image = screen.getByRole<HTMLInputElement>('checkbox', { name: `${en.modelInputImage} 1` })
   expect(image.checked).toBe(false)
 
