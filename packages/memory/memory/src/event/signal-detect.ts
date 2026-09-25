@@ -161,6 +161,27 @@ export const GENERIC_STATEMENT_STRENGTH = 0.6
 /** Minimum length a statement must reach to be worth staging. */
 const MIN_STATEMENT_LENGTH = 15
 
+/**
+ * Markers that open context the harness injects into a turn, not words the user
+ * spoke.
+ *
+ * Without this list the plugin stores its own injections as if they were user
+ * statements, which makes the memory system feed on itself: every turn's hot
+ * pack and runtime snapshot become fresh candidates, so the store grows each
+ * session and the pack it injects next time quotes itself. Mirror of the
+ * `INJECTED_MARKERS` in the dataset builder, kept here so both agree.
+ */
+const INJECTED_MARKERS: readonly string[] = [
+  '<system-reminder>',
+  '[MEMORY_HOT_PACK',
+  '[MEMORY_RECALL',
+  '[MEMORY_PATTERNS',
+  'Current runtime context',
+  'Instructions from:',
+  'This snapshot supersedes earlier',
+  'Current date',
+]
+
 /** Patterns that mark a message as procedural noise regardless of length. */
 const NOISE_PATTERNS: readonly RegExp[] = [
   /^\s*(?:null|undefined|true|false|\[\]|\{\})\s*$/i,
@@ -174,13 +195,15 @@ const NOISE_PATTERNS: readonly RegExp[] = [
  *
  * Relaxed intake means the rules stop *requiring* a keyword to admit content;
  * what they still reject is noise a future self never needs again: bare
- * acknowledgements, retry/undo commands, greetings, placeholder values, and
- * anything too short to carry a fact.
+ * acknowledgements, retry/undo commands, greetings, placeholder values, the
+ * context the harness injects into a turn, and anything too short to carry a
+ * fact.
  * @param text - The trimmed message text.
  * @returns `true` when the message should not stage a candidate.
  */
 export function isNoiseByRule(text: string): boolean {
   if (text.length < MIN_STATEMENT_LENGTH) return true
+  if (INJECTED_MARKERS.some(marker => text.includes(marker))) return true
   return NOISE_PATTERNS.some(pattern => pattern.test(text))
 }
 

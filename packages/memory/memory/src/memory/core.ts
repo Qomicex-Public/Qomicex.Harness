@@ -32,6 +32,7 @@ import type {
 } from '../types.ts'
 import { computeExcitability } from '../algorithms/excitability.ts'
 import { DAY_MS } from '../algorithms/fsrs.ts'
+import { reinforce } from '../algorithms/retention.ts'
 import { emptyRetention, isStructuralFact } from '../types.ts'
 
 /** What a write gate may inspect before deciding. */
@@ -197,6 +198,31 @@ export class MemoryCore implements ObservationSink {
    */
   async write(candidate: StagingCandidate): Promise<Memory | undefined> {
     const existing = (await this.tiers.every()).map(entry => entry.memory)
+    // The same fact restated is the same fact. Staging a second copy because
+    // the wording drifted, or because the same sentence was captured in another
+    // session, would grow the store without adding anything it knows — and the
+    // hot pack would then spend its budget repeating itself. Reinforcing the
+    // copy already stored keeps the tally honest (it counts how often the fact
+    // was reaffirmed) while the store keeps one row. Scope is part of the match:
+    // "this project uses pnpm" and a different project's pnpm are different
+    // facts that happen to read alike.
+    // Only a live memory can absorb a restatement. A deleted one is a decision
+    // the user made, and re-observing the same words is the one way that
+    // decision gets reversed - absorbing the restatement into the tombstoned row
+    // would reinforce a memory that is no longer there and leave the fact dead.
+    // "Live" means what the hot pack means by it, so a merge never revives
+    // something the pack would still refuse to show.
+    const duplicate = existing.find(memory =>
+      (memory.lifecycle.state === 'active' || memory.lifecycle.state === 'consolidated')
+      && memory.scope === candidate.scope
+      && memory.identity.contentHash === candidate.contentHash)
+    if (duplicate !== undefined) {
+      // `usage`, not `adjacency` or `mention`: the fact was restated by the
+      // user, which is the strongest of the three signals that it still matters.
+      await reinforce(this.tiers.store, duplicate.identity.id, 'usage', this.clock())
+      this.working.remove(candidate.id)
+      return undefined
+    }
     const context: GateContext = {
       existingMemories: existing,
       tombstones: await this.tiers.store.allTombstones(),

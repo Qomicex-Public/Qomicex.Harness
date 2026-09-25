@@ -38,6 +38,10 @@ function remoteStub() {
       graph: vi.fn(async () => ({ ok: true as const, value: graph })),
       status: vi.fn(async () => ({ ok: true as const, value: { mounted: true, total: 0 } })),
       forget: vi.fn(async () => ({ ok: true as const, value: { ok: true, detail: 'done' } })),
+      dedupeMemories: vi.fn(async () => ({
+        ok: true as const,
+        value: { ok: true, removed: 15, collapsed: 3, detail: 'merged' },
+      })),
     },
     // The distillation dropdowns read the provider directory and the settings
     // mirror; both are declared in the plugin's inject, so the bench must
@@ -129,8 +133,21 @@ describe('ui-settings-memory browser plugin', () => {
     await expect(injected.loadStatus()).resolves.toEqual({ mounted: true, total: 0 })
     expect(b.remote.memory.status).toHaveBeenCalledTimes(1)
 
-    await expect(injected.forget('m1', 'suppress')).resolves.toEqual({ kind: 'ok', value: { detail: 'done' } })
+    await expect(injected.forget?.('m1', 'suppress')).resolves.toEqual({ kind: 'ok', value: { detail: 'done' } })
     expect(b.remote.memory.forget).toHaveBeenCalledWith({ memoryId: 'm1', mode: 'suppress' })
+
+    // The cleanup passes the counts through, because a pass that merged forty
+    // copies and one that found nothing must not look identical on screen.
+    b.remote.memory.dedupeMemories.mockResolvedValueOnce({
+      ok: true as const,
+      value: { ok: true, removed: 15, collapsed: 3, detail: 'merged' },
+    } as never)
+    await expect(injected.dedupeMemories?.()).resolves.toEqual({
+      kind: 'ok',
+      value: { removed: 15, collapsed: 3 },
+    })
+    expect(b.remote.memory.dedupeMemories).toHaveBeenCalledTimes(1)
+
     await b.ctx.fiber.dispose()
   })
 
