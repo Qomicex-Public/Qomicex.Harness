@@ -119,6 +119,16 @@ export interface MemoryExtractionValue {
   readonly produced: number
 }
 
+/** Outcome of one duplicate-merge pass. */
+export interface MemoryDedupeValue {
+  readonly ok: boolean
+  /** Copies removed, so a store that said one thing sixteen times ends with one. */
+  readonly removed: number
+  /** Distinct facts those copies covered. */
+  readonly collapsed: number
+  readonly detail: string
+}
+
 /** One pattern state change requested from the Settings panel. */
 export interface MemoryPatternDecisionRequest {
   readonly patternId: string

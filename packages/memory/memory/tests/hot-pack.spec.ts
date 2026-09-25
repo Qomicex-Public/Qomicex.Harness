@@ -37,6 +37,55 @@ function core(memories: readonly Memory[]): MemoryCore {
   return { all: () => Promise.resolve([...memories]) } as unknown as MemoryCore
 }
 
+describe('hot pack deduplicates', () => {
+  it('collapses copies of the same fact to one entry, keeping the most important', async () => {
+    // The observed store said "project uses_package_manager pnpm" sixteen times,
+    // which spent the profile budget saying one thing. Whitespace and case are
+    // not meaning, so they must not buy a second entry either.
+    const same = (id: string, importance: number, raw: string): Memory =>
+      memory(id, {
+        content: { raw, kind: 'episodic', semantic: null, language: 'en' },
+        salience: { importance, usageCount: 0, userMarked: false, pinned: false },
+      })
+    const pack = await buildHotPack(core([
+      same('weak', 0.3, 'project uses_package_manager pnpm'),
+      same('strong', 0.9, '  project   uses_package_manager   pnpm  '),
+      same('shout', 0.5, 'PROJECT USES_PACKAGE_MANAGER PNPM'),
+    ]), projectScope('C:/repo'), NOW)
+
+    expect(pack.profile).toHaveLength(1)
+    expect(pack.profile[0]?.key).toBe('strong')
+    expect(pack.index).toHaveLength(1)
+    expect(pack.index[0]?.id).toBe('strong')
+  })
+
+  it('keeps facts apart when only their scope differs', async () => {
+    // A session pack reads both the session and project scopes, so one store can
+    // hold "uses pnpm" at two levels at once. They are two facts at two scopes;
+    // collapsing them would tell one level something decided at the other.
+    const atSession = memory('at_session', {
+      scope: SESSION,
+      content: { raw: 'project uses_package_manager pnpm', kind: 'episodic', semantic: null, language: 'en' },
+    })
+    const atProject = memory('at_project', {
+      scope: PROJECT,
+      content: { raw: 'project uses_package_manager pnpm', kind: 'episodic', semantic: null, language: 'en' },
+    })
+    const pack = await buildHotPack(core([atSession, atProject]), sessionScope('C:/repo', 's1'), NOW)
+
+    expect(pack.profile.map(entry => entry.key).sort()).toEqual(['at_project', 'at_session'])
+  })
+
+  it('leaves an empty content unmerged rather than merging blanks together', async () => {
+    const pack = await buildHotPack(core([
+      memory('blank_a', { content: { raw: '   ', kind: 'episodic', semantic: null, language: 'en' } }),
+      memory('blank_b', { content: { raw: '', kind: 'episodic', semantic: null, language: 'en' } }),
+    ]), projectScope('C:/repo'), NOW)
+
+    expect(pack.profile).toHaveLength(0)
+  })
+})
+
 describe('hot pack', () => {
   it('sorts user-stated facts into the profile and pinned ones into constraints', async () => {
     const pack = await buildHotPack(core([

@@ -51,11 +51,22 @@ export interface MemorySectionInjected {
   readonly loadGraph: () => Promise<LoadOutcome<MemoryGraphValue>>
   /** Read whether the plugin is mounted. */
   readonly loadStatus: () => Promise<{ readonly mounted: boolean; readonly total?: number }>
-  /** Forget one memory. */
-  readonly forget: (
+  /**
+   * Forget one memory. Absent when the memory Remote namespace is unreachable,
+   * which is the same condition that removes the graph and the panel with it.
+   */
+  readonly forget?: ((
     memoryId: string,
     mode: 'suppress' | 'delete' | 'deprecate',
-  ) => Promise<LoadOutcome<{ readonly detail: string }>>
+  ) => Promise<LoadOutcome<{ readonly detail: string }>>) | undefined
+  /**
+   * Merge the duplicate copies the store has accumulated. Absent when the
+   * memory Remote namespace is unreachable.
+   */
+  readonly dedupeMemories?: () => Promise<LoadOutcome<{
+    readonly removed: number
+    readonly collapsed: number
+  }>>
   /** The settings face over the plugin's profile entry. */
   readonly settings: MemorySettingsFace
   /**
@@ -132,7 +143,7 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
   const {
     t, loadGraph, loadStatus, loadDistillTargets,
     downloadModel, modelDownloadStatus, revealModelFile,
-    patterns, extractPatternsNow, decidePattern, settings,
+    patterns, extractPatternsNow, decidePattern, forget, dedupeMemories, settings,
   } = props
   const [graph, setGraph] = useState<MemoryGraphValue | undefined>(undefined)
   const [mounted, setMounted] = useState<boolean | undefined>(undefined)
@@ -236,6 +247,14 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
           node={selected}
           t={t}
           onClose={() => { setSelected(undefined) }}
+          onForget={forget === undefined
+            ? undefined
+            : async (memoryId, mode) => {
+              const outcome = await forget(memoryId, mode)
+              if (outcome.kind === 'failed') throw new Error(outcome.message)
+              setSelected(undefined)
+              await refresh()
+            }}
         />
       )}
 
@@ -287,6 +306,13 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
             if (outcome.kind === 'failed') throw new Error(outcome.message)
             return outcome.value
           }}
+        dedupeMemories={dedupeMemories === undefined
+          ? undefined
+          : async () => {
+            const outcome = await dedupeMemories()
+            if (outcome.kind === 'failed') throw new Error(outcome.message)
+            return outcome.value
+          }}
       />
     </section>
   )
@@ -297,8 +323,23 @@ function MemoryDetail(props: {
   node: MemoryNodeView
   t: MemorySectionProps['t']
   onClose: () => void
+  /** Delete this memory; absent when the memory Remote is unreachable. */
+  onForget?: ((memoryId: string, mode: 'delete') => Promise<void>) | undefined
 }): ReactNode {
-  const { node, t, onClose } = props
+  const { node, t, onClose, onForget } = props
+  const [removing, setRemoving] = useState(false)
+  const [failure, setFailure] = useState<string | undefined>(undefined)
+  const remove = async (): Promise<void> => {
+    if (onForget === undefined) return
+    setFailure(undefined)
+    setRemoving(true)
+    try {
+      await onForget(node.id, 'delete')
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : String(error))
+      setRemoving(false)
+    }
+  }
   return (
     <aside className={css.detail}>
       <header className={css.detailHeader}>
@@ -316,6 +357,14 @@ function MemoryDetail(props: {
         <div><dt>{t('detailForgetScore')}</dt><dd>{node.forgetScore.toFixed(2)}</dd></div>
         <div><dt>{t('detailObservedAt')}</dt><dd>{new Date(node.observedAt).toLocaleString()}</dd></div>
       </dl>
+      {onForget !== undefined && (
+        <div className={css.detailActions}>
+          <Button onClick={() => { void remove() }} disabled={removing}>
+            {removing ? t('detailDeleting') : t('detailDelete')}
+          </Button>
+          {failure !== undefined && <span className={css.muted}>{failure}</span>}
+        </div>
+      )}
     </aside>
   )
 }

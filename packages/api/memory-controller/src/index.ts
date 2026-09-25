@@ -19,6 +19,7 @@ import {
   memoryServices,
   applyGovernanceAction,
   applyLifecycleAction,
+  dedupeMemories,
   downloadJudgeModel,
   runExtraction,
 } from '@deepseek-ai/dsh-memory'
@@ -26,6 +27,7 @@ import type { Memory, Pattern } from '@deepseek-ai/dsh-memory'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { dirname } from 'node:path'
 import type {
+  MemoryDedupeValue,
   MemoryDownloadState,
   MemoryEdgeKind,
   MemoryEdgeView,
@@ -256,6 +258,34 @@ export class MemoryController extends TypertRemoteService {
       throw new RemoteError('memory/not-found', `no memory ${request.memoryId}`, { memoryId: request.memoryId })
     }
     return { ok: true, detail: `Applied ${request.mode} to ${request.memoryId}.` }
+  }
+
+  /**
+   * Merge the duplicate memories the store has already accumulated.
+   *
+   * The hot pack and the write path both deduplicate now, so no new duplicates
+   * appear; this is the repair for the ones stored before that. It is a click
+   * rather than an automatic pass because it deletes rows, and a deletion the
+   * user did not ask for is not one the system should perform on its own
+   * reading of "duplicate".
+   * @returns How many copies were merged and how many facts they covered.
+   * @throws RemoteError `memory/unavailable` when the plugin is not mounted.
+   */
+  @Remote
+  async dedupeMemories(): Promise<MemoryDedupeValue> {
+    const services = memoryServices(this.ctx)
+    if (services === undefined) {
+      throw new RemoteError('memory/unavailable', 'the bio-memory plugin is not mounted', {})
+    }
+    const report = await dedupeMemories(services.repository, Date.now())
+    return {
+      ok: true,
+      removed: report.removed,
+      collapsed: report.collapsed,
+      detail: report.removed === 0
+        ? 'No duplicate memories found.'
+        : `Merged ${report.removed} duplicate copies across ${report.collapsed} facts.`,
+    }
   }
 
   /**

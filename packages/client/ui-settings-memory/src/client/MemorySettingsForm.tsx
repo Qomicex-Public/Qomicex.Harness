@@ -84,6 +84,11 @@ export interface MemorySettingsFormProps {
     patternId: string,
     action: 'approve' | 'reject' | 'disable' | 'enable',
   ) => Promise<unknown>) | undefined
+  /** Merge the duplicate copies the store has accumulated. */
+  readonly dedupeMemories?: (() => Promise<{
+    readonly removed: number
+    readonly collapsed: number
+  }>) | undefined
 }
 
 /** One pattern row as the panel shows it. */
@@ -309,7 +314,7 @@ export function userHasPath(user: unknown, path: readonly string[]): boolean {
 export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
   const {
     settings, t, distillTargets, downloadModel, modelDownloadStatus, revealModelFile,
-    patterns, extractPatternsNow, decidePattern,
+    patterns, extractPatternsNow, decidePattern, dedupeMemories,
   } = props
   const [snapshot, setSnapshot] = useState<SettingsSnapshotView>(() => settings.snapshot())
   const [failure, setFailure] = useState<string | undefined>(undefined)
@@ -318,6 +323,8 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
   const [panelOpen, setPanelOpen] = useState(false)
   const [patternRows, setPatternRows] = useState<PatternRow[]>([])
   const [extracting, setExtracting] = useState(false)
+  const [deduping, setDeduping] = useState(false)
+  const [dedupeNote, setDedupeNote] = useState<string | undefined>(undefined)
   const [deciding, setDeciding] = useState<string | undefined>(undefined)
   /**
    * Which action the message on screen belongs to.
@@ -408,6 +415,30 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
       await revealModelFile()
     } catch (error) {
       setFailure(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  /**
+   * Merge the store's duplicate memories, then say how many went away.
+   *
+   * The count is the whole feedback: a pass that finds nothing looks identical
+   * to one that merged forty copies unless the number is shown, and a user who
+   * clicked this needs to know whether it did anything.
+   */
+  const runDedupe = async (): Promise<void> => {
+    if (dedupeMemories === undefined) return
+    setFailure(undefined)
+    setDedupeNote(undefined)
+    setDeduping(true)
+    try {
+      const value = await dedupeMemories()
+      setDedupeNote(value.removed === 0
+        ? t('field.dedupe.none')
+        : t('field.dedupe.done').replace('{removed}', String(value.removed)).replace('{collapsed}', String(value.collapsed)))
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : String(error))
+    } finally {
+      setDeduping(false)
     }
   }
 
@@ -529,6 +560,23 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
                   >
                     {extracting ? t('field.patternPanel.running') : t('field.patternPanel.extract')}
                   </Button>
+                </div>
+              </div>
+            )}
+            {group === 'patternExtraction' && dedupeMemories !== undefined && (
+              <div className={css.row}>
+                <div className={css.rowText}>
+                  <span className={css.label}>{t('field.dedupe.label')}</span>
+                  <span className={css.hint}>{t('field.dedupe.hint')}</span>
+                </div>
+                <div className={css.rowControl}>
+                  <Button
+                    onClick={() => { void runDedupe() }}
+                    disabled={deduping}
+                  >
+                    {deduping ? t('field.dedupe.running') : t('field.dedupe.action')}
+                  </Button>
+                  {dedupeNote !== undefined && <span className={css.muted}>{dedupeNote}</span>}
                 </div>
               </div>
             )}

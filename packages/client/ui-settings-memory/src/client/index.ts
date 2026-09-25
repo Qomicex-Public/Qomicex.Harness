@@ -114,6 +114,16 @@ export function apply(ctx: ClientContext): void {
       if (response.ok) return { kind: 'ok', value: response.value }
       return { kind: 'failed', code: response.error.code, message: response.error.message }
     },
+    dedupeMemories: async () => {
+      const response = await ctx.remote.memory.dedupeMemories()
+      if (response.ok) {
+        return {
+          kind: 'ok',
+          value: { removed: response.value.removed, collapsed: response.value.collapsed },
+        }
+      }
+      return { kind: 'failed', code: response.error.code, message: response.error.message }
+    },
     settings: {
       snapshot: () => form.getSnapshot(),
       subscribe: listener => form.subscribe(listener),

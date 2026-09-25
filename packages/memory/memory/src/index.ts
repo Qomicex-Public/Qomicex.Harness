@@ -176,6 +176,8 @@ export {
   runExtraction,
 } from './algorithms/patterns.ts'
 export type { ExtractionReport, PatternCandidate, PatternMatch, PatternThresholds, PruneReport } from './algorithms/patterns.ts'
+export { dedupeMemories } from './algorithms/dedupe.ts'
+export type { DedupeReport } from './algorithms/dedupe.ts'
 export {
   areIndependent,
   computeConfidence,
