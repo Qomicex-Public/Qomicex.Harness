@@ -383,7 +383,11 @@ export class LazyJudge implements LocalJudge {
   }
 }
 
-/** The verdict a boolean answer maps to; exported so tests read one name. */
+/**
+ * The verdict a boolean answer maps to; exported so tests read one name.
+ * @param shouldRemember - The judge's answer.
+ * @returns `remember` when the answer is true, otherwise `forget`.
+ */
 export function verdictOf(shouldRemember: boolean): JudgmentVerdict {
   return shouldRemember ? 'remember' : 'forget'
 }

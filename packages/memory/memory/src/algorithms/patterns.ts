@@ -91,7 +91,10 @@ export interface ExtractionReport {
   suppressed: number
 }
 
-/** An empty report. */
+/**
+ * An empty report.
+ * @returns A report with every counter at zero.
+ */
 export function emptyExtractionReport(): ExtractionReport {
   return { found: 0, created: 0, refreshed: 0, suppressed: 0 }
 }
@@ -105,6 +108,7 @@ export function emptyExtractionReport(): ExtractionReport {
  * @param memories - Every stored memory, both tiers.
  * @param retentions - Retention records keyed by memory id.
  * @param thresholds - The thresholds to apply.
+ * @param toolSequences - One ordered list of tool names per session.
  * @returns The proposed candidates, best-supported first.
  */
 export function extractPatterns(
@@ -487,7 +491,10 @@ export interface PruneReport {
   archived: number
 }
 
-/** An empty report. */
+/**
+ * An empty report.
+ * @returns A report with the archived count at zero.
+ */
 export function emptyPruneReport(): PruneReport {
   return { archived: 0 }
 }
@@ -525,7 +532,13 @@ export async function prunePatterns(
   return report
 }
 
-/** Whether enough time has passed to run extraction again. */
+/**
+ * Whether enough time has passed to run extraction again.
+ * @param lastExtractionAt - When extraction last ran, or `null` if never.
+ * @param intervalDays - Minimum days between runs.
+ * @param now - Current time (ms).
+ * @returns `true` when extraction has never run or the interval has lapsed.
+ */
 export function extractionDue(
   lastExtractionAt: number | null,
   intervalDays: number,

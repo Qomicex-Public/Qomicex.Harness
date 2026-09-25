@@ -1,5 +1,5 @@
 # MAPPING_TABLE — 移植映射表
-# STATUS: 完成(committed bb9b4346 + 95dff604)。5 包 30 测试绿、oxlint/typecheck/doc 门禁过；pentest+junsi 两个内置 preset 已建；ADR-001 记录；源排除项不移植。
+# STATUS: 完成。5 包 30 测试绿、oxlint/typecheck/doc 门禁过；pentest+junsi 两个内置 preset 已建；ADR-001 记录；源排除项不移植。
 # 源：C:\Project\dsh-junsi-dev-toolkit\plugins\memory-tools.mjs（515 行）
 # 目标：packages/junsi/memory-tools/src/index.ts（@deepseek-ai/dsh-tool-memory）
 # 策略：逐字翻译，仅适配目标 API 类型与 TS 严格性。

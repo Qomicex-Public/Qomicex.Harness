@@ -8,6 +8,7 @@
 |---|---|
 | [boot.md](boot.zh.md) | 当前 profile 插件管理与 launcher 重载协调 |
 | [core.md](core.zh.md) | `packages/core` 如何控制 agent loop（智能体循环）：逐包的循环说明、agent 创建与所有权（`AgentHandle`）、`Agent` 句柄的投递/取消/拦截约定，以及全仓通用类型模式（`…Map → derived-union`、品牌化 id） |
+| [memory.md](memory.zh.md) | 记忆子系统：面向 agent 的插件存储（捕获、判断、保留、整合、模式、策展）与记忆设置页背后的宿主侧控制器投影 |
 | [llm-streaming.md](llm-streaming.zh.md) | `packages/llm` 的对话类型——`Message`/`ContentBlock`、组装完成的模型请求、`StreamChunk` wire protocol 和适配器约定（adapter contract）、`BlockAssembler`，以及 `LlmAdapter` 提供方约定 |
 | [token-meter.md](token-meter.zh.md) | 不可变的标量与位置回放度量，附带已消费日志修订号 |
 | [scope.md](scope.zh.md) | 作用域注册标识、dispatch 载体，以及拥有的 `Scope` 上下文 |

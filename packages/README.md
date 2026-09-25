@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The harness is assembled from npm packages under `packages/`, grouped by capability family: sessions and the agent loop, model-facing tools, shell and filesystem execution, web access, subagents, and the rest. Use this page as the top-level map: find the owning group, then open its README for the package list. Every package is scoped `@deepseek-ai/dsh-*` and lives in exactly one group; each group README is the authoritative package map for its family.
+The harness is assembled from npm packages under `packages/`, grouped by capability family: sessions and the agent loop, model-facing tools, shell and filesystem execution, web access, subagents, and the rest. Every package is scoped `@deepseek-ai/dsh-*` and lives in exactly one group; each group README is the authoritative package map for its family.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ The harness is assembled from npm packages under `packages/`, grouped by capabil
 <a id="package-groups"></a>
 ## Package groups
 
-Every package lives in exactly one group; new packages join existing groups, and a new group updates its own README and this table.
+New packages join existing groups; a new group updates its own README and this table.
 
 | Group | Role |
 |---|---|

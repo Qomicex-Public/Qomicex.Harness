@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-With `dsh-web-firecrawl`, the harness searches the web and retrieves pages through Firecrawl: one plugin registers a search provider on `POST /v2/search` and a fetch provider on `POST /v2/scrape`, both under the id `firecrawl`. Search returns citeable sources with the engine description as `snippet` and no generated answer. Fetch returns the page as server-side markdown, reported as text, so the consumer skips HTML-to-markdown conversion and pages needing JavaScript rendering yield their content. No API key is required — Firecrawl serves search and scrape on a rate-limited free tier, and a key raises the limits — so a deployment can adopt one backend for both capabilities without provisioning a credential. The model-facing `web_search` and `web_fetch` tools live in `dsh-tool-web`.
+With `dsh-web-firecrawl`, the harness searches the web and retrieves pages through Firecrawl: one plugin registers a search provider and a fetch provider, both under the id `firecrawl`. Search returns citeable sources with the engine description as `snippet` and no generated answer. Fetch returns the page as server-side markdown, reported as text, so the consumer skips HTML-to-markdown conversion and pages needing JavaScript rendering yield their content. No API key is required — Firecrawl serves search and scrape on a rate-limited free tier, and a key raises the limits. The model-facing `web_search` and `web_fetch` tools live in `dsh-tool-web`.
 
 ## Table of Contents
 

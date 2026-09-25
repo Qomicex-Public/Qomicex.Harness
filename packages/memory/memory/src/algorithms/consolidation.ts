@@ -479,7 +479,10 @@ export class ConsolidationDaemon {
   }
 }
 
-/** An empty report. */
+/**
+ * An empty report.
+ * @returns A report with every counter at zero.
+ */
 export function emptyReport(): ConsolidationReport {
   return { replayed: 0, distilled: 0, decayed: 0, forgotten: 0, blockedByTombstone: 0, ttl: emptyTtlReport() }
 }

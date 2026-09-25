@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-web-firecrawl` 让 harness 通过 Firecrawl 搜索网页并抓取页面：一个插件在 `POST /v2/search` 注册搜索 provider、在 `POST /v2/scrape` 注册抓取 provider，两者同用 `firecrawl` 这一个 id。搜索返回可引用来源，引擎描述作为 `snippet`，不生成答复正文。抓取返回服务端 markdown，以 text 体上报，消费侧无需再做 HTML 转 markdown，需要 JavaScript 渲染的页面也能取到内容。无需 API key——Firecrawl 在限流的免费层提供搜索与抓取，配 key 则提升限额——部署因此无需预备凭据即可用一个后端覆盖两项能力。模型侧的 `web_search` 与 `web_fetch` 工具在 `dsh-tool-web`。
+`dsh-web-firecrawl` 让 harness 通过 Firecrawl 搜索网页并抓取页面：一个插件注册搜索 provider 与抓取 provider，两者同用 `firecrawl` 这一个 id。搜索返回可引用来源，引擎描述作为 `snippet`，不生成答复正文。抓取返回服务端 markdown，以 text 体上报，消费侧无需再做 HTML 转 markdown，需要 JavaScript 渲染的页面也能取到内容。无需 API key——Firecrawl 在限流的免费层提供搜索与抓取，配 key 则提升限额。模型侧的 `web_search` 与 `web_fetch` 工具在 `dsh-tool-web`。
 
 ## 目录
 

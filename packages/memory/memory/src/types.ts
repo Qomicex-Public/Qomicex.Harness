@@ -492,7 +492,13 @@ export interface RetentionRecord {
   lastReinforcedAt: number
 }
 
-/** An empty retention record for a freshly written memory. */
+/**
+ * An empty retention record for a freshly written memory.
+ * @param memoryId - The memory the record tracks.
+ * @param excitabilityScore - Excitability recorded at write time.
+ * @param now - Write time (ms).
+ * @returns The fresh record with every signal at zero.
+ */
 export function emptyRetention(memoryId: string, excitabilityScore: number, now: number): RetentionRecord {
   return {
     memoryId,
@@ -504,7 +510,11 @@ export function emptyRetention(memoryId: string, excitabilityScore: number, now:
   }
 }
 
-/** Whether a memory's fact key marks it as structural (TTL exempt). */
+/**
+ * Whether a memory's fact key marks it as structural (TTL exempt).
+ * @param memory - The memory.
+ * @returns `true` when the fact's subject and predicate are both structural.
+ */
 export function isStructuralFact(memory: Memory): boolean {
   const key = memory.identity.semanticKey
   if (key === null) return false

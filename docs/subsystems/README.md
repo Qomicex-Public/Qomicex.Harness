@@ -8,6 +8,7 @@ One page per subsystem of the DeepSeek Harness: what it is, the data structures 
 |---|---|
 | [boot.md](boot.md) | Current-profile plugin management and launcher reload coordination |
 | [core.md](core.md) | how `packages/core` controls the agent loop: the package-by-package loop description, agent creation and ownership (`AgentHandle`), the `Agent` handle's delivery/cancellation/interception contracts, and the repo-wide type patterns (`…Map → derived-union`, branded ids) |
+| [memory.md](memory.md) | the memory subsystem: the agent-facing plugin store (capture, judgment, retention, consolidation, patterns, curation) and the Host-side controller projection behind the Memory Settings page |
 | [llm-streaming.md](llm-streaming.md) | the `packages/llm` conversation types — `Message`/`ContentBlock`, the assembled model request, the `StreamChunk` wire protocol and adapter contract, `BlockAssembler`, and the `LlmAdapter` provider contract |
 | [token-meter.md](token-meter.md) | immutable scalar and positional replay measurements with consumed-log revisions |
 | [scope.md](scope.md) | scoped registration identity, dispatch carriers, and the owned `Scope` context |
