@@ -89,7 +89,6 @@ Tools register under the same bare names as the upstream project-docs MCP server
 Read these pages when the package-level contract is not enough. They move from the preset to the tools subsystem.
 
 - [junsi group map](../README.md) — the sibling group page and its package table.
-- [Junsi preset composition](../../../preset/agent-presets/presets/junsi) — where this package is mounted and its skills live.
 - [Tools subsystem reference](../../../docs/subsystems/tools.md) — the tool-registration contract.
 
 -----

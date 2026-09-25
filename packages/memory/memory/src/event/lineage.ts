@@ -108,7 +108,11 @@ class SessionLineage {
 export class CausalLineage {
   private readonly sessions = new Map<string, SessionLineage>()
 
-  /** The lineage state of one session, created on demand. */
+  /**
+   * The lineage state of one session, created on demand.
+   * @param sessionId - The session id.
+   * @returns The session's lineage tracker, created when first requested.
+   */
   for(sessionId: string): SessionLineage {
     let lineage = this.sessions.get(sessionId)
     if (lineage === undefined) {
@@ -118,7 +122,10 @@ export class CausalLineage {
     return lineage
   }
 
-  /** Release one session's lineage state. */
+  /**
+   * Release one session's lineage state.
+   * @param sessionId - The session id.
+   */
   release(sessionId: string): void {
     this.sessions.delete(sessionId)
   }

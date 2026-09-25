@@ -40,7 +40,7 @@ function face(options: { value?: unknown; failure?: string } = {}) {
 }
 
 /** Props for one row; only `field` and the shared framework seats matter here. */
-function props(settings: AutomationSettingsFace | undefined): AutomationRowProps {
+function props(settings: AutomationSettingsFace): AutomationRowProps {
   return { t, close: () => {}, settings } as unknown as AutomationRowProps
 }
 
@@ -60,18 +60,23 @@ describe('automation settings rows', () => {
     await waitFor(() => { expect(screen.getByLabelText<HTMLSelectElement>('Browser').value).toBe('chromium') })
   })
 
-  it('disables every control when no settings service is mounted', async () => {
+  it('disables every control when the namespace is not served', async () => {
+    const unavailable = {
+      snapshot: (): SettingsSnapshotView => ({ status: 'unavailable', value: undefined, user: undefined, writable: false, revision: undefined }),
+      subscribe: () => () => {},
+      mutate: vi.fn(async (): Promise<void> => {}),
+    } satisfies AutomationSettingsFace
     render(<>
-      <BrowserRow {...props(undefined)} />
-      <BrowserPathRow {...props(undefined)} />
-      <HeadlessRow {...props(undefined)} />
+      <BrowserRow {...props(unavailable)} />
+      <BrowserPathRow {...props(unavailable)} />
+      <HeadlessRow {...props(unavailable)} />
     </>)
     await waitFor(() => { expect(screen.getAllByText(/No settings service/)).toHaveLength(3) })
     expect(screen.getByLabelText<HTMLSelectElement>('Browser').disabled).toBe(true)
     expect(screen.getByLabelText<HTMLInputElement>('Browser path').disabled).toBe(true)
     expect(screen.getByLabelText<HTMLInputElement>('Headless').disabled).toBe(true)
     // A disabled control still reaches its handler when an event is forced, and
-    // the write must drop it rather than touch an absent face.
+    // the write must drop it rather than touch an unserved form.
     fireEvent.change(screen.getByLabelText<HTMLSelectElement>('Browser'), { target: { value: 'msedge' } })
     expect(screen.queryByText(/Failed to save/)).toBeNull()
   })

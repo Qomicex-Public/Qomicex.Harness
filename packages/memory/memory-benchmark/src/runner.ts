@@ -374,7 +374,11 @@ function blockedRows(rejected: readonly { candidate: StagingCandidate; reason: s
     .map(entry => ({ candidate: entry.candidate, tombstoneId: '', reason: entry.reason }))
 }
 
-/** The rule signal a user message produces, mirroring the observer's rules. */
+/**
+ * The rule signal a user message produces, mirroring the observer's rules.
+ * @param text - The user message.
+ * @returns The signal, or `undefined` when no rule matches.
+ */
 export function userSignalOf(text: string): CaptureSignal | undefined {
   const extracted = extractManager(text)
   if (/(?:不对|错了|纠正|actually,?\s+correction)/i.test(text)) {
@@ -402,7 +406,11 @@ function extractManager(text: string): CaptureSignal['extracted'] {
   }
   return undefined
 }
-/** The rule signal an agent message produces. */
+/**
+ * The rule signal an agent message produces.
+ * @param text - The agent message.
+ * @returns The signal, or `undefined` when no rule matches.
+ */
 export function agentSignalOf(text: string): CaptureSignal | undefined {
   if (/(?:我猜|估计|可能|应该是|I\s+(?:guess|think)|probably|maybe)/i.test(text)) {
     return { type: 'agent_claim', strength: 0.4, epistemic: 'hypothesis', sourceType: 'agent_inference' }
@@ -413,7 +421,12 @@ export function agentSignalOf(text: string): CaptureSignal | undefined {
   return undefined
 }
 
-/** The rule signal a tool result produces. */
+/**
+ * The rule signal a tool result produces.
+ * @param name - The tool name.
+ * @param result - The tool result: text, or an object carrying `content`.
+ * @returns The signal, or `undefined` when the result states no fact.
+ */
 export function toolSignalOf(name: string, result: unknown): CaptureSignal | undefined {
   if (name !== 'read') return undefined
   let text: string | undefined
@@ -442,7 +455,11 @@ export function toolSignalOf(name: string, result: unknown): CaptureSignal | und
   }
 }
 
-/** The fact key one memory claims, or `undefined`. */
+/**
+ * The fact key one memory claims, or `undefined`.
+ * @param memory - The memory.
+ * @returns The composite fact key, or `undefined` when the memory has none.
+ */
 export function factKeyOf(memory: Memory): string | undefined {
   const key = memory.identity.semanticKey
   return key === null ? undefined : `${key.subject}|${key.predicate}|${key.normalizedObject ?? ''}`

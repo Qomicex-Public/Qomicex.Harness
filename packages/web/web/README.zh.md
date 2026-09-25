@@ -33,7 +33,7 @@ kind: "package-reference"
 
 ### 最小配置
 
-加载服务并让唯一挂载的后端自动选择，或用 `searchProvider`／`fetchProvider` 固定提供方 id。环境变量 `$DSH_WEB_SEARCH_PROVIDER` 与 `$DSH_WEB_FETCH_PROVIDER` 提供相同字段，不是另一条优先级链。同样两个字段也位于 `web` 设置命名空间中，因此自带的通用设置页无需配置文件即可切换任一项后端；选择在每次调用时重新读取，提交后的更改在下一次搜索或抓取生效。
+加载服务并让唯一挂载的后端自动选择，或用 `searchProvider`／`fetchProvider` 固定提供方 id。环境变量 `$DSH_WEB_SEARCH_PROVIDER` 与 `$DSH_WEB_FETCH_PROVIDER` 提供相同字段，不是另一条优先级链。同样两个字段是实时配置，自带的通用设置页无需配置文件即可切换任一项后端，编辑通过 profile 补丁持久化；选择在每次调用时重新读取，提交后的更改在下一次搜索或抓取生效。
 
 ```yaml
 - name: '@deepseek-ai/dsh-web'

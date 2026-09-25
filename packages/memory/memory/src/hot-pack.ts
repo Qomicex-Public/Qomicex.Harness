@@ -51,6 +51,7 @@ export const HOT_PACK_GENERATOR = { name: 'dsh-bio-memory', version: '0.1.6-alph
  * @param scope - The scope to build for.
  * @param now - Build time (ms).
  * @param patterns - The approved patterns to carry, already filtered by the caller.
+ * @param integrations - Sections contributed by other tools, relayed verbatim.
  * @returns The pack.
  */
 export async function buildHotPack(

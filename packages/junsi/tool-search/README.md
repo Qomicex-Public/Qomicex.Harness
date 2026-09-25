@@ -80,9 +80,7 @@ Each call lowercases the trimmed keyword and filters entries whose `${id} ${use}
 Read these pages when the package-level contract is not enough. They move from the preset to the tool and skills subsystems.
 
 - [junsi group map](../README.md) — the sibling group page and its package table.
-- [Junsi preset composition](../../../preset/agent-presets/presets/junsi) — where this package is mounted and its skills live.
 - [Tools subsystem reference](../../../docs/subsystems/tools.md) — the tool-registration contract.
-- [Generated tool catalog](../../../docs/tool-catalog.md#deepseek-aidsh-tool-tool-search) — the exact `tool-search` schema.
 
 -----
 

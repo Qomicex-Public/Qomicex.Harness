@@ -59,6 +59,8 @@ kind: "package-reference"
 
 可直接套用的覆盖层位于 [`apps/cli/config/examples/memory/cordis.yml`](../../../apps/cli/config/examples/memory/cordis.yml)；用 `dsh --patch <path>` 应用。
 
+该配置中的每个字段都是 volatile，因此 Harness 会把它投影为记忆设置页中的可编辑表单：提交的编辑无需重启即作用于运行中的插件，并持久化到 profile patch——即上方覆盖层所写入的那一层。
+
 ### 四个工具
 
 | 工具 | 作用 |
@@ -250,3 +252,5 @@ Writing is automatic — there is no tool to remember something, so just say it 
 `bio_memory` 存储 domain 为版本 1。修改记录 schema 意味着提升 domain 版本并添加迁移路径，因为该 domain 会拒绝不符合 schema 的记录，而不是降级处理。
 
 </details>
+
+**Runtime invariant:** 不发布伴随包。实现章节列出的每条关系都由拥有该决策的操作在内部强制——门控、血缘指派与冲突标记都运行在写入路径本身——持久记录的保证属于 `bio_memory` 存储 domain；插件不保有自己的第二份独立投影可供伴随包比对。

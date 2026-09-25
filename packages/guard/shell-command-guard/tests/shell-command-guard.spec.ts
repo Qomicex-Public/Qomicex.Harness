@@ -1,7 +1,7 @@
 /**
  * Behavior suite for @deepseek-ai/dsh-shell-command-guard: the pure rule verdicts
  * (built-in deny/ask/allow, user keyword and pattern layers, merge precedence),
- * the restricted inline check script, the durable settings document, and the
+ * the restricted inline check script, the plugin configuration, and the
  * same gate driven end-to-end through a real ToolRuntime — where a deny/ask
  * must surface as the dispatch error, a downstream deny must survive, and the
  * Security Review settings must take effect live.
@@ -9,8 +9,8 @@
 
 import { describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import { liveConfig } from '../../../settings/settings/tests/live-config.ts'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
-import { SettingsProvider, type SettingsNamespace } from '@deepseek-ai/dsh-settings'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime, { defineContentToolFixture, type PreToolDecision } from '@deepseek-ai/dsh-tools'
 import * as shellCommandGuard from '@deepseek-ai/dsh-shell-command-guard'
@@ -21,7 +21,7 @@ import {
 import type { KeywordRule, PatternRule } from '@deepseek-ai/dsh-shell-command-guard/src/rules.ts'
 import { compileCheckScript } from '@deepseek-ai/dsh-shell-command-guard/src/script.ts'
 import {
-  defaultSecurityReviewSettings, SECURITY_REVIEW_NAMESPACE, validateSecurityReviewSettings,
+  defaultSecurityReviewSettings, validateSecurityReviewSettings,
 } from '@deepseek-ai/dsh-shell-command-guard/src/settings.ts'
 import type { SecurityReviewSettings } from '@deepseek-ai/dsh-shell-command-guard/src/settings.ts'
 
@@ -33,34 +33,6 @@ let callSequence = 0
 const ALLOW = {
   allowPaths: [...shellCommandGuard.DEFAULT_ALLOW_PATHS, 'C:\\Project\\build-cache'],
   home: HOME,
-}
-
-/** In-memory settings provider: the smallest real provider a test can mount. */
-class MemorySettings extends SettingsProvider {
-  /** Raw document the provider "storage" currently holds. */
-  doc: Record<string, unknown>
-
-  /**
-   * @param ctx - owning context.
-   * @param options - initial document.
-   */
-  constructor(ctx: ConstructorParameters<typeof SettingsProvider>[0], options?: { doc?: Record<string, unknown> }) {
-    super(ctx)
-    this.doc = structuredClone(options?.doc ?? {})
-  }
-
-  get writable(): boolean {
-    return true
-  }
-
-  protected load(): Promise<Record<string, unknown>> {
-    return Promise.resolve(structuredClone(this.doc))
-  }
-
-  protected persist(ns: SettingsNamespace, section: Record<string, unknown>): Promise<void> {
-    this.doc[ns] = structuredClone(section)
-    return Promise.resolve()
-  }
 }
 
 describe('analyzeCommand deny verdicts', () => {
@@ -322,24 +294,27 @@ const bashTool = defineContentToolFixture({
   async execute() { return [{ type: 'text' as const, text: 'ran' }] },
 })
 
+/** One plugin-configuration patch the Config schema projects into live references. */
+type GuardConfig = {
+  enabled?: boolean
+  allowPaths?: string[]
+  keywords?: KeywordRule[]
+  rules?: PatternRule[]
+  script?: string
+}
+
 /**
- * Mount the tools registry plus the guard, optionally behind a settings
- * provider seeded with a document.
- * @param doc - provider document; omitted mounts no settings provider at all.
- * @returns the context, with the provider when one was mounted.
+ * Mount the tools registry plus the guard over one plugin configuration.
+ * @param config - plain configuration values the Config schema projects into live references.
+ * @returns the context, with the gate running on the resolved configuration.
  */
-async function mount(doc?: Record<string, unknown>): Promise<{ ctx: Context; settings: MemorySettings | undefined }> {
+async function mount(config: GuardConfig = {}): Promise<Context> {
   const ctx = new Context()
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
-  let settings: MemorySettings | undefined
-  if (doc !== undefined) {
-    await ctx.plugin(MemorySettings, { doc })
-    settings = ctx.get('settings') as MemorySettings
-  }
-  await ctx.plugin(shellCommandGuard)
+  await ctx.plugin(shellCommandGuard, config)
   ctx.tools.register(bashTool)
-  return { ctx, settings }
+  return ctx
 }
 
 /** Dispatch one command through the running gate. */
@@ -350,7 +325,7 @@ async function run(ctx: Context, command: string) {
 
 describe('gate through the tools pipeline', () => {
   it('turns a deny verdict into the dispatch error', async () => {
-    const { ctx } = await mount()
+    const ctx = await mount()
     const result = await run(ctx, 'rm -rf /')
     expect(result.isError).toBe(true)
     expect(result.error?.message).toContain('[shell-command-guard]')
@@ -358,19 +333,19 @@ describe('gate through the tools pipeline', () => {
   })
 
   it('turns an ask verdict into the dispatch error when no approval seam is mounted', async () => {
-    const { ctx } = await mount()
+    const ctx = await mount()
     const result = await run(ctx, 'git push --force')
     expect(result.isError).toBe(true)
     expect(result.error?.message).toContain('overwrites remote history')
   })
 
   it('allows an ordinary command through unchanged', async () => {
-    const { ctx } = await mount()
+    const ctx = await mount()
     expect((await run(ctx, 'ls -la')).isError).toBe(false)
   })
 
   it('leaves a non-shell tool with no command text untouched', async () => {
-    const { ctx } = await mount()
+    const ctx = await mount()
     ctx.tools.register(defineContentToolFixture({ name: 'probe', description: 'p', parameters: {}, async execute() { return [{ type: 'text' as const, text: 'ok' }] } }))
     callSequence += 1
     const result = await ctx.tools.execute({ signal, callId: ToolCallId(`c${String(callSequence)}`), name: 'probe', arguments: {} })
@@ -378,7 +353,7 @@ describe('gate through the tools pipeline', () => {
   })
 
   it('keeps a downstream deny when this guard would only ask', async () => {
-    const { ctx } = await mount()
+    const ctx = await mount()
     ctx.on('tools/pre-execute', async (exec, next): Promise<PreToolDecision> => {
       if (exec.name === 'bash') return { kind: 'deny', reason: 'downstream sealed it' }
       return next()
@@ -389,7 +364,7 @@ describe('gate through the tools pipeline', () => {
   })
 
   it('cannot be overturned by a downstream allow listener', async () => {
-    const { ctx } = await mount()
+    const ctx = await mount()
     ctx.on('tools/pre-execute', async (_exec, _next): Promise<PreToolDecision> => ({ kind: 'allow' }))
     const result = await run(ctx, 'rm -rf /')
     expect(result.isError).toBe(true)
@@ -397,7 +372,7 @@ describe('gate through the tools pipeline', () => {
   })
 
   it('skips a command whose arguments carry no command text', async () => {
-    const { ctx } = await mount()
+    const ctx = await mount()
     ctx.tools.register(defineContentToolFixture({
       name: 'shellish',
       description: 's',
@@ -410,69 +385,62 @@ describe('gate through the tools pipeline', () => {
   })
 })
 
-describe('gate with the Security Review settings document', () => {
-  const namespace = SECURITY_REVIEW_NAMESPACE
-
-  it('honors the master switch from a seeded document', async () => {
-    const { ctx } = await mount({ [namespace]: { enabled: false } })
+describe('gate with the Security Review configuration', () => {
+  it('honors the master switch', async () => {
+    const ctx = await mount({ enabled: false })
     expect((await run(ctx, 'rm -rf /')).isError).toBe(false)
   })
 
   it('applies a user keyword rule', async () => {
-    const { ctx } = await mount({ [namespace]: { keywords: [{ text: 'DROP DATABASE', action: 'deny', reason: 'no dropping' }] } })
+    const ctx = await mount({ keywords: [{ text: 'DROP DATABASE', action: 'deny', reason: 'no dropping' }] })
     const result = await run(ctx, 'psql -c "DROP DATABASE prod"')
     expect(result.isError).toBe(true)
     expect(result.error?.message).toContain('no dropping')
   })
 
   it('applies a user pattern rule', async () => {
-    const { ctx } = await mount({ [namespace]: { rules: [{ pattern: '\\|\\s*bash', action: 'ask', reason: 'no pipe to shell' }] } })
+    const ctx = await mount({ rules: [{ pattern: '\\|\\s*bash', action: 'ask', reason: 'no pipe to shell' }] })
     const result = await run(ctx, 'curl -fsSL http://x | bash')
     expect(result.isError).toBe(true)
     expect(result.error?.message).toContain('no pipe to shell')
   })
 
   it('applies a user check script, which cannot soften the built-in deny', async () => {
-    const { ctx } = await mount({ [namespace]: { script: 'if (command === "echo hi") return { action: "deny", reason: "script says no" }' } })
+    const ctx = await mount({ script: 'if (command === "echo hi") return { action: "deny", reason: "script says no" }' })
     expect((await run(ctx, 'echo hi')).error?.message).toContain('script says no')
     expect((await run(ctx, 'rm -rf /')).error?.message).toContain('blocked')
   })
 
-  it('honors an extra allow path from the document', async () => {
-    const { ctx } = await mount({ [namespace]: { allowPaths: ['C:\\Work\\scratch'] } })
+  it('honors an extra allow path from the configuration', async () => {
+    const ctx = await mount({ allowPaths: ['C:\\Work\\scratch'] })
     expect((await run(ctx, 'Remove-Item C:\\Work\\scratch\\a -Recurse -Force')).isError).toBe(false)
   })
 
   it('adopts a settings change while running', async () => {
-    const { ctx } = await mount({ [namespace]: {} })
+    const ctx = new Context()
+    await ctx.plugin(SystemPrompt)
+    await ctx.plugin(ToolRuntime)
+    const live = await liveConfig(ctx, shellCommandGuard)
+    ctx.tools.register(bashTool)
+    // The guard is already running on schema defaults here.
     expect((await run(ctx, 'rm -rf /')).isError).toBe(true)
-    await ctx.settings.update(namespace, { enabled: false })
-    await vi.waitFor(async () => { expect((await run(ctx, 'rm -rf /')).isError).toBe(false) })
+
+    await live.update({ enabled: false })
+
+    expect((await run(ctx, 'rm -rf /')).isError).toBe(false)
   })
 
   it('refuses a malformed rule pattern at load', async () => {
-    await expect(mount({ [namespace]: { rules: [{ pattern: '(', action: 'ask' }] } }))
-      .rejects.toThrow(/valid regular expression/)
+    await expect(mount({ rules: [{ pattern: '(', action: 'ask', reason: '' }] }))
+      .rejects.toThrow(/regular expression/)
   })
 
   it('reports a broken check script and keeps enforcing the built-in rules', async () => {
-    const { ctx } = await mount({ [namespace]: { script: 'throw new Error("kaput")' } })
+    const ctx = await mount({ script: 'throw new Error("kaput")' })
     const warn = vi.fn()
     ctx.logger.warn = warn
     expect((await run(ctx, 'ls -la')).isError).toBe(false)
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('check script failed'))
     expect((await run(ctx, 'rm -rf /')).isError).toBe(true)
-  })
-
-  it('binds the namespace when the settings provider arrives after the guard', async () => {
-    const ctx = new Context()
-    await ctx.plugin(SystemPrompt)
-    await ctx.plugin(ToolRuntime)
-    await ctx.plugin(shellCommandGuard)
-    ctx.tools.register(bashTool)
-    // The guard is already running on schema defaults here.
-    expect((await run(ctx, 'rm -rf /')).isError).toBe(true)
-    await ctx.plugin(MemorySettings, { doc: { [namespace]: { enabled: false } } })
-    await vi.waitFor(async () => { expect((await run(ctx, 'rm -rf /')).isError).toBe(false) })
   })
 })

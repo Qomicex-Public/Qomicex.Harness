@@ -66,7 +66,7 @@ export interface ToolContext {
 /**
  * Render one recalled memory as a single labelled line.
  * @param memory - The memory.
- * @param result - Its recall result.
+ * @param relevance - The recall's relevance score.
  * @returns The rendered line.
  */
 export function formatRecall(memory: Memory, relevance: number): string {

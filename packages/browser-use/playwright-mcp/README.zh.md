@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-通过 Playwright MCP 的上游工具检查网页并操作 Chromium。提供方在 Session 创建或恢复完成前初始化其 MCP 连接，并跨轮次保留连接。可以启动独立浏览器，也可以让一个 Session 接入已有浏览器，使用其现有标签页和登录状态。启动模式在每次浏览器启动时读取 `automation` 设置命名空间，用户在设置页选择的浏览器类型、可执行路径与无头选项会对之后打开的每个浏览器生效。本包以实验状态发布，仅在显式挂载后启用。
+通过 Playwright MCP 的上游工具检查网页并操作 Chromium。提供方在 Session 创建或恢复完成前初始化其 MCP 连接，并跨轮次保留连接。可以启动独立浏览器，也可以让一个 Session 接入已有浏览器，使用其现有标签页与登录状态。启动模式在每次浏览器启动时读取实时提供方配置，用户在设置页选择的浏览器类型、可执行路径与无头选项会对之后打开的每个浏览器生效。本包以实验状态发布，仅在显式挂载后启用。
 
 ## 目录
 
@@ -49,9 +49,9 @@ kind: "package-reference"
 
 [配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-browser-use-playwright-mcp)列出接受的字段。浏览器模式由 profile 或 preset 选择。子进程会清空继承的 `PLAYWRIGHT_MCP_*` 选项，避免其替换该配置。
 
-### 自动化设置命名空间
+### 自动化设置字段
 
-启动模式以组合配置为基底层注册 `automation` 设置命名空间，因此 `browser`、`executablePath` 与 `headless` 字段同样会从 `settings.yaml` 的用户段解析——由「通用设置」中的[自动化设置行](../../client/ui-settings-automation/README.zh.md)编辑。用户层值解析在组合配置之上；清除该值即回到组合配置。提供方在每次浏览器启动时读取命名空间，因此设置更改对之后打开的浏览器生效，而运行中的浏览器保持其启动时的选择。未挂载设置提供方时应用 schema 默认值，行为不变。附加模式不注册命名空间。
+`browser`、`executablePath` 与 `headless` 是 `browser-use-playwright-mcp` profile 条目中的实时 `Config` 字段，由「通用设置」中的[自动化设置行](../../client/ui-settings-automation/README.zh.md)编辑并经 profile 补丁持久化。这些字段是标记为 volatile 的 `Config` schema 叶子，因此提供方无需配置即可组合，且改动在运行时生效、无需重启。提供方在每次浏览器启动时读取这些字段，因此设置更改对之后打开的浏览器生效，而运行中的浏览器保持其启动时的选择。未挂载设置提供方时应用 schema 默认值，行为不变。附加模式不读取启动选择。
 
 为整个进程配置系统提示词的 `toolOrder` 时，将浏览器工具留在 `<unlisted-tools>` 中。显式列出浏览器工具名称可能导致未获得浏览器连接的 Session 无法组装提示词。
 

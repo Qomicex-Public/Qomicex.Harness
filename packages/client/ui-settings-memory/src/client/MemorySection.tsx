@@ -36,7 +36,7 @@ export type SettingsPathOp =
   | { readonly op: 'set'; readonly path: string[]; readonly value: unknown }
   | { readonly op: 'unset'; readonly path: string[] }
 
-/** The settings face, present only when a settings provider is mounted. */
+/** The settings face over the memory plugin's profile entry. */
 export interface MemorySettingsFace {
   /** Current snapshot of the memory settings section. */
   readonly snapshot: () => SettingsSnapshotView
@@ -45,7 +45,6 @@ export interface MemorySettingsFace {
   /** Apply path-addressed writes to the user section. */
   readonly mutate: (ops: readonly SettingsPathOp[]) => Promise<void>
 }
-
 /** Registration-side face used by the page. */
 export interface MemorySectionInjected {
   /** Read the whole memory graph. */
@@ -57,8 +56,8 @@ export interface MemorySectionInjected {
     memoryId: string,
     mode: 'suppress' | 'delete' | 'deprecate',
   ) => Promise<LoadOutcome<{ readonly detail: string }>>
-  /** The settings face, or `undefined` when no provider is mounted. */
-  readonly settings: MemorySettingsFace | undefined
+  /** The settings face over the plugin's profile entry. */
+  readonly settings: MemorySettingsFace
   /**
    * Providers and their configured models, for the distillation dropdowns.
    * Empty when the deployment exposes no provider directory.
@@ -242,57 +241,53 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
 
       <h3 className={css.subtitle}>{t('settingsTitle')}</h3>
       <p className={css.hint}>{t('settingsHint')}</p>
-      {settings === undefined
-        ? <p className={css.muted}>{t('settingsUnavailable')}</p>
-        : (
-          <MemorySettingsForm
-            settings={settings}
-            t={t}
-            distillTargets={distillTargets}
-            downloadModel={downloadModel === undefined
-              ? undefined
-              : async () => {
-                const outcome = await downloadModel()
-                if (outcome.kind === 'failed') throw new Error(outcome.message)
-                return outcome.value
-              }}
-            modelDownloadStatus={modelDownloadStatus === undefined
-              ? undefined
-              : async () => {
-                const outcome = await modelDownloadStatus()
-                if (outcome.kind === 'failed') throw new Error(outcome.message)
-                return outcome.value
-              }}
-            revealModelFile={revealModelFile === undefined
-              ? undefined
-              : async () => {
-                const outcome = await revealModelFile()
-                if (outcome.kind === 'failed') throw new Error(outcome.message)
-                return outcome.value
-              }}
-            patterns={patterns === undefined
-              ? undefined
-              : async () => {
-                const outcome = await patterns()
-                if (outcome.kind === 'failed') throw new Error(outcome.message)
-                return outcome.value
-              }}
-            extractPatternsNow={extractPatternsNow === undefined
-              ? undefined
-              : async () => {
-                const outcome = await extractPatternsNow()
-                if (outcome.kind === 'failed') throw new Error(outcome.message)
-                return outcome.value
-              }}
-            decidePattern={decidePattern === undefined
-              ? undefined
-              : async (patternId, action) => {
-                const outcome = await decidePattern(patternId, action)
-                if (outcome.kind === 'failed') throw new Error(outcome.message)
-                return outcome.value
-              }}
-          />
-        )}
+      <MemorySettingsForm
+        settings={settings}
+        t={t}
+        distillTargets={distillTargets}
+        downloadModel={downloadModel === undefined
+          ? undefined
+          : async () => {
+            const outcome = await downloadModel()
+            if (outcome.kind === 'failed') throw new Error(outcome.message)
+            return outcome.value
+          }}
+        modelDownloadStatus={modelDownloadStatus === undefined
+          ? undefined
+          : async () => {
+            const outcome = await modelDownloadStatus()
+            if (outcome.kind === 'failed') throw new Error(outcome.message)
+            return outcome.value
+          }}
+        revealModelFile={revealModelFile === undefined
+          ? undefined
+          : async () => {
+            const outcome = await revealModelFile()
+            if (outcome.kind === 'failed') throw new Error(outcome.message)
+            return outcome.value
+          }}
+        patterns={patterns === undefined
+          ? undefined
+          : async () => {
+            const outcome = await patterns()
+            if (outcome.kind === 'failed') throw new Error(outcome.message)
+            return outcome.value
+          }}
+        extractPatternsNow={extractPatternsNow === undefined
+          ? undefined
+          : async () => {
+            const outcome = await extractPatternsNow()
+            if (outcome.kind === 'failed') throw new Error(outcome.message)
+            return outcome.value
+          }}
+        decidePattern={decidePattern === undefined
+          ? undefined
+          : async (patternId, action) => {
+            const outcome = await decidePattern(patternId, action)
+            if (outcome.kind === 'failed') throw new Error(outcome.message)
+            return outcome.value
+          }}
+      />
     </section>
   )
 }

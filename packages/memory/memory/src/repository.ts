@@ -453,7 +453,10 @@ export class MemoryRepository {
     return (await this.opened()).table('retention').get(memoryId)
   }
 
-  /** Every retention record, in insertion order. */
+  /**
+   * Every retention record, in insertion order.
+   * @returns Every stored retention record.
+   */
   async allRetentions(): Promise<RetentionRecord[]> {
     return [...(await this.opened()).table('retention').entries()].map(([, row]) => row)
   }
@@ -486,7 +489,10 @@ export class MemoryRepository {
     return (await this.opened()).table('patterns').get(id)
   }
 
-  /** Every pattern, in insertion order. */
+  /**
+   * Every pattern, in insertion order.
+   * @returns Every stored pattern.
+   */
   async allPatterns(): Promise<Pattern[]> {
     return [...(await this.opened()).table('patterns').entries()].map(([, row]) => row)
   }
@@ -510,7 +516,10 @@ export class MemoryRepository {
     await (await this.opened()).table('curation').put(record.memoryId, record)
   }
 
-  /** Every curation record, in insertion order. */
+  /**
+   * Every curation record, in insertion order.
+   * @returns Every stored curation record.
+   */
   async allCurations(): Promise<CurationRecord[]> {
     return [...(await this.opened()).table('curation').entries()].map(([, row]) => row)
   }
@@ -524,7 +533,10 @@ export class MemoryRepository {
     await (await this.opened()).table('summaries').put(summary.id, summary)
   }
 
-  /** Every summary, in insertion order. */
+  /**
+   * Every summary, in insertion order.
+   * @returns Every stored summary layer.
+   */
   async allSummaries(): Promise<SummaryRecord[]> {
     return [...(await this.opened()).table('summaries').entries()].map(([, row]) => row)
   }
@@ -570,7 +582,10 @@ export class MemoryRepository {
     }
   }
 
-  /** The report shape a fresh consolidation cycle starts from. */
+  /**
+   * The report shape a fresh consolidation cycle starts from.
+   * @returns A report with every counter at zero.
+   */
   static emptyReport(): ConsolidationReport {
     return {
       replayed: 0,

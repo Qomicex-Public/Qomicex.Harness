@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The `memory/` group gives the agent a persistent, decaying store instead of a transcript it can only scroll back through. The plugin observes each turn, decides locally whether a statement is worth keeping, writes it with a source-derived trust level, and later lets reinforcement promote it and TTL forget it. Everything the model sees comes back through a bounded hot pack at the first step of a turn, so recall costs one prefix rather than a tool round trip. A Host Remote controller and a Settings page are the browser-facing half; they read and write the same store through the plugin's own governance.
+The `memory/` group gives the agent a persistent, decaying store instead of a scrollable transcript. The plugin observes each turn, decides locally whether a statement is worth keeping, writes it with a source-derived trust level, and later lets reinforcement promote it and TTL forget it. Everything the model sees comes back through a bounded hot pack at a turn's first step, so recall costs one prefix rather than a tool round trip. A Host Remote controller and a Settings page are the browser-facing half; they read and write the same store through the plugin's own governance.
 
 ## Table of Contents
 

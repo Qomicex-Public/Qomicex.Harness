@@ -50,7 +50,10 @@ export interface RetentionConfig {
 /** What one TTL pass did. */
 export type { TtlReport }
 
-/** An empty report. */
+/**
+ * An empty report.
+ * @returns A report with every counter at zero.
+ */
 export function emptyTtlReport(): TtlReport {
   return { promoted: 0, extended: 0, archived: 0, deleted: 0, skipped: 0 }
 }
@@ -83,7 +86,11 @@ export async function reinforce(
   await repository.putRetention(next)
 }
 
-/** The three signals summed; the number a TTL decision compares. */
+/**
+ * The three signals summed; the number a TTL decision compares.
+ * @param record - The retention record.
+ * @returns The usage, adjacency, and mention scores added together.
+ */
 export function reinforcementTotal(record: RetentionRecord): number {
   return record.usageScore + record.adjacencyScore + record.mentionScore
 }
@@ -188,14 +195,23 @@ async function archive(tier: MemoryTiers['episodic'], id: string): Promise<void>
   }))
 }
 
-/** Distinct sessions that have produced an observation. */
+/**
+ * Distinct sessions that have produced an observation.
+ * @param repository - The repository.
+ * @returns The number of distinct session ids in the observation stream.
+ */
 export async function sessionCount(repository: MemoryRepository): Promise<number> {
   const sessions = new Set<string>()
   for (const event of await repository.allObservations()) sessions.add(event.sessionId)
   return sessions.size
 }
 
-/** Whether the system is still inside its startup grace period. */
+/**
+ * Whether the system is still inside its startup grace period.
+ * @param sessions - Distinct sessions observed so far.
+ * @param config - Retention knobs.
+ * @returns `true` while fewer sessions have been seen than the grace allows.
+ */
 export function inStartupGrace(sessions: number, config: RetentionConfig): boolean {
   return sessions < config.startupGraceSessions
 }
@@ -217,12 +233,20 @@ export function mentionsFact(memory: Memory, message: string): boolean {
   return tokenize(message).includes(object.toLowerCase())
 }
 
-/** Whether a memory's retention record shows it was ever used. */
+/**
+ * Whether a memory's retention record shows it was ever used.
+ * @param record - The memory's retention record, if it has one.
+ * @returns `true` when a record exists with a positive usage score.
+ */
 export function wasUsed(record: RetentionRecord | undefined): boolean {
   return record !== undefined && record.usageScore > 0
 }
 
-/** The verdict a judgment log row's usage field takes, given its memory. */
+/**
+ * The verdict a judgment log row's usage field takes, given its memory.
+ * @param record - The memory's retention record, if it has one.
+ * @returns `used` when the record shows a recall, otherwise `not-used`.
+ */
 export function usageVerdictOf(record: RetentionRecord | undefined): 'used' | 'not-used' {
   return wasUsed(record) ? 'used' : 'not-used'
 }

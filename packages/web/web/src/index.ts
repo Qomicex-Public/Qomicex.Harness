@@ -8,8 +8,9 @@
 
 import { Context, Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-// Type-only: pulls the ctx.settings Context merge this service's selection section needs.
+// Type-only: merges the `settings` service whose page policy this entry registers.
 import type {} from '@deepseek-ai/dsh-settings'
+import type { Volatile } from '@deepseek-ai/cordis'
 import type {
   WebFetchProvider,
   WebFetchRequest,
@@ -55,18 +56,11 @@ interface Selection<P> {
  * must feed these same fields rather than introduce a hidden priority chain.
  */
 export interface WebRuntimeConfig {
-  /** Explicit search provider id. Omitted = auto-select when exactly one usable. */
-  readonly searchProvider?: string
-  /** Explicit fetch provider id. Omitted = auto-select when exactly one usable. */
-  readonly fetchProvider?: string
+  /** Live reference to the explicit search provider id. Omitted = auto-select when exactly one usable. */
+  readonly searchProvider: Volatile<string | undefined>
+  /** Live reference to the explicit fetch provider id. Omitted = auto-select when exactly one usable. */
+  readonly fetchProvider: Volatile<string | undefined>
 }
-
-/**
- * Settings namespace carrying this service's provider selection. The shipped
- * General settings surface edits it, so a deployment can switch the search or
- * fetch backend without a configuration file.
- */
-export const WEB_SETTINGS_NAMESPACE = 'web'
 
 /**
  * The web access service. Registered as `ctx.web` (one instance per context).
@@ -82,47 +76,35 @@ export const WEB_SETTINGS_NAMESPACE = 'web'
  */
 export class WebRuntime extends Service {
   /**
-   * Provider selection config. The settings section under
-   * {@link WEB_SETTINGS_NAMESPACE} layers user values over the composition
-   * entry, and operational env overrides feed the SAME fields:
+   * Provider selection config. Both fields are live references owned by this
+   * entry: the shipped General settings page edits them through the profile
+   * patch, and operational env overrides feed the SAME fields —
    * `$DSH_WEB_SEARCH_PROVIDER` / `$DSH_WEB_FETCH_PROVIDER` are equivalent to
    * `searchProvider` / `fetchProvider` and are NOT a hidden priority chain.
-   * Selection is re-read at every search and fetch, so a settings change takes
+   * Selection is re-read at every search and fetch, so a committed change takes
    * effect on the next call.
    */
-  static Config: z<WebRuntimeConfig> = z.object({
-    searchProvider: z.string(),
-    fetchProvider: z.string(),
+  static Config = z.object({
+    searchProvider: z.string().volatile(),
+    fetchProvider: z.string().volatile(),
   })
 
   private searchProviders = new Map<string, WebSearchProvider>()
   private fetchProviders = new Map<string, WebFetchProvider>()
-  /** The currently authoritative selection config; starts at the composition entry. */
-  private configSource: () => WebRuntimeConfig
 
-  constructor(ctx: Context, config: WebRuntimeConfig = {}) {
+  constructor(ctx: Context, private readonly config: WebRuntimeConfig) {
     super(ctx, 'web')
-    this.configSource = () => config
-    ctx.inject(['settings'], (settingsCtx) => {
-      settingsCtx.settings.installSection(ctx, WEB_SETTINGS_NAMESPACE, WebRuntime.Config, config, {
-        setSource: (source) => {
-          this.configSource = source
-        },
-        // The registration carries no resolved value: selection is re-read per
-        // call, so a committed change needs no re-registration.
-        onChange: () => {},
-      })
-    })
+    ctx.inject(['settings'], (child) => { child.effect(() => child.settings.configure({ auto: false }, ctx.fiber)) })
   }
 
   /** The configured search provider id, or the operational env override of the same field. */
   private searchProviderId(): string | undefined {
-    return this.configSource().searchProvider ?? process.env.DSH_WEB_SEARCH_PROVIDER
+    return this.config.searchProvider.get() ?? process.env.DSH_WEB_SEARCH_PROVIDER
   }
 
   /** The configured fetch provider id, or the operational env override of the same field. */
   private fetchProviderId(): string | undefined {
-    return this.configSource().fetchProvider ?? process.env.DSH_WEB_FETCH_PROVIDER
+    return this.config.fetchProvider.get() ?? process.env.DSH_WEB_FETCH_PROVIDER
   }
 
   /**

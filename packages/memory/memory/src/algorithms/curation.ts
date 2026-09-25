@@ -139,7 +139,10 @@ export interface CurationReport {
   budgetExhausted: boolean
 }
 
-/** An empty report. */
+/**
+ * An empty report.
+ * @returns A report with every counter at zero and no flags set.
+ */
 export function emptyCurationReport(): CurationReport {
   return {
     selected: 0,

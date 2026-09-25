@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState, type ReactNode } from 'react'
-import { Button, IconChevronDownOutline14, Input, Menu, Switch } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, IconChevronDownOutlineRegular, Input, Menu, Switch } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SecurityReviewLocaleKey } from './locales.ts'
 import {
@@ -28,7 +28,7 @@ export interface SecurityReviewSnapshot {
   readonly writable: boolean
 }
 
-/** The settings face for the guard namespace; absent when no provider is mounted. */
+/** The settings face for the guard namespace. */
 export interface SecurityReviewFace {
   /** Current snapshot of the guard settings section. */
   readonly snapshot: () => SecurityReviewSnapshot
@@ -40,8 +40,8 @@ export interface SecurityReviewFace {
 
 /** Registration-side face used by the page. */
 export interface SecurityReviewInjected {
-  /** The settings face, or `undefined` when no settings provider is mounted. */
-  readonly settings: SecurityReviewFace | undefined
+  /** The settings face over the guard's profile entry. */
+  readonly settings: SecurityReviewFace
 }
 
 /** Full component props assembled by the Settings slot renderer. */
@@ -77,7 +77,6 @@ interface RuleRowValue {
  */
 export function SecurityReviewSection(props: SecurityReviewSectionProps): ReactNode {
   const { settings, t } = props
-  if (settings === undefined) return <p className={css.muted}>{t('unavailable')}</p>
   return <SecurityReviewForm settings={settings} t={t} />
 }
 
@@ -317,16 +316,16 @@ function ActionMenu(props: {
 }): ReactNode {
   const { id, value, disabled, t, onChange } = props
   const [open, setOpen] = useState(false)
-  const options: readonly { id: ReviewAction; label: SecurityReviewLocaleKey }[] = [
-    { id: 'ask', label: 'actionAsk' },
-    { id: 'deny', label: 'actionDeny' },
+  const options: readonly { id: ReviewAction; labelKey: SecurityReviewLocaleKey }[] = [
+    { id: 'ask', labelKey: 'actionAsk' },
+    { id: 'deny', labelKey: 'actionDeny' },
   ]
   const selected = value === 'deny' ? 'actionDeny' : 'actionAsk'
   return (
     <Menu
       open={open}
       onClose={() => { setOpen(false) }}
-      items={options.map(option => ({ id: option.id, label: t(option.label) }))}
+      items={options.map(option => ({ id: option.id, label: t(option.labelKey) }))}
       selectedId={value}
       onSelect={(id) => {
         setOpen(false)
@@ -344,7 +343,7 @@ function ActionMenu(props: {
           onClick={() => { setOpen(value => !value) }}
         >
           {t(selected)}
-          <IconChevronDownOutline14 className={css.chevron} />
+          <IconChevronDownOutlineRegular className={css.chevron} />
         </button>
       )}
     />

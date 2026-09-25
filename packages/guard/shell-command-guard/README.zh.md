@@ -41,7 +41,7 @@ shell 命令守门会在 shell 与数据库工具调用执行前检查命令文�
 
 ### 调整它
 
-用户可改的一切都在持久化的 `shell-command-guard` settings 命名空间中，通过[安全审查设置页](../../client/ui-settings-security-review/README.zh.md)编辑并保存到 `settings.yaml`。不存在 `Config` 字段，因此守门无需配置即可组合，且改动在运行时生效、无需重启。
+用户可改的一切都是 `shell-command-guard` profile 条目中的实时 `Config` 字段，通过[安全审查设置页](../../client/ui-settings-security-review/README.zh.md)编辑并经 profile 补丁持久化。这些字段是标记为 volatile 的 `Config` schema 叶子，因此守门无需配置即可组合，且改动在运行时生效、无需重启。
 
 | 设置 | 作用 |
 |---|---|
@@ -70,9 +70,9 @@ shell 命令守门会在 shell 与数据库工具调用执行前检查命令文�
 守门建立在四项承诺上：
 
 - **拒绝集是安全不变量。** `src/rules.ts` 保存内置模式，既不导入 Cordis 也不导入 Harness 代码，因此规则可被独立测试，也不会随插件一起加载失败。任何设置值都无法表达 `allow` 规则。
-- **设置承载可调层。** `src/settings.ts` 拥有 `shell-command-guard` schema 与 `validate` 钩子；插件通过 settings 提供者注册命名空间，并在每次变更时重新编译已解析的文档。
+- **配置承载可调层。** `src/settings.ts` 拥有插件 `Config` schema——每个字段都是设置表单投影的 volatile 叶子——与编译期校验；插件在 Loader 提交变更时重新编译其引用所承载的值。
 - **优先级固定，不可配置。** `mergeVerdicts` 按内置拒绝 > 用户拒绝 > 用户询问 > 内置询问 > 放行应用。因此用户规则只会升级、不会放宽。
-- **没有提供者，行为也不变。** 未组合 settings 提供者时，`defaultSecurityReviewSettings()` 与 schema 默认值一致，因此守门两种情况下都执行内置规则。
+- **没有 settings 服务，行为也不变。** schema 默认值随插件加载时收到的 volatile 快照一同到达，因此无论是否组合 Settings 服务，守门都执行内置规则。
 
 ### 检测与判定
 
@@ -82,13 +82,13 @@ shell 命令守门会在 shell 与数据库工具调用执行前检查命令文�
 
 ### 用户层与检查脚本
 
-`compileUserRules` 在每次设置变更时编译一次关键词列表与非空正则表达式；`evaluateUserRules` 先扫描关键词再扫描模式，拒绝直接胜出，第一个询问即保留，因此后续规则无法软化更早的匹配。`validateSecurityReviewSettings` 在写入与注册时编译同样的层，因此格式错误的表达式会在持久化为静默失效的规则前被拒绝。
+`compileUserRules` 在每次提交变更时编译一次关键词列表与非空正则表达式；`evaluateUserRules` 先扫描关键词再扫描模式，拒绝直接胜出，第一个询问即保留，因此后续规则无法软化更早的匹配。`validateSecurityReviewSettings` 编译同样的层，因此格式错误的表达式会在守门采纳配置时——插件加载与每次实时更新——被拒绝，而不是持久化为静默失效的规则。
 
 `compileCheckScript` 将内联主体包进一个隔离的 `node:vm` 上下文，该上下文只接收 `command` 与 `context`，随后以 50 ms 超时运行。脚本可以返回 `deny` 或 `ask` 判定；其他任何结果——无结果、未知动作或 `allow`——都表示「无意见」。编译或运行失败通过插件 logger 上报且从不抛出，因此损坏的脚本无法阻止内置拒绝集保护主机。
 
-### 设置绑定
+### 配置绑定
 
-插件读取 `ctx.get('settings')`：若提供者已组合则立即绑定命名空间，否则通过 `ctx.inject(['settings'], …)` 等待，因为该服务可选且行顺序不固定。`scope.watch` 在已解析文档变化时重新编译运行时配置，观察者随插件一并释放。
+插件通过 `apply` 收到的 volatile `Config` 引用直接读取可调层，守门与其值之间没有服务查找。`loader/volatile-update` 事件触发运行时配置重新编译；安全审查页通过可选的 Settings 服务组合时以 effect 注册的 `configure({ auto: false })` 页面策略保留自己的呈现；插件无法编译的提交会让上一个可用运行时继续生效。
 
 ### 源文件一览
 
@@ -96,7 +96,7 @@ shell 命令守门会在 shell 与数据库工具调用执行前检查命令文�
 |---|---|
 | [`src/index.ts`](src/index.ts) | 插件入口：`name`/`apply`、设置绑定、`tools/pre-execute` 监听器 |
 | [`src/rules.ts`](src/rules.ts) | 内置模式、判定合并、用户规则编译、放行路径匹配 |
-| [`src/settings.ts`](src/settings.ts) | 命名空间名、schema、已解析值类型、写入校验、无提供者时的默认值 |
+| [`src/settings.ts`](src/settings.ts) | 插件 `Config` schema、已解析值类型、编译期校验与默认文档 |
 | [`src/script.ts`](src/script.ts) | 内联检查脚本的编译与受限 `node:vm` 运行 |
 | − | 不发布运行时 invariant 伴随包。纯分类器加上用户自有设置上的一个 waterfall 监听器，没有包内事件历史或可变关系可供独立伴随包观察；固定的拒绝优先级改由单元测试钉住。 |
 
@@ -110,8 +110,8 @@ shell 命令守门会在 shell 与数据库工具调用执行前检查命令文�
 当包级契约不够用时，请阅读这些页面。它们从工具调用流水线走向设置文档与分组地图。
 
 - [工具子系统参考](../../../docs/subsystems/tools.zh.md)——本守门返回的 `tools/pre-execute` waterfall 与 `PreToolDecision` 结构。
-- [设置子系统参考](../../../docs/subsystems/settings.zh.md)——守门绑定的命名空间注册、schema 与写入校验路径。
-- [安全审查设置页](../../client/ui-settings-security-review/README.zh.md)——编辑本插件命名空间的界面。
+- [设置子系统参考](../../../docs/subsystems/settings.zh.md)——本插件字段所经过的 volatile Config 投影与 profile 补丁编辑路径。
+- [安全审查设置页](../../client/ui-settings-security-review/README.zh.md)——编辑本插件配置字段的界面。
 - [guard 分组地图](../README.zh.md)——同组守门包。
 
 -----

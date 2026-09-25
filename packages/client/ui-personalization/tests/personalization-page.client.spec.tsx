@@ -121,8 +121,9 @@ const sectionProps = (settings: PersonalizationInjected['settings']): Personaliz
   ({ t, settings } as unknown as PersonalizationSectionProps)
 
 describe('section states', () => {
-  it('reports a missing settings provider', () => {
-    render(<PersonalizationSection {...sectionProps(undefined)} />)
+  it('reports an unavailable settings section', () => {
+    const unavailable = makeFace(section(), { status: 'unavailable' })
+    render(<PersonalizationSection {...sectionProps(unavailable.face)} />)
     expect(screen.getByText('unavailable')).toBeTruthy()
   })
 
@@ -396,19 +397,28 @@ describe('adoption and preview lifecycle', () => {
 })
 
 describe('browser plugin registration', () => {
-  /** A slot registry, locale runtime, theme service, and the section declaration. */
-  async function bench(): Promise<{ ctx: Context; slots: SlotRegistry }> {
+  /** A slot registry, locale runtime, theme service, form, and the section declaration. */
+  async function bench(): Promise<{ ctx: Context; slots: SlotRegistry; observed: string[] }> {
     const ctx = new Context()
     await ctx.plugin(SlotRegistry).await()
     ctx.provide('locale', new LocaleRuntime(ctx))
     ctx.provide('theme', { overrideTokens: () => () => {} } as never)
+    const snapshot: { status: 'ready' | 'unavailable'; value: unknown; writable: boolean; revision: number | undefined } =
+      { status: 'ready', value: section(), writable: true, revision: 1 }
+    const observed: string[] = []
+    const form = {
+      getSnapshot: () => snapshot,
+      subscribe: (listener: () => void) => { observed.push('subscribe'); listener(); return () => {} },
+      mutate: async () => { observed.push('mutate'); return true },
+    }
+    ctx.provide('configForms', { get: () => form } as never)
     const slots = ctx.get('slots') as SlotRegistry
     slots.register({ name: 'root', children: { 'settings.section': { kind: 'list', scope: 'root' } } } as never, () => null)
-    return { ctx, slots }
+    return { ctx, slots, observed }
   }
 
-  it('declares the slot registry, locale, and theme services', () => {
-    expect(inject).toEqual(['slots', 'locale', 'theme'])
+  it('declares the slot registry, locale, theme, and configuration-form services', () => {
+    expect(inject).toEqual(['slots', 'locale', 'theme', 'configForms'])
   })
 
   it('registers one Personalization section at order 12', async () => {
@@ -418,28 +428,20 @@ describe('browser plugin registration', () => {
     expect(entry.options.id).toBe('personalization')
     expect(entry.options.order).toBe(12)
     expect(resolveSlotLabel(entry.options.label)).toBe('Personalization')
-    expect(((entry.inject as unknown as () => PersonalizationInjected)()).settings).toBeUndefined()
+    expect(((entry.inject as unknown as () => PersonalizationInjected)()).settings.snapshot().status).toBe('ready')
   })
 
-  it('binds the namespace through the settings scope service', async () => {
+  it('binds the namespace through the shared configuration form', async () => {
     const b = await bench()
-    const observed: string[] = []
-    const scope = {
-      getSnapshot: () => ({ status: 'ready', value: section(), writable: true }),
-      subscribe: () => { observed.push('subscribe'); return () => {} },
-      mutate: async () => { observed.push('mutate') },
-    }
-    b.ctx.provide('settingsScope', { bind: () => scope, describe: () => [] } as never)
     await b.ctx.plugin({ inject: [...inject], apply }).await()
     const entry = b.slots.entries('settings.section')[0]!
     const injected = (entry.inject as unknown as () => PersonalizationInjected)()
-    expect(injected.settings).toBeDefined()
-    expect(injected.settings!.snapshot().status).toBe('ready')
-    injected.settings!.subscribe(() => {})
-    await injected.settings!.mutate(saveOps(section()))
+    expect(injected.settings.snapshot().status).toBe('ready')
+    injected.settings.subscribe(() => {})
+    await injected.settings.mutate(saveOps(section()))
     // One subscribe is the plugin's own settings adoption, the second is the
     // page's; the mutate goes through the same face.
-    expect(observed).toEqual(['subscribe', 'subscribe', 'mutate'])
+    expect(b.observed).toEqual(['subscribe', 'subscribe', 'mutate'])
   })
 
   it('tears the effects down with the plugin fiber', async () => {
@@ -453,13 +455,16 @@ describe('browser plugin registration', () => {
     expect(mountedStyle.isConnected).toBe(false)
   })
 
-  it('registers the Host namespace with the guard validate hook', async () => {
-    const registered: string[] = []
+  it('registers the profile entry page policy when the settings service composes', async () => {
+    const configured: { auto: boolean }[] = []
     const ctx = new Context()
-    ctx.provide('settings', { register: (namespace: string) => { registered.push(namespace) } } as never)
+    ctx.provide('settings', { configure: (options: { auto: boolean }) => {
+      configured.push(options)
+      return () => {}
+    } } as never)
     hostApply(ctx)
     await new Promise(resolve => setTimeout(resolve, 0))
-    expect(registered).toContain('personalization')
+    expect(configured).toEqual([{ auto: false }])
   })
 
   it('leaves the Host half tolerant of a missing settings service', () => {

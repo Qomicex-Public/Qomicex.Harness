@@ -59,7 +59,7 @@ kind: "package-reference"
 
 ### 注册与数据来源
 
-`apply()` 注册 `settings.security-review` 字典，并贡献一个 id 为 `security-review` 的 `settings.section` 条目；导航项、模态框与已挂载的区域都由 Settings 外壳拥有，因此这里不含这些外壳。插件声明 `slots` 与 `locale`，并通过 `ctx.get` 解析 `settingsScope` 而非注入它：没有 settings 提供者的部署仍须渲染页面的不可用状态，而不是让该条目永远处于 pending。
+`apply()` 注册 `settings.security-review` 字典，并贡献一个 id 为 `security-review` 的 `settings.section` 条目；导航项、模态框与已挂载的区域都由 Settings 外壳拥有，因此这里不含这些外壳。插件声明 `slots`、`locale` 与 `configForms`，并通过 `ctx.configForms.get()` 读取守门配置项的表单；Host 未提供该条目时快照为 `unavailable`，页面据此渲染，而不会让该条目永远挂起。
 
 注入面暴露带 `snapshot`、`subscribe`、`mutate` 的 `settings` 句柄；组件永远看不到 `ctx`。该句柄绑定到 Host 守门插件注册的 `shell-command-guard` 命名空间；页面只负责展示，自身从不校验或执行规则。
 
@@ -125,7 +125,7 @@ kind: "package-reference"
 <details>
 <summary>维护者的工作上下文——点击展开</summary>
 
-页面刻意不持有校验权威：它在写入前重新检查正则以便用户立即得到提示，但 Host 守门的 `validateSecurityReviewSettings` 才是强制手段，因此即便该检查改变，页面也必须继续可用。`settingsScope` 绑定保持通过 `ctx.get` 的惰性解析，原因与记忆页面相同：没有提供者组合时，区域必须渲染其不可用状态，而不是挂起。
+页面刻意不持有校验权威：它在写入前重新检查正则以便用户立即得到提示，但 Host 守门的 `validateSecurityReviewSettings` 才是强制手段，因此即便该检查改变，页面也必须继续可用。`configForms` 读取让区域在 Host 未组合该条目时渲染不可用状态，而不是挂起。
 
 </details>
 

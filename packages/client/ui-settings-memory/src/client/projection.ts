@@ -59,7 +59,11 @@ export const DEFAULT_FOV = Math.PI / 4
 /** Pitch clamp: stop just short of the poles so the up vector never degenerates. */
 export const MAX_PITCH = Math.PI / 2 - 0.01
 
-/** Focal length in pixels for one viewport. */
+/**
+ * Focal length in pixels for one viewport.
+ * @param viewport - The canvas being drawn into.
+ * @returns Pixels from the eye to the projection plane.
+ */
 export function focalLength(viewport: Viewport): number {
   return viewport.height / 2 / Math.tan(viewport.fov / 2)
 }

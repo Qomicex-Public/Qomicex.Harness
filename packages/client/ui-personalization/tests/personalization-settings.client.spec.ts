@@ -1,11 +1,11 @@
 /**
- * Personalization settings: the schema defaults, the write validation the Host
- * registers, and the pure value operations the page performs.
+ * Personalization settings: the schema defaults, the plugin Config projection,
+ * the write validation, and the pure value operations the page performs.
  */
 
 import { describe, expect, it } from 'vitest'
 import {
-  PersonalizationSettingsSchema, PERSONALIZATION_NAMESPACE, defaultPersonalizationSettings,
+  Config, PersonalizationSettingsSchema, PERSONALIZATION_NAMESPACE, defaultPersonalizationSettings,
   validatePersonalizationSettings, type PersonalizationSettings,
 } from '../src/personalization-settings.ts'
 import { firstInvalidColor, isColorOrEmpty, readValue, resetOps, saveOps } from '../src/client/model.ts'
@@ -17,7 +17,7 @@ function value(overrides: Partial<PersonalizationSettings> = {}): Personalizatio
 
 describe('settings schema', () => {
   it('defaults to the effects-off profile with glass enabled', () => {
-    expect(PERSONALIZATION_NAMESPACE).toBe('personalization')
+    expect(PERSONALIZATION_NAMESPACE).toBe('ui-personalization')
     const resolved = PersonalizationSettingsSchema({} as PersonalizationSettings)
     expect(resolved).toEqual(defaultPersonalizationSettings())
     expect(resolved.enabled).toBe(true)
@@ -26,6 +26,18 @@ describe('settings schema', () => {
     expect(resolved.glass.enabled).toBe(true)
     expect(resolved.glass.blur).toBe(20)
     expect(resolved.corner.enabled).toBe(false)
+  })
+})
+
+describe('plugin Config', () => {
+  it('resolves every leaf to the schema default as a live reference', () => {
+    const config = Config({})
+    expect(config.enabled.get()).toBe(true)
+    expect(config.themeColor.get()).toBe('')
+    expect(config.background.mode.get()).toBe('none')
+    expect(config.background.angle.get()).toBe(135)
+    expect(config.glass.blur.get()).toBe(20)
+    expect(config.corner.position.get()).toBe('bottom-left')
   })
 })
 

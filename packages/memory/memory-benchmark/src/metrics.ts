@@ -84,7 +84,13 @@ export function evaluateValue(
     : { name, status: 'fail', value, reason: `expected ${threshold.op} ${threshold.value}, got ${value}` }
 }
 
-/** Apply one comparison operator. */
+/**
+ * Apply one comparison operator.
+ * @param value - The measured value.
+ * @param op - The operator to apply.
+ * @param target - The value to compare against.
+ * @returns Whether the comparison holds.
+ */
 export function compare(value: number, op: Threshold['op'], target: number): boolean {
   switch (op) {
     case '<': return value < target

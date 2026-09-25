@@ -2,15 +2,16 @@
  * Automation settings rows, browser half.
  *
  * Registers three `settings.general.item` contributions editing the
- * `automation` namespace the Playwright MCP provider registers on the Host.
- * The scope is bound lazily: a deployment without a settings provider still
- * renders the rows, which then explain why nothing can be edited.
+ * `browser-use-playwright-mcp` profile entry the Playwright MCP provider
+ * registers. While the Host serves no such entry to this client the form
+ * reports `unavailable`, and the rows still render and explain why nothing
+ * can be edited.
  */
 
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 // Type-only: pulls ctx.locale into this program.
 import type {} from '@deepseek-ai/dsh-client-locale/client'
-// Type-only: the settings slot declarations plus the ctx.settingsScope Context
+// Type-only: the settings slot declarations plus the ctx.configForms Context
 // merge. Cross-plugin collaboration goes through the service, never a value
 // import (client bundle purity gate).
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
@@ -35,8 +36,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 /** Dictionary namespace owned by this plugin. */
 const NS = 'settings.automation'
 
-/** The settings namespace the Playwright MCP provider registers. */
-const AUTOMATION_SETTINGS_NS = 'automation'
+/** The profile entry the Playwright MCP provider registers its Config on. */
+const AUTOMATION_SETTINGS_NS = 'browser-use-playwright-mcp'
 
 /** The rows this plugin contributes, in the order the General section shows them. */
 const ROWS = [
@@ -45,7 +46,7 @@ const ROWS = [
   { id: 'automation-headless', order: 22, component: HeadlessRow },
 ] as const
 
-export const inject = ['slots', 'locale']
+export const inject = ['slots', 'locale', 'configForms']
 
 /**
  * Register the `automation` dictionaries and the automation settings rows.
@@ -54,22 +55,18 @@ export const inject = ['slots', 'locale']
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-settings-automation: row dictionaries')
 
-  // The settings scope is bound lazily: a deployment without a settings
-  // provider has no `settingsScope` service, and the rows must still render
-  // and say so. `ctx.get` keeps that optional instead of making every row
-  // wait on a service that will never arrive.
-  const scope = ctx.get('settingsScope')?.bind({ namespace: AUTOMATION_SETTINGS_NS })
+  const form = ctx.configForms.get(AUTOMATION_SETTINGS_NS)
 
   const injected = (): AutomationRowInjected => ({
-    settings: scope === undefined
-      ? undefined
-      : {
-        snapshot: () => scope.getSnapshot(),
-        subscribe: listener => scope.subscribe(listener),
-        mutate: (ops: readonly SettingsPathOp[]) => scope.mutate(ops.map(op => op.op === 'set'
+    settings: {
+      snapshot: () => form.getSnapshot(),
+      subscribe: listener => form.subscribe(listener),
+      mutate: async (ops: readonly SettingsPathOp[]) => {
+        await form.mutate(ops.map(op => op.op === 'set'
           ? { op: 'set' as const, path: [...op.path], value: op.value as JsonValue }
-          : { op: 'unset' as const, path: [...op.path] })),
+          : { op: 'unset' as const, path: [...op.path] }))
       },
+    },
   })
 
   for (const row of ROWS) {

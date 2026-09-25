@@ -68,7 +68,18 @@ async function bench() {
   ctx.provide('locale', locale)
   const namespaces = remoteStub()
   const remote = new TestRemote(ctx, namespaces)
-  return { ctx, slots: ctx.get('slots') as SlotRegistry, locale, remote: namespaces, carrier: remote }
+  let snapshot: { status: 'ready' | 'unavailable'; value: unknown; user: unknown; writable: boolean; revision: number | undefined } =
+    { status: 'unavailable', value: undefined, user: undefined, writable: false, revision: undefined }
+  const form = {
+    getSnapshot: () => snapshot,
+    subscribe: () => () => {},
+    mutate: vi.fn(async () => true),
+  }
+  ctx.provide('configForms', { get: () => form })
+  return {
+    ctx, slots: ctx.get('slots') as SlotRegistry, locale, remote: namespaces, carrier: remote, form,
+    serveMemorySettings: (value: unknown) => { snapshot = { status: 'ready', value, user: value, writable: true, revision: 1 } },
+  }
 }
 
 /** Declare the slot the shell owns, so registrations have somewhere to land. */
@@ -85,7 +96,7 @@ describe('ui-settings-memory browser plugin', () => {
   })
 
   it('declares only the services the page uses', () => {
-    expect(inject).toEqual(['slots', 'locale', 'remote', 'remote.memory', 'remote.llm', 'remote.settings'])
+    expect(inject).toEqual(['slots', 'locale', 'remote', 'remote.memory', 'configForms', 'remote.llm', 'remote.settings'])
   })
 
   it('registers the memory page with localized copy', async () => {
@@ -143,14 +154,31 @@ describe('ui-settings-memory browser plugin', () => {
     await b.ctx.fiber.dispose()
   })
 
-  it('leaves the settings face absent when no settings scope is mounted', async () => {
+  it('hands the page a settings face over the memory profile entry', async () => {
+    const b = await bench()
+    declare(b.slots)
+    b.serveMemorySettings({ enabled: true, workingMemorySlots: 64 })
+    await b.ctx.plugin({ inject: [...inject], apply }).await()
+
+    const entry = b.slots.entries('settings.section')[0]!
+    const injected = (entry.inject as unknown as () => MemorySectionInjected)()
+    const settings = injected.settings
+    expect(settings.snapshot().status).toBe('ready')
+    const stop = settings.subscribe(() => {})
+    stop()
+    await settings.mutate([{ op: 'set', path: ['enabled'], value: false }])
+    expect(b.form.mutate).toHaveBeenCalledWith([{ op: 'set', path: ['enabled'], value: false }])
+    await b.ctx.fiber.dispose()
+  })
+
+  it('reports an unserved entry as an unavailable settings face', async () => {
     const b = await bench()
     declare(b.slots)
     await b.ctx.plugin({ inject: [...inject], apply }).await()
 
     const entry = b.slots.entries('settings.section')[0]!
     const injected = (entry.inject as unknown as () => MemorySectionInjected)()
-    expect(injected.settings).toBeUndefined()
+    expect(injected.settings.snapshot().status).toBe('unavailable')
     await b.ctx.fiber.dispose()
   })
 

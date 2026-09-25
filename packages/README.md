@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The harness is assembled from npm packages under `packages/`, grouped by capability family: sessions and the agent loop, model-facing tools, shell and filesystem execution, web access, subagents, and the rest. Use this page as the top-level map: find the owning group, then open its README for the package list. Every package is scoped `@deepseek-ai/dsh-*` and lives in exactly one group; each group README is the authoritative package map for its family.
+The harness is assembled from npm packages under `packages/`, grouped by capability family: sessions and the agent loop, model-facing tools, shell and filesystem execution, web access, subagents, and the rest. Every package is scoped `@deepseek-ai/dsh-*` and lives in exactly one group; each group README is the authoritative package map for its family.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ The harness is assembled from npm packages under `packages/`, grouped by capabil
 <a id="package-groups"></a>
 ## Package groups
 
-Every package lives in exactly one group; new packages join existing groups, and a new group updates its own README and this table.
+New packages join existing groups; a new group updates its own README and this table.
 
 | Group | Role |
 |---|---|
@@ -45,6 +45,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`security/`](security/README.md) | Security tooling: model-facing WSL pentest tools, mounted only by the `pentest` preset |
 | [`browser-use/`](browser-use/README.md) | Exclusive named browser-provider registration |
 | [`sandbox/`](sandbox/README.md) | Process-confinement seam; bwrap/Landlock/Seatbelt backends |
+| [`deliverables/`](deliverables/README.md) | Turn deliverables: explicit file delivery and recorded workspace changes |
 | [`fs/`](fs/README.md) | Filesystem capability family: seam, local impl, model-facing file tools, discovery tools |
 | [`lsp/`](lsp/README.md) | LSP capability family: seam, generic stdio provider, and the `lsp` tool |
 | [`skill/`](skill/README.md) | Skill capability family: provider registry, local provider, model-facing catalog/loader |
@@ -57,6 +58,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`workflow/`](workflow/README.md) | Workflow seam, PTC process engine, and model-facing `workflow`/`ralph` tools |
 | [`webhook/`](webhook/README.md) | Verified external events, trusted rules, and fire-and-forget Workspace Sessions |
 | [`web/`](web/README.md) | Web capability family: seam, search/fetch providers, model-facing web tools |
+| [`document/`](document/README.md) | Shared Host Office-to-PDF conversion |
 | [`attachment/`](attachment/README.md) | Durable attachment identity, validation, local content-addressed storage |
 | [`spill/`](spill/README.md) | Spill capability family: storage seam, local impl, tool-result spill policy |
 | [`todo/`](todo/README.md) | The model-facing `todo_write` tool |
@@ -77,7 +79,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`acp/`](acp/README.md) | Automation-only Agent Client Protocol server |
 | [`interaction/`](interaction/README.md) | Human-collaboration plane: approval/interaction seams, permission preset, commands, ask-user tool |
 | [`boot/`](boot/README.md) | Shared app-bin boot glue |
-| [`host/`](host/README.md) | Web-GUI host half: API gateway + HTTP route server |
+| [`host/`](host/README.md) | Web GUI host services, directory picking, application launch, plugin inventory, and product telemetry |
 | [`client/`](client/README.md) | Web-GUI browser half: shell, wire, object services, slots, `ui-*` plugins |
 | [`test-support/`](test-support/README.md) | Test infrastructure (testkits, replay, Loader smokes) |
 | [`runtime-diagnostics/`](runtime-diagnostics/README.md) | Runtime diagnostics: package-owned invariant checks and reports |

@@ -20,23 +20,27 @@ const t = ((key: ArchivedSessionsLocaleKey, params?: Record<string, string | num
   )) as ArchivedSessionsSectionProps['t']
 
 function summary(id: string, title: string, updatedAt: number): SessionSummary {
-  return { id: sid(id), displayTitle: title, running: false, blank: false, updatedAt }
+  return { id: sid(id), displayTitle: title, running: false, blank: false, retainedBy: {}, updatedAt }
 }
 
 function sessionState(sessions: readonly SessionSummary[], phase: SessionListState['phase'] = 'ready'): SessionListState {
   return {
     ids: sessions.map(session => session.id),
     byId: Object.fromEntries(sessions.map(session => [session.id, session])),
-    current: undefined,
     phase,
-    subagentsByParent: {},
-    jobsBySession: {},
-    currentAddress: undefined,
+    projectionsBySession: {},
   }
 }
 
 function snapshot(archivedSessionIds: readonly string[], items: readonly WorkspaceView[] = []): WorkspaceSnapshot {
-  return { items, archivedSessionIds: archivedSessionIds.map(sid), state: 'idle', phase: 'ready', error: null }
+  return {
+    items,
+    archivedSessionIds: archivedSessionIds.map(sid),
+    pinnedSessionIds: [],
+    state: 'idle',
+    phase: 'ready',
+    error: null,
+  }
 }
 
 function workspace(title: string, sessionIds: readonly string[]): WorkspaceView {

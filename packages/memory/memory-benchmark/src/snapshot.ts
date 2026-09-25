@@ -72,7 +72,10 @@ export interface BenchmarkSnapshot {
   blockedCandidates: BlockedRow[]
 }
 
-/** An empty snapshot. */
+/**
+ * An empty snapshot.
+ * @returns A snapshot with every collection empty.
+ */
 export function emptySnapshot(): BenchmarkSnapshot {
   return {
     observations: [],

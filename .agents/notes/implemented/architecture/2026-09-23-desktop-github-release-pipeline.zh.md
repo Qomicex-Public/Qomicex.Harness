@@ -12,9 +12,9 @@ Status: implemented
 
 `build-desktop.yml` 成为发布路径：`workflow_dispatch` 接收 `version` 输入，用 `pnpm release:dsh <version>` 本地写入版本，构建未签名 Windows 安装包，并以 `v<version>` 为标签发布到被派发提交上的 GitHub Release。Release 只附带安装包及其 `.blockmap`；版本号含 `-` 时标记为预发布；低于当前清单版本的输入使运行失败；用相同版本号重新派发会替换资源而不是新建第二个 Release。版本提交只留在本地——被发布的产物是 Release 而不是代码树，人工仍拥有每一个被推送的版本提交。
 
-`DSH_DESKTOP_GITHUB_REPOSITORY`（`owner/repo`，工作流从 `github.repository` 填入）选择打包应用的更新源，由 [desktop-release-feed.mjs](../apps/desktop/scripts/desktop-release-feed.mjs) 解析。未设置时，签名构建保留上游 COS 源，未签名构建仍然不发布任何源——此前的上传路径和本地未签名构建不受影响。
+`DSH_DESKTOP_GITHUB_REPOSITORY`（`owner/repo`，工作流从 `github.repository` 填入）选择打包应用的更新源，由 `apps/desktop/scripts/desktop-release-feed.mjs` 解析。未设置时，签名构建保留上游 COS 源，未签名构建仍然不发布任何源——此前的上传路径和本地未签名构建不受影响。
 
-这反转了 [electron-desktop-packaging-and-updates](2026-08-25-electron-desktop-packaging-and-updates.zh.md) 记录的"未签名构建省略更新元数据"立场：写入 GitHub Release 本就需要对发布了该安装包的仓库拥有写权限，因此更新源与安装包本身具有相同权威。[update-coordinator.ts](../apps/desktop/src/update-coordinator.ts) 现在从当前版本推导 `allowPrerelease`，alpha 构建跟随 alpha 频道，稳定构建永远不会被提供预发布——否则在只发布预发布版本时，GitHub provider 对稳定构建什么都不提供。
+这反转了 [electron-desktop-packaging-and-updates](2026-08-25-electron-desktop-packaging-and-updates.zh.md) 记录的"未签名构建省略更新元数据"立场：写入 GitHub Release 本就需要对发布了该安装包的仓库拥有写权限，因此更新源与安装包本身具有相同权威。`apps/desktop/src/update-coordinator.ts` 现在从当前版本推导 `allowPrerelease`，alpha 构建跟随 alpha 频道，稳定构建永远不会被提供预发布——否则在只发布预发布版本时，GitHub provider 对稳定构建什么都不提供。
 
 ## 考虑过的替代方案
 

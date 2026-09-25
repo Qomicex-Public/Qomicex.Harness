@@ -59,6 +59,8 @@ Enable it in a profile patch layer:
 
 A ready-to-apply overlay lives at [`apps/cli/config/examples/memory/cordis.yml`](../../../apps/cli/config/examples/memory/cordis.yml); apply it with `dsh --patch <path>`.
 
+Every field in that configuration is volatile, so the harness projects it into the memory Settings page as an editable form: a committed edit reaches the running plugin without a restart and persists in the profile patch, the layer the overlay above writes.
+
 ### The four tools
 
 | Tool | Does |
@@ -250,3 +252,5 @@ Two known places where the implementation diverges from the document, both delib
 The `bio_memory` storage domain is version 1. Changing a record schema means bumping the domain version and adding a migration path, because the domain rejects records that fail their schema rather than degrading them.
 
 </details>
+
+**Runtime invariant:** No companion is published. Every relation the implementation section lists is enforced inside the operation that owns the decision — the gates, lineage assignment, and conflict marking run on the write path itself — and the durable record guarantees belong to the `bio_memory` storage domain; the plugin keeps no second, independently maintained projection of its own state for a companion to compare.

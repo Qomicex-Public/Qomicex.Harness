@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/junsi/tool-search/README.md
-README.md: dcad2195c165476592ef2b218307eb52969eadc1
-README.zh.md: 00d713e0cfb2264358849c4ef317672715e984e9
+README.md: 23580cde015ba6f9cd54870d7dcff87596c67006
+README.zh.md: ae4585f399936341b327aba1d0ebf33636792028

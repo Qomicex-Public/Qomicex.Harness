@@ -130,3 +130,5 @@ Independent: the benchmark makes no model request, so it cannot affect a cached 
 runner 自持内存后端而不导入 `storage-domain` 的测试助手：已发布的 `src` 不得伸手进同级包的 `tests/`，且该助手在打包安装中并不存在。
 
 </details>
+
+**Runtime invariant:** 不发布伴随包。该套件是在一次性内存后端上运行脚本场景后退出的 CI 工具；它不注册任何产品服务，不发出 Cordis 事件，也不保留运行结束后仍然存在的状态，因此不存在可供独立伴随包观测的运行时关系。

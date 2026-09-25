@@ -283,7 +283,11 @@ function adversarialLayer(
   }
 }
 
-/** Every metric, for a compact report. */
+/**
+ * Every metric, for a compact report.
+ * @param metrics - The measured metrics.
+ * @returns One result per metric, in declaration order.
+ */
 export function metricRows(metrics: BenchmarkMetrics): MetricResult[] {
   return [
     metrics.capturePrecision,

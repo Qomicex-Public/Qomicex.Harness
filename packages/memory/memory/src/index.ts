@@ -14,6 +14,8 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/cordis-plugin-loader'
+import type {} from '@deepseek-ai/dsh-settings'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import { getOrCreateAnonymousUserId } from '@deepseek-ai/dsh-anonymous-user-id'
@@ -38,8 +40,7 @@ import { createToolkitIntegration } from './integrations/toolkit.ts'
 import { fuse } from './algorithms/retrieval.ts'
 import type { DistillProvider } from './algorithms/distill.ts'
 import { EventObserver } from './event/observer.ts'
-import { registerMemorySettings } from './settings.ts'
-import { registerHooks, PLUGIN_NAME, PATTERN_OPEN, PATTERN_CLOSE } from './hooks.ts'
+import { registerHooks, PATTERN_OPEN, PATTERN_CLOSE } from './hooks.ts'
 import type { TurnSignals } from './hooks.ts'
 import { registerTools } from './tools.ts'
 import { buildHotPack } from './hot-pack.ts'
@@ -49,7 +50,6 @@ import type { ReinforcementKind } from './types.ts'
 
 export { Config, resolveConfig } from './config.ts'
 export type { Config as MemoryConfig, ResolvedConfig } from './config.ts'
-export { MEMORY_SETTINGS_NS, registerMemorySettings } from './settings.ts'
 export {
   memoryDomain,
   MEMORY_TABLES,
@@ -406,18 +406,21 @@ export function memoryServices(ctx: Context): MemoryServices | undefined {
  * @returns resolution once every contribution is registered.
  */
 export async function apply(ctx: Context, config: Config): Promise<void> {
-  // The authoritative config, replaceable while the harness runs: the Settings
-  // page edits this section, and `installSection` hands back a new source on
-  // every change. Everything read per-operation reads through this thunk, so an
-  // edit applies without a restart; values captured at construction (working
+  // The memory Settings page is its own slot section
+  // (packages/client/ui-settings-memory), so the form auto-projected from
+  // this Config stays off; an edit reaches the plugin as a volatile commit.
+  ctx.inject(['settings'], (child) => { child.effect(() => child.settings.configure({ auto: false }, ctx.fiber)) })
+
+  // The authoritative config, re-resolved on every volatile commit: the
+  // loader writes new snapshots into the same references, and this listener is
+  // what turns an edit into the values the per-operation thunks read, so an
+  // edit applies without a restart. Values captured at construction (working
   // and staging capacity, the retrieval pipeline, the authorization listener)
   // deliberately do not, because rebuilding those mid-flight would drop the
   // in-memory state they own.
   let resolved = resolveConfig(config)
   const currentConfig = (): ResolvedConfig => resolved
-  registerMemorySettings(ctx, config, (source) => {
-    resolved = resolveConfig(source())
-  })
+  ctx.on('loader/volatile-update', () => { resolved = resolveConfig(config) })
 
   const opened = ctx.storageDomain.open(memoryDomain)
   const repository = new MemoryRepository(opened)
@@ -894,7 +897,7 @@ function createLlmDistillProvider(ctx: Context, provider: string, model: string)
             + 'Preserve the meaning exactly. Output only the sentence.',
           messages: [createUserMessage({
             content: [{ type: 'text', text }],
-            source: { kind: 'plugin', plugin: PLUGIN_NAME },
+            source: { kind: 'runtime-context' },
           })],
         })) {
           if (chunk.type === 'text-delta') output += chunk.text

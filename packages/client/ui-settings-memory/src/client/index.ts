@@ -3,10 +3,10 @@
  *
  * Registers one `settings.section` entry. The page owns two independent
  * surfaces: the plugin's configuration (a settings section, edited through
- * `settingsScope`) and a preview of every stored memory (read from the
- * `memory` Remote namespace). They are separate because they answer different
- * questions and fail independently — a deployment can have memories to show
- * without a settings provider to edit.
+ * the shared configuration form) and a preview of every stored memory (read
+ * from the `memory` Remote namespace). They are separate because they answer
+ * different questions and fail independently — a deployment can have memories
+ * to show while the plugin's entry is not served to this client.
  */
 
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
@@ -31,11 +31,11 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 
 const NS = 'settings.memory'
 
-/** The settings namespace the memory plugin registers. */
+/** The profile entry the memory plugin registers its Config on. */
 const MEMORY_SETTINGS_NS = 'bio-memory'
 
 export const inject = [
-  'slots', 'locale', 'remote', 'remote.memory',
+  'slots', 'locale', 'remote', 'remote.memory', 'configForms',
   // The distillation dropdowns read the provider directory and each provider's
   // configured models, which live in `remote.llm` and `remote.settings`.
   'remote.llm', 'remote.settings',
@@ -46,11 +46,7 @@ export function apply(ctx: ClientContext): void {
 
   const t = ctx.locale.bind(NS)
 
-  // The settings scope is bound lazily: a deployment without a settings
-  // provider has no `settingsScope` service, and the page must still render the
-  // graph half. `ctx.get` keeps that optional instead of making the whole
-  // section wait on a service that will never arrive.
-  const scope = ctx.get('settingsScope')?.bind({ namespace: MEMORY_SETTINGS_NS })
+  const form = ctx.configForms.get(MEMORY_SETTINGS_NS)
 
   const injected = (): MemorySectionInjected => ({
     loadGraph: async () => {
@@ -118,15 +114,15 @@ export function apply(ctx: ClientContext): void {
       if (response.ok) return { kind: 'ok', value: response.value }
       return { kind: 'failed', code: response.error.code, message: response.error.message }
     },
-    settings: scope === undefined
-      ? undefined
-      : {
-        snapshot: () => scope.getSnapshot(),
-        subscribe: listener => scope.subscribe(listener),
-        mutate: ops => scope.mutate(ops.map(op => op.op === 'set'
+    settings: {
+      snapshot: () => form.getSnapshot(),
+      subscribe: listener => form.subscribe(listener),
+      mutate: async (ops) => {
+        await form.mutate(ops.map(op => op.op === 'set'
           ? { op: 'set' as const, path: [...op.path], value: op.value as JsonValue }
-          : { op: 'unset' as const, path: [...op.path] })),
+          : { op: 'unset' as const, path: [...op.path] }))
       },
+    },
   })
 
   ctx.slots.inject('settings.section', () => ctx.slots.register({

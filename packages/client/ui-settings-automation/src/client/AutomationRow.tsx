@@ -78,8 +78,8 @@ export interface AutomationSettingsFace {
 
 /** Registration-side face used by the rows. */
 export interface AutomationRowInjected {
-  /** The settings face, or `undefined` when no provider is mounted. */
-  readonly settings: AutomationSettingsFace | undefined
+  /** The settings face over the provider's profile entry. */
+  readonly settings: AutomationSettingsFace
 }
 
 /** Full component props assembled by the Settings slot renderer. */
@@ -132,23 +132,25 @@ function AutomationRow(props: AutomationRowProps, field: AutomationRowField): Re
   const [failure, setFailure] = useState<string | undefined>(undefined)
   const [draft, setDraft] = useState<string>('')
 
-  // The scope publishes through a snapshot store, so the rows subscribe rather
+  // The form publishes through a snapshot store, so the rows subscribe rather
   // than polling: a write from anywhere else (another tab, a file edit) has to
   // reach these inputs.
   useEffect(() => {
-    if (settings === undefined) return
     setSnapshot(settings.snapshot())
     return settings.subscribe(() => { setSnapshot(settings.snapshot()) })
   }, [settings])
 
-  const selection = snapshot === undefined ? undefined : selectionOf(snapshot.value)
+  // `loading` before the first accepted section and `unavailable` when the
+  // Host serves no such entry: either way nothing can be edited here yet.
+  const unavailable = snapshot === undefined || snapshot.status !== 'ready'
+  const selection = unavailable ? undefined : selectionOf(snapshot.value)
   const path = selection?.executablePath ?? ''
   // The draft is local until it commits: a path being typed must not write on
   // every keystroke, and an incoming change replaces it wholesale.
   useEffect(() => { setDraft(path) }, [path])
 
   const write = async (ops: readonly SettingsPathOp[]): Promise<void> => {
-    if (settings === undefined) return
+    if (unavailable) return
     setFailure(undefined)
     try {
       await settings.mutate(ops)
@@ -164,7 +166,7 @@ function AutomationRow(props: AutomationRowProps, field: AutomationRowField): Re
           id={CONTROL_IDS.browser}
           className={css.input}
           value={selection?.browser ?? 'chromium'}
-          disabled={settings === undefined}
+          disabled={unavailable}
           onChange={(event) => { void write([{ op: 'set', path: ['browser'], value: event.target.value }]) }}
         >
           {BROWSERS.map(option => (
@@ -181,7 +183,7 @@ function AutomationRow(props: AutomationRowProps, field: AutomationRowField): Re
           type="text"
           value={draft}
           placeholder={t('executablePath.placeholder')}
-          disabled={settings === undefined}
+          disabled={unavailable}
           onChange={(event) => { setDraft(event.target.value) }}
           onBlur={() => {
             const trimmed = draft.trim()
@@ -198,7 +200,7 @@ function AutomationRow(props: AutomationRowProps, field: AutomationRowField): Re
         className={css.checkbox}
         type="checkbox"
         checked={selection?.headless ?? true}
-        disabled={settings === undefined}
+        disabled={unavailable}
         onChange={(event) => { void write([{ op: 'set', path: ['headless'], value: event.target.checked }]) }}
       />
     )
@@ -210,7 +212,7 @@ function AutomationRow(props: AutomationRowProps, field: AutomationRowField): Re
         <label className={css.label} htmlFor={CONTROL_IDS[field]}>{t(LABELS[field])}</label>
         <span className={css.hint}>
           {t(HINTS[field])}
-          {settings === undefined && ` ${t('unavailable')}`}
+          {unavailable && ` ${t('unavailable')}`}
         </span>
         {failure !== undefined && <span className={css.error}>{t('saveFailed')} {failure}</span>}
       </div>

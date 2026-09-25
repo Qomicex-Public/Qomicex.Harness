@@ -1,5 +1,5 @@
 ---
-description: "Automation settings rows in the General section for the dsh web client: the browser channel, executable path, and headless selection over the `automation` namespace."
+description: "Automation settings rows in the General section for the dsh web client: the browser channel, executable path, and headless selection over the `browser-use-playwright-mcp` profile entry."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Three rows in the General section of Settings where a user chooses the browser automation starts: which browser family the launch resolves, an optional executable path, and whether it runs headless. The rows edit the `automation` settings namespace the Playwright MCP browser provider registers on the Host; each write lands in the user section of `settings.yaml` and every browser opened afterwards starts with it. A deployment without a settings provider still renders the rows, disabled, saying why.
+Three rows in the General section of Settings where a user chooses the browser automation starts: which browser family the launch resolves, an optional executable path, and whether it runs headless. The rows edit the `browser-use-playwright-mcp` profile entry the Playwright MCP browser provider registers on the Host; each write lands in the user section of the profile document and every browser opened afterwards starts with it. A Host that serves no such entry leaves the form snapshot `unavailable`, and the rows still render, disabled, saying why.
 
 ## Table of Contents
 
@@ -43,7 +43,7 @@ The package is three `settings.general.item` contributions sharing one component
 
 ### Registration and data sources
 
-`apply()` registers the locale namespace and contributes the rows through `ctx.slots.inject()`. It declares only `slots` and `locale`; the settings scope is bound lazily through `ctx.get('settingsScope')` rather than injected, because a deployment without a settings provider must still render the rows and injecting the service would hold every row pending on one that never arrives. The injected face exposes a `settings` handle with `snapshot`, `subscribe`, and `mutate`; the component never sees `ctx`.
+`apply()` registers the locale namespace and contributes the rows through `ctx.slots.inject()`. It declares `slots`, `locale`, and `configForms`, and reads the entry's form through `ctx.configForms.get()`; a Host that serves no such entry leaves the snapshot `unavailable` instead of holding the rows pending. The injected face exposes a `settings` handle with `snapshot`, `subscribe`, and `mutate`; the component never sees `ctx`.
 
 Each row subscribes to the namespace snapshot, so a write from anywhere else — another tab, a file edit — reaches the inputs. The path row keeps a local draft until blur: a path being typed must not write on every keystroke, and an empty draft writes a clear operation that reverts the field to the composition entry's value.
 
@@ -65,7 +65,7 @@ Each row subscribes to the namespace snapshot, so a write from anywhere else —
 ## Further Exploration
 
 - [Browser use](../../../docs/subsystems/browser-use.md) — provider selection and Session ownership.
-- [Playwright MCP provider](../../browser-use/playwright-mcp/README.md) — the Host side reading the `automation` namespace.
+- [Playwright MCP provider](../../browser-use/playwright-mcp/README.md) — the Host side reading the `browser-use-playwright-mcp` entry.
 
 -----
 
@@ -84,7 +84,7 @@ The rows add no prompt text. The provider's tool catalog and guidance are unchan
 
 The rows reach only what the provider and settings service they edit own.
 
-- The rows edit only the Playwright MCP provider's launch selection; other browser providers read no settings namespace.
+- The rows edit only the Playwright MCP provider's launch selection; other browser providers read no settings entry.
 - A running browser is not reconfigured; the change applies at the next launch.
 - `mode: attach` ignores the selection entirely; the attached browser is externally owned.
 
@@ -97,3 +97,5 @@ The rows reach only what the provider and settings service they edit own.
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published. The package contributes three settings rows and one locale namespace as fiber-disposed effects and emits no Cordis events; every value the rows display and write is read back through the injected settings face at call time, so the package holds no independent observation that could diverge.

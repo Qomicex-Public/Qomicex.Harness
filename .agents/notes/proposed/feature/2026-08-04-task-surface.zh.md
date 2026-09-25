@@ -178,19 +178,7 @@ interface TaskSurfaceUserMessageSource {
 }
 ```
 
-`session/queue` 协议条目已经携带完整 `Message`。客户端投影会显式扩展以保留其来源，不再丢失关联信息：
-
-```ts ignore-check
-interface QueuedMessage {
-  id: InboxItemId
-  messageId: MessageId
-  placement: 'queued' | 'steering'
-  source: MessageSource
-  content: readonly ContentBlock[]
-  preview: string
-  text: string | null
-}
-```
+标准 `inbox` 投影已经在原始 `next-turn` 或 `next-step` 列表中携带每条完整 `UserMessage`，包括 `MessageId`、source 与 content。客户端会把该值保存在通用 projection store 中，因此本提案不需要扩展 queue 传输，也不需要第二种待处理消息类型。
 
 浏览器安全的领域包拥有 `TaskSurfaceId`、提交和关闭 ID、`TaskSurfaceCorrelation`，以及待处理提交的形态。ApiProxy 拥有传输扩展，负责将关联信息与 `rpcId` 组合。保留 `kind: 'user'` 可维持普通用户消息气泡和提示词语义，额外字段则提供持久关联信息。消息内容是由产品格式化的可读摘要，包括面板标题、标签和提交值，以及可选备注。模型接收相同的文本。结构化来源不是第二条隐藏指令。
 
@@ -198,7 +186,7 @@ interface QueuedMessage {
 
 客户端边界上的提交具有事务性。接纳成功会返回处于 `queued` 阶段的确切 `messageId`；在 `queued` 和 `claiming` 两个阶段中，Dock 会禁用所有变更，并且只有匹配的用户消息持久化后，才会清除已持久化的草稿。若请求被拒绝，则保留值供用户继续编辑，并显示返回的原因。双击和传输重试会复用 `submissionId` 并返回第一次调用的结果；只要第一次提交仍在处理中，另一个提交 ID 就会收到 `submission-pending`。对于一个已接受的 Surface，Host 只会接纳一条用户消息。
 
-Task Surface 服务将已接受提交的协调状态记录为 `pending.phase: 'queued'`，客户端则可通过仍在队列中的行所保留的 `source` 关联它。当 Agent 从队列取出该调用实例进行普通提示词接纳时，服务会先同步把同一份待处理记录改为 `claiming`，然后 ApiProxy 才发布不再包含已认领行的普通队列快照。服务会在异步接纳和重新连接期间一直保留这份进程内认领状态，直到匹配的持久 `user/message` 发布，或 Agent 报告终态丢弃。
+Task Surface 服务将已接受提交的协调状态记录为 `pending.phase: 'queued'`，客户端则可通过仍在队列中的行所保留的 `source` 关联它。当 Agent 为普通提示词接纳认领该消息时，服务会先同步把同一份待处理记录改为 `claiming`，随后持久删除 splice 才会从通用 `inbox` 投影移除该消息。服务会在异步接纳和重新连接期间一直保留这份进程内认领状态，直到匹配的持久 `user/message` 发布，或 Agent 报告终态丢弃。
 
 匹配的 `user/message` 会关闭持久投影并清除认领状态。在持久化之前发生拒绝、取消或 dispose（资源释放）时，系统会报告丢弃、清除认领状态，并让 Surface 保持打开。Dock 绝不会把队列行消失解读为其中任一结果，而会重新读取 `getActive`：`pending.phase: 'claiming'` 会维持禁用状态，`pending: null` 会恢复草稿，`not-open` 会关闭 Dock。`getActive` 会把由日志推导的活动调用实例与这唯一一份进程内待处理记录合并。该记录属于协调状态，不是第二个持久权威来源；Host 重启后，未提交的认领状态不复存在，日志中仍然打开的 Surface 会恢复为可编辑状态。
 
@@ -229,7 +217,7 @@ Web 插件将未提交值保存在一个有界、按会话持久化的 slot stor
 | `packages/core/agent` 和 `packages/core/agent-loop` | 为已认领的下一轮 inbox 条目提供通用终态结果，让 Host 观察方无需使用 Task Surface 专用类型，即可区分持久接纳和丢弃 |
 | `packages/task-surface/task-surface` | 浏览器安全的模型、带品牌类型的 ID、关联和待处理类型、解析器、限制、提交校验器／格式化器、会话事件扩展、投影单元，以及 Host 服务约定 |
 | `packages/task-surface/tool-task-surface` | `show_task_surface`、规范输出、呈现元数据、通用 render intent、活动 Surface 检查和 `concludeTurn()` 行为 |
-| `packages/client/runtime` | 通用排队消息 `source` 投影和会话作用域的活动投影访问 |
+| `packages/client/ui-chat` | 通用排队消息 `source` 投影和会话作用域的活动投影访问 |
 | `packages/client/ui-primitives` | 与 Task Surface 无关的 `MarkdownText.remoteImages` 策略，包括 `alt-only` 图片分支和 URL 策略测试 |
 | `packages/client/ui-task-surface` | 静态且可操作的 `TaskSurfaceDock`、带 key 的只读 transcript 行、消费 Task Surface 模型并以 `alt-only` 模式使用 `MarkdownText` 的声明式 Web 渲染器、按会话划分的草稿 store，以及提交客户端 |
 | `packages/host/apiproxy` | 类型化的活动 Surface 读取／提交／关闭传输、用户消息来源扩展与传递、队列操作限制，以及认领和终态结果的路由；将校验、待处理协调和接纳委托给 Task Surface 服务 |

@@ -2,9 +2,11 @@
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render } from '@testing-library/react'
+import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { apply, inject } from '../src/client/index.ts'
 import { QomicexBrandMark, QomicexBrandName, QomicexHeroMark } from '../src/client/Brand.tsx'
+import { en } from '../src/client/locales.ts'
 import { QOMICEX_MARK_DATA_URL } from '../src/client/mark.ts'
 import { apply as hostApply } from '../src/index.ts'
 
@@ -23,6 +25,8 @@ const BRAND_HOLES = [...SIDEBAR_HOLES, HERO_HOLE] as const
 async function bench(declare = true) {
   const ctx = new Context()
   await ctx.plugin(SlotRegistry).await()
+  const locale = new LocaleRuntime(ctx)
+  ctx.provide('locale', locale)
   const slots = ctx.get('slots') as SlotRegistry
   const declareHoles = () => slots.register({
     name: 'root',
@@ -38,7 +42,7 @@ describe('Qomicex browser-brand plugin', () => {
   })
 
   it('declares only the slot service it uses', () => {
-    expect(inject).toEqual(['slots'])
+    expect(inject).toEqual(['slots', 'locale'])
   })
 
   it('fills every declared hole before or after apply and removes every occupant on teardown', async () => {
@@ -77,7 +81,7 @@ describe('Qomicex browser-brand plugin', () => {
     expect(hero.container.querySelector('img')?.getAttribute('class')).toBe('hero-mark')
     hero.unmount()
 
-    const name = render(<QomicexBrandName />)
+    const name = render(<QomicexBrandName t={key => en[key]} />)
     expect(name.container.textContent).toBe('Qomicex')
   })
 })
