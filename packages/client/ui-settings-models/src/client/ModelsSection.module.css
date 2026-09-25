@@ -564,6 +564,117 @@
   line-height: 18px;
 }
 
+.modelPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.modelChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.modelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 4px 10px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.modelChipActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 4px 10px;
+  border: 0.5px solid var(--dsw-alias-button-primary-fill);
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-interactive-bg-hover-accent);
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.modelChipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modelChipMeta {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.modelChipRemove {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 999px;
+  corner-shape: round;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.modelChipRemove:hover {
+  color: var(--dsw-static-red-500);
+}
+
+.modelSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 0.5px solid var(--dsw-alias-border-l4);
+  border-radius: 10px;
+}
+
+.modelFieldRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.modelChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.modelChipToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.modelAddRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .modelInputTypes {
   grid-column: 1 / -1;
   min-width: 0;

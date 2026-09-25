@@ -33,14 +33,25 @@ const openaiCopy = (template: string): string => providerCopy(template, OPENAI_T
 const DEEPSEEK_TARGET = { provider: 'deepseek-official', displayName: 'DeepSeek' }
 const deepSeekCopy = (template: string): string => providerCopy(template, DEEPSEEK_TARGET)
 
-/** Open one row's capacity disclosure (1-based, as the labels read). */
-function expandRow(position: number): void {
-  fireEvent.click(screen.getByLabelText(`${en.modelAdvanced} ${String(position)}`))
+/** Select one model chip by its 1-based position, as the list reads. */
+function selectChip(position: number): void {
+  fireEvent.click(screen.getAllByRole('option')[position - 1] as HTMLElement)
 }
 
-/** The capacity inputs of every open row, in row order. */
-function capacityInputs(label: string): HTMLInputElement[] {
-  return screen.getAllByLabelText<HTMLInputElement>(new RegExp(label))
+/** Add a model by id through the panel's add row; the new row is selected. */
+function addModel(id: string): void {
+  fireEvent.change(screen.getByLabelText(en.modelAdd), { target: { value: id } })
+  fireEvent.click(screen.getByRole('button', { name: en.addCustomModel }))
+}
+
+/** The selected row's capacity input, addressed by its own position label. */
+function capacityInput(label: string, position: number): HTMLInputElement {
+  return screen.getByLabelText<HTMLInputElement>(`${label} ${String(position)}`)
+}
+
+/** The visible text of every model chip, in list order. */
+function chips(): string[] {
+  return screen.getAllByRole('option').map(chip => chip.textContent ?? '')
 }
 
 const PiAiConfig = Schema.object({
@@ -639,18 +650,12 @@ describe('ModelsSection', () => {
     })
     fireEvent.click(screen.getByText(en.customized))
     expect(screen.getByText(en.modelsInherited)).toBeTruthy()
-    expect(screen.getAllByLabelText(new RegExp(en.modelId)).map(input => (input as HTMLInputElement).value))
-      .toEqual(['deepseek-v4-flash', 'deepseek-v4-pro'])
+    expect(chips()).toEqual(['DeepSeek-V4-Flash1M', 'DeepSeek-V4-Pro1M'])
 
-    fireEvent.click(screen.getByText(en.addModel))
-    const ids = screen.getAllByLabelText(new RegExp(en.modelId))
-    const names = screen.getAllByLabelText(new RegExp(en.modelName))
-    expandRow(3)
-    fireEvent.change(ids[2] as HTMLInputElement, { target: { value: 'private-preview' } })
-    fireEvent.change(names[2] as HTMLInputElement, { target: { value: 'Private Preview' } })
-    // Only row 3 is open, so its capacity is addressed by its own label.
-    fireEvent.change(screen.getByLabelText(`${en.contextWindow} 3`), { target: { value: '131072' } })
-    fireEvent.click(within(screen.getByRole('group', { name: `${en.modelInputTypes} 3` })).getByRole('checkbox', { name: en.modelInputImage }))
+    addModel('private-preview')
+    fireEvent.change(screen.getByLabelText(`${en.modelName} 3`), { target: { value: 'Private Preview' } })
+    fireEvent.change(capacityInput(en.contextWindow, 3), { target: { value: '131072' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.modelInputImage} 3` }))
     fireEvent.click(screen.getByText(en.apply))
 
     await waitFor(() => { expect(mutate).toHaveBeenCalledTimes(1) })
@@ -716,12 +721,12 @@ describe('ModelsSection', () => {
   it('rejects duplicate DeepSeek model ids before writing', async () => {
     const { mutate } = await mountDeepSeekCard()
     fireEvent.click(screen.getByText(en.customized))
-    fireEvent.click(screen.getByText(en.addModel))
-    const ids = screen.getAllByLabelText(new RegExp(en.modelId))
-    fireEvent.change(ids[2] as HTMLInputElement, { target: { value: 'deepseek-v4-flash' } })
-    fireEvent.click(screen.getByText(en.apply))
+    addModel('deepseek-v4-flash')
 
-    await screen.findByText(`Model 3: ${en.modelIdDuplicate}`)
+    // The card refuses this in place: the message names the new row's position
+    // and the commit stays disabled, so the host never sees the duplicate.
+    expect(screen.getByText(`Model 3: ${en.modelIdDuplicate}`)).toBeTruthy()
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: en.apply }).disabled).toBe(true)
     expect(mutate).not.toHaveBeenCalled()
   })
 
@@ -747,6 +752,11 @@ describe('ModelsSection', () => {
     expect(validateDeepSeekModels([{ id: 'model', maxTokens: 0 }]))
       .toEqual({ index: 0, key: 'modelMaxTokensInvalid' })
     expect(validateDeepSeekModels([{ id: 'model', maxTokens: 8192 }])).toBeUndefined()
+    expect(validateDeepSeekModels([{ id: 'model', reasoningEfforts: { high: '' } }]))
+      .toEqual({ index: 0, key: 'modelEffortWireRequired' })
+    expect(validateDeepSeekModels([{ id: 'model', reasoningEfforts: { off: '', high: 'high' } }]))
+      .toBeUndefined()
+    expect(validateDeepSeekModels([{ id: 'model', reasoningEfforts: false }])).toBeUndefined()
   })
 
   it('reads context windows written as counts, thousands, or millions', () => {
@@ -788,24 +798,22 @@ describe('ModelsSection', () => {
       mutate: vi.fn(() => Promise.resolve(remoteOk(wireNamespaces()[0]))),
     })
     fireEvent.click(screen.getByText(en.customized))
-    expandRow(1)
-    expandRow(2)
-    const windows = capacityInputs(en.contextWindow)
-    // The inherited 1000000 reads back short.
-    expect((windows[0] as HTMLInputElement).value).toBe('1M')
+    // The first row is selected from the start; the inherited 1000000 reads back short.
+    expect(capacityInput(en.contextWindow, 1).value).toBe('1M')
 
     // Keystrokes stay verbatim while the row has focus, so typing `1000` does
     // not rewrite itself to `1K` mid-word.
-    fireEvent.change(windows[0] as HTMLInputElement, { target: { value: '1000' } })
-    expect((windows[0] as HTMLInputElement).value).toBe('1000')
-    fireEvent.change(windows[0] as HTMLInputElement, { target: { value: '1000K' } })
-    expect((windows[0] as HTMLInputElement).value).toBe('1000K')
+    fireEvent.change(capacityInput(en.contextWindow, 1), { target: { value: '1000' } })
+    expect(capacityInput(en.contextWindow, 1).value).toBe('1000')
+    fireEvent.change(capacityInput(en.contextWindow, 1), { target: { value: '1000K' } })
+    expect(capacityInput(en.contextWindow, 1).value).toBe('1000K')
     // Blur settles the row to the canonical spelling of the same count.
-    fireEvent.blur(windows[0] as HTMLInputElement)
-    expect((windows[0] as HTMLInputElement).value).toBe('1M')
+    fireEvent.blur(capacityInput(en.contextWindow, 1))
+    expect(capacityInput(en.contextWindow, 1).value).toBe('1M')
 
-    fireEvent.change(windows[1] as HTMLInputElement, { target: { value: '256K' } })
-    fireEvent.blur(windows[1] as HTMLInputElement)
+    selectChip(2)
+    fireEvent.change(capacityInput(en.contextWindow, 2), { target: { value: '256K' } })
+    fireEvent.blur(capacityInput(en.contextWindow, 2))
     fireEvent.click(screen.getByText(en.apply))
 
     await waitFor(() => { expect(mutate).toHaveBeenCalledTimes(1) })
@@ -826,18 +834,12 @@ describe('ModelsSection', () => {
   it('keeps unreadable context-window text on screen and refuses the write', async () => {
     const { mutate } = await mountDeepSeekCard()
     fireEvent.click(screen.getByText(en.customized))
-    expandRow(1)
-    expandRow(2)
-    const windows = capacityInputs(en.contextWindow)
-    fireEvent.change(windows[0] as HTMLInputElement, { target: { value: '1 gazillion' } })
-    // Blurring a row that is not the edited one leaves the buffer alone.
-    fireEvent.blur(windows[1] as HTMLInputElement)
-    fireEvent.blur(windows[0] as HTMLInputElement)
-    // The text the user typed is still there to correct.
-    expect((windows[0] as HTMLInputElement).value).toBe('1 gazillion')
-
-    fireEvent.click(screen.getByText(en.apply))
-    await screen.findByText(`Model 1: ${en.modelContextInvalid}`)
+    fireEvent.change(capacityInput(en.contextWindow, 1), { target: { value: '1 gazillion' } })
+    // The text the user typed is still there to correct...
+    expect(capacityInput(en.contextWindow, 1).value).toBe('1 gazillion')
+    // ...and the write is refused with a message naming the row.
+    expect(screen.getByText(`Model 1: ${en.modelContextInvalid}`)).toBeTruthy()
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: en.apply }).disabled).toBe(true)
     expect(mutate).not.toHaveBeenCalled()
   })
 
@@ -874,62 +876,59 @@ describe('ModelsSection', () => {
     />)
     fireEvent.click(screen.getByText(en.customized))
     expect(screen.getByText(en.modelsCustomized)).toBeTruthy()
-    expect(screen.getAllByLabelText(new RegExp(en.modelId)).map(input => (input as HTMLInputElement).value))
-      .toEqual(['user-only-model'])
+    expect(chips()).toEqual(['User Only'])
 
     fireEvent.click(screen.getByText(en.resetModels))
 
     expect(screen.getByText(en.modelsInherited)).toBeTruthy()
-    expect(screen.getAllByLabelText(new RegExp(en.modelId)).map(input => (input as HTMLInputElement).value))
-      .toEqual(base === undefined ? ['deepseek-v4-flash', 'deepseek-v4-pro'] : ['pinned-by-deployment'])
+    expect(chips()).toEqual(base === undefined
+      ? ['DeepSeek-V4-Flash1M', 'DeepSeek-V4-Pro1M']
+      : ['pinned-by-deployment'])
   })
 
-  it('keeps every row\'s unreadable text, not just the last one edited', async () => {
-    // The regression: one active buffer meant editing a second row displaced
-    // the first, which then fell back to rendering its stored NaN as `NaN` —
-    // losing the text the user was told they could still correct.
+  it('keeps the selected row\'s unreadable text across a selection change and a removal', async () => {
+    // The buffer is keyed by the model, not by its position: the panel edits
+    // one row at a time, and text parked on a row survives selecting another
+    // one and dropping a row below it — an unreadable spelling never settles.
     await mountDeepSeekCard()
     fireEvent.click(screen.getByText(en.customized))
-    expandRow(1)
-    expandRow(2)
-    const windows = capacityInputs(en.contextWindow)
-    fireEvent.change(windows[0] as HTMLInputElement, { target: { value: 'not a number' } })
-    fireEvent.blur(windows[0] as HTMLInputElement)
-    fireEvent.change(windows[1] as HTMLInputElement, { target: { value: '2M' } })
+    fireEvent.change(capacityInput(en.contextWindow, 1), { target: { value: 'not a number' } })
+    expect(capacityInput(en.contextWindow, 1).value).toBe('not a number')
 
-    expect((windows[0] as HTMLInputElement).value).toBe('not a number')
-    expect((windows[1] as HTMLInputElement).value).toBe('2M')
+    // Selecting the other row shows its own stored count, not the parked text.
+    selectChip(2)
+    expect(capacityInput(en.contextWindow, 2).value).toBe('1M')
+    // Coming back, the first row's text is where it was left.
+    selectChip(1)
+    expect(capacityInput(en.contextWindow, 1).value).toBe('not a number')
+
+    // Dropping the row below carries nothing over: the survivor keeps its text.
+    fireEvent.click(screen.getByLabelText(`${en.removeModel} 2`))
+    expect(capacityInput(en.contextWindow, 1).value).toBe('not a number')
   })
 
-  it('re-keys the typed text around a removed row', async () => {
+  it('carries each row\'s typed text around a removed row', async () => {
     await mountDeepSeekCard()
     fireEvent.click(screen.getByText(en.customized))
-    const windows = (): HTMLInputElement[] => capacityInputs(en.contextWindow)
-    const removeRow = (at: number): void => {
-      fireEvent.click(screen.getAllByLabelText(new RegExp(en.removeModel))[at] as HTMLElement)
-    }
     // Three rows, with text parked on the outer two.
-    fireEvent.click(screen.getByText(en.addModel))
-    expandRow(1)
-    expandRow(2)
-    expandRow(3)
-    fireEvent.change(windows()[0] as HTMLInputElement, { target: { value: 'top text' } })
-    fireEvent.blur(windows()[0] as HTMLInputElement)
-    fireEvent.change(windows()[2] as HTMLInputElement, { target: { value: 'bottom text' } })
-    fireEvent.blur(windows()[2] as HTMLInputElement)
+    addModel('third')
+    selectChip(1)
+    fireEvent.change(capacityInput(en.contextWindow, 1), { target: { value: 'top text' } })
+    selectChip(3)
+    fireEvent.change(capacityInput(en.contextWindow, 3), { target: { value: 'bottom text' } })
 
     // Dropping the middle row leaves the row above untouched and carries the
     // row below down with its own text, rather than stranding it.
-    removeRow(1)
-    expect(windows()).toHaveLength(2)
-    expect((windows()[0] as HTMLInputElement).value).toBe('top text')
-    expect((windows()[1] as HTMLInputElement).value).toBe('bottom text')
+    fireEvent.click(screen.getByLabelText(`${en.removeModel} 2`))
+    selectChip(1)
+    expect(capacityInput(en.contextWindow, 1).value).toBe('top text')
+    selectChip(2)
+    expect(capacityInput(en.contextWindow, 2).value).toBe('bottom text')
 
     // Dropping a row that holds text takes that text with it; the survivor
     // keeps its own rather than inheriting the deleted row's.
-    removeRow(0)
-    expect(windows()).toHaveLength(1)
-    expect((windows()[0] as HTMLInputElement).value).toBe('bottom text')
+    fireEvent.click(screen.getByLabelText(`${en.removeModel} 1`))
+    expect(capacityInput(en.contextWindow, 1).value).toBe('bottom text')
   })
 
   it('drops the typed text when reset replaces the rows it annotated', async () => {
@@ -940,16 +939,15 @@ describe('ModelsSection', () => {
       mutate: vi.fn(() => Promise.resolve(remoteOk(wireNamespaces()[0]))),
     })
     fireEvent.click(screen.getByText(en.customized))
-    expandRow(1)
-    const windows = capacityInputs(en.contextWindow)
-    fireEvent.change(windows[0] as HTMLInputElement, { target: { value: 'garbage' } })
-    fireEvent.blur(windows[0] as HTMLInputElement)
+    addModel('private-preview')
+    fireEvent.change(capacityInput(en.contextWindow, 3), { target: { value: 'garbage' } })
     fireEvent.click(screen.getByText(en.resetModels))
 
-    // Reset collapses every row, so the restored capacity needs opening again.
-    expandRow(1)
-    const restored = capacityInputs(en.contextWindow)
-    expect((restored[0] as HTMLInputElement).value).toBe('1M')
+    // Reset hands the catalog back, so the restored rows show their stored
+    // capacities rather than the text the dropped rows carried.
+    expect(chips()).toEqual(['DeepSeek-V4-Flash1M', 'DeepSeek-V4-Pro1M'])
+    selectChip(1)
+    expect(capacityInput(en.contextWindow, 1).value).toBe('1M')
 
     // Reset put the draft back where it started, so Apply writes nothing at
     // all rather than persisting whatever the stale text had parsed to.
@@ -963,21 +961,17 @@ describe('ModelsSection', () => {
       mutate: vi.fn(() => Promise.resolve(remoteOk(wireNamespaces()[0]))),
     })
     fireEvent.click(screen.getByText(en.customized))
-    expandRow(1)
-    expandRow(2)
-    // The profile's own cap is the placeholder both rows inherit.
-    expect(capacityInputs(en.maxTokens).map(input => input.placeholder)).toEqual(['256K', '256K'])
+    selectChip(2)
+    // The profile's own cap is the placeholder the row inherits.
+    expect(capacityInput(en.maxTokens, 2).placeholder).toBe('256K')
 
-    fireEvent.change(screen.getByLabelText(`${en.maxTokens} 2`), { target: { value: '64K' } })
-    fireEvent.blur(screen.getByLabelText(`${en.maxTokens} 2`))
-    expect(screen.getByLabelText<HTMLInputElement>(`${en.maxTokens} 2`).value).toBe('64K')
+    fireEvent.change(capacityInput(en.maxTokens, 2), { target: { value: '64K' } })
+    fireEvent.blur(capacityInput(en.maxTokens, 2))
+    expect(capacityInput(en.maxTokens, 2).value).toBe('64K')
 
     // Dropping the row above carries the cap text down with its own row.
-    fireEvent.click(screen.getAllByLabelText(new RegExp(en.removeModel))[0] as HTMLElement)
-    expect(screen.getByLabelText<HTMLInputElement>(`${en.maxTokens} 1`).value).toBe('64K')
-    // The disclosure closes on a second press.
-    expandRow(1)
-    expect(screen.queryByLabelText(`${en.maxTokens} 1`)).toBeNull()
+    fireEvent.click(screen.getByLabelText(`${en.removeModel} 1`))
+    expect(capacityInput(en.maxTokens, 1).value).toBe('64K')
 
     fireEvent.click(screen.getByText(en.apply))
     await waitFor(() => { expect(mutate).toHaveBeenCalledTimes(1) })
@@ -995,13 +989,10 @@ describe('ModelsSection', () => {
   it('settles a pasted id and refuses whitespace that would never match', async () => {
     await mountDeepSeekCard()
     fireEvent.click(screen.getByText(en.customized))
-    const ids = screen.getAllByLabelText<HTMLInputElement>(new RegExp(en.modelId))
-    fireEvent.change(ids[0] as HTMLInputElement, { target: { value: '  deepseek-v4-flash  ' } })
-    fireEvent.blur(ids[0] as HTMLInputElement)
-    expect((ids[0] as HTMLInputElement).value).toBe('deepseek-v4-flash')
-    // A settled id needs no second trim.
-    fireEvent.blur(ids[0] as HTMLInputElement)
-    expect((ids[0] as HTMLInputElement).value).toBe('deepseek-v4-flash')
+    // The add row takes the id, and surrounding whitespace is a paste artifact:
+    // what lands in the catalog is the trimmed id.
+    addModel('  private-preview  ')
+    expect(screen.getByLabelText<HTMLInputElement>(`${en.modelId} 3`).value).toBe('private-preview')
 
     // An id that is only whitespace is as absent as an empty one, and a padded
     // id is a duplicate of its trimmed twin.
@@ -1010,6 +1001,34 @@ describe('ModelsSection', () => {
       .toEqual({ index: 1, key: 'modelIdDuplicate' })
   })
 
+  it('writes a text-only DeepSeek row when its image box is unchecked', async () => {
+    const { mutate } = await mountDeepSeekCard({
+      mutate: vi.fn(() => Promise.resolve(remoteOk(wireNamespaces()[0]))),
+    })
+    fireEvent.click(screen.getByText(en.customized))
+    addModel('text-only')
+    selectChip(3)
+    fireEvent.change(capacityInput(en.contextWindow, 3), { target: { value: '131072' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.modelInputImage} 3` }))
+    // The row carries image limits, then stops accepting images: the adapter
+    // rejects those limits on a text-only model, so they leave the row.
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.modelInputImage} 3` }))
+    fireEvent.click(screen.getByText(en.apply))
+
+    await waitFor(() => { expect(mutate).toHaveBeenCalledTimes(1) })
+    expect(mutate.mock.calls[0]).toEqual([
+      'llm-deepseek',
+      [{
+        op: 'set',
+        path: ['models'],
+        value: [
+          ...DEFAULT_DEEPSEEK_MODELS,
+          { id: 'text-only', contextWindow: 131_072, inputModalities: ['text'] },
+        ],
+      }],
+      0,
+    ])
+  })
   it('renders malformed draft fallbacks without inventing catalog values', () => {
     render(<DeepSeekModelsEditor
       models={[{}]}
@@ -1022,7 +1041,6 @@ describe('ModelsSection', () => {
       onReset={vi.fn()}
     />)
     expect(screen.getByLabelText<HTMLInputElement>(`${en.modelId} 1`).value).toBe('')
-    expandRow(1)
     expect(screen.getByLabelText<HTMLInputElement>(`${en.contextWindow} 1`).placeholder)
       .toBe(en.contextWindowPlaceholder)
     expect(screen.getByLabelText<HTMLInputElement>(`${en.maxTokens} 1`).placeholder)
@@ -1034,17 +1052,16 @@ describe('ModelsSection', () => {
       mutate: vi.fn(() => Promise.resolve(remoteOk(wireNamespaces()[0]))),
     })
     fireEvent.click(screen.getByText(en.customized))
-    fireEvent.click(screen.getAllByLabelText(new RegExp(en.removeModel))[0] as HTMLElement)
-    fireEvent.click(screen.getByLabelText(new RegExp(en.removeModel)))
+    fireEvent.click(screen.getByLabelText(`${en.removeModel} 1`))
+    fireEvent.click(screen.getByLabelText(`${en.removeModel} 1`))
     expect(screen.getByText(en.modelsEmpty)).toBeTruthy()
     fireEvent.click(screen.getByText(en.resetModels))
     expect(screen.getByText(en.modelsInherited)).toBeTruthy()
 
-    const names = screen.getAllByLabelText(new RegExp(en.modelName))
-    expandRow(1)
-    const windows = capacityInputs(en.contextWindow)
-    fireEvent.change(names[0] as HTMLInputElement, { target: { value: '' } })
-    fireEvent.change(windows[0] as HTMLInputElement, { target: { value: '' } })
+    // Clearing an optional field drops it from the write; the description the
+    // curated editor never shows rides along untouched.
+    selectChip(1)
+    fireEvent.change(capacityInput(en.contextWindow, 1), { target: { value: '' } })
     fireEvent.click(screen.getByText(en.apply))
 
     await waitFor(() => { expect(mutate).toHaveBeenCalledTimes(1) })
@@ -1054,7 +1071,7 @@ describe('ModelsSection', () => {
         op: 'set',
         path: ['models'],
         value: [
-          { id: 'deepseek-v4-flash', description: 'Preserved hidden detail' },
+          { id: 'deepseek-v4-flash', name: 'DeepSeek-V4-Flash', description: 'Preserved hidden detail' },
           DEFAULT_DEEPSEEK_MODELS[1],
         ],
       }],
