@@ -49,7 +49,7 @@ jobs:
       # this repository. Without it the build carries no updater metadata.
       DSH_DESKTOP_GITHUB_REPOSITORY: ${{ github.repository }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
           clean: true
