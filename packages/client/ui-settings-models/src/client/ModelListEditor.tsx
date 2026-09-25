@@ -375,6 +375,9 @@ export function ModelListEditor(props: ModelListEditorProps): ReactNode {
               placeholder: CAPACITY_HINT.maxTokens,
               onChange: (text) => { editCapacity(index, 'maxTokens', text) },
             }}
+            efforts={{
+              onChange: (next) => { onChange(models.map((row, at) => at === index ? next : row)) },
+            }}
             onFieldChange={(field, value) => { patch(index, { [field]: value }) }}
             onChange={(next) => { onChange(models.map((row, at) => at === index ? next : row)) }}
             onToggle={() => { toggleExpanded(index) }}

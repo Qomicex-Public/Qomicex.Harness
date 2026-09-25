@@ -73,7 +73,7 @@ export interface DeepSeekModelsValidationFailure {
   index: number
   /** Message key owned by the Models settings section. */
   key: 'modelIdRequired' | 'modelIdDuplicate' | 'modelNameInvalid' | 'modelContextInvalid'
-  | 'modelMaxTokensInvalid'
+  | 'modelMaxTokensInvalid' | 'modelEffortWireRequired'
 }
 
 /** Convert a schema-validated catalog value into records without dropping hidden fields. */
@@ -116,6 +116,15 @@ export function validateDeepSeekModels(value: unknown): DeepSeekModelsValidation
     if (maxTokens !== undefined
       && (typeof maxTokens !== 'number' || !Number.isInteger(maxTokens) || maxTokens <= 0)) {
       return { index, key: 'modelMaxTokensInvalid' }
+    }
+    // Every declared level above `off` must carry the wire value dispatch
+    // sends; the host refuses the empty spelling, so the page refuses first.
+    const efforts = model['reasoningEfforts']
+    if (typeof efforts === 'object' && efforts !== null
+      && Object.entries(efforts as Record<string, unknown>).some(
+        ([level, wire]) => level !== 'off' && (typeof wire !== 'string' || wire.length === 0),
+      )) {
+      return { index, key: 'modelEffortWireRequired' }
     }
   }
   return undefined
