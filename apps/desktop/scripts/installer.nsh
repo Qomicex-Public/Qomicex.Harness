@@ -87,8 +87,12 @@ ManifestDPIAware true
   Call un.CleanData
 !macroend
 
+; The instfiles page's pre callback belongs to electron-builder's template
+; (it sanitizes `$INSTDIR` to nest under the application-name subfolder), and
+; the template pre-defines that symbol before inserting this macro — any
+; `!define MUI_PAGE_CUSTOMFUNCTION_PRE` here fails with `already defined!`.
+; The fork's preflight therefore chains at the show callback instead.
 !macro customPageAfterChangeDir
-  !define MUI_PAGE_CUSTOMFUNCTION_PRE InstallerBeforeInstall
   !define MUI_PAGE_CUSTOMFUNCTION_SHOW InstallerProgressShow
 !macroend
 

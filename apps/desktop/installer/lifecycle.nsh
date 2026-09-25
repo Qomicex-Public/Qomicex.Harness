@@ -53,6 +53,10 @@ Function InstallerBeforeInstall
 FunctionEnd
 
 Function InstallerProgressShow
+    ; The template owns the instfiles pre callback, so the preflight runs here:
+    ; the page is shown before any section executes, and a failed preflight
+    ; quits with the window auto-closed, as it did ahead of the page.
+    Call InstallerBeforeInstall
     ; Only the stock worker executes installation; this overlay runs on the UI thread.
     ShowWindow $mui.InstFilesPage 0
     StrCpy $0 0
