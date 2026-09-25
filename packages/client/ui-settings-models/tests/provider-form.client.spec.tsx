@@ -36,6 +36,7 @@ const PiAiConfig = Schema.object({
       name: Schema.string(),
       contextWindow: Schema.number(),
       maxTokens: Schema.number(),
+      reasoningEfforts: Schema.union([Schema.const(false), Schema.dict(Schema.union([Schema.string(), Schema.const(null)]))]),
     })),
     reasoning: Schema.union(['off', 'high']),
   })),
@@ -300,20 +301,19 @@ describe('model list editing', () => {
     })
   })
 
-  it('names a duplicate model id in the edit flow too', async () => {
-    const { mutate } = await mountSection({
-      providers: { openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'dup' }] } },
-    })
-    openEditor('openai')
+  it('names a duplicate model id in the edit flow too', async () => {    const { mutate } = await mountSection({
+    providers: { openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'dup' }] } },
+  })
+  openEditor('openai')
 
-    fireEvent.click(screen.getByRole('button', { name: en.addModel }))
-    fireEvent.change(screen.getByLabelText(`${en.modelId} 2`), { target: { value: 'dup' } })
+  fireEvent.click(screen.getByRole('button', { name: en.addModel }))
+  fireEvent.change(screen.getByLabelText(`${en.modelId} 2`), { target: { value: 'dup' } })
 
-    // The create card refuses this in place; an edited route must not have to
-    // learn it from the host's refusal instead.
-    expect(screen.getByText(`${en.model} 2: ${en.modelIdDuplicate}`)).toBeTruthy()
-    expect(buttonNamed(en.apply).disabled).toBe(true)
-    expect(mutate).not.toHaveBeenCalled()
+  // The create card refuses this in place; an edited route must not have to
+  // learn it from the host's refusal instead.
+  expect(screen.getByText(`${en.model} 2: ${en.modelIdDuplicate}`)).toBeTruthy()
+  expect(buttonNamed(en.apply).disabled).toBe(true)
+  expect(mutate).not.toHaveBeenCalled()
   })
 
   it('reads K and M suffixes and keeps the text the user typed', async () => {
@@ -354,6 +354,100 @@ describe('model list editing', () => {
     expect(screen.getByText(`${en.model} 1: ${en.modelMaxTokensInvalid}`)).toBeTruthy()
     expect(buttonNamed(en.apply).disabled).toBe(true)
     expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('declares per-model reasoning efforts with the wire value each level sends', async () => {
+    const { mutate } = await mountSection({
+      providers: { openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'm' }] } },
+    })
+    openEditor('openai')
+    expandModel(1)
+
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortOff} 1` }))
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortLow} 1` }))
+    // A freshly checked level sends its own name until the field is edited.
+    expect(screen.getByLabelText<HTMLInputElement>(`${en.modelEffortWire} ${en.effortLow} 1`).value).toBe('low')
+    fireEvent.change(screen.getByLabelText(`${en.modelEffortWire} ${en.effortLow} 1`), { target: { value: 'think' } })
+    // Off is the one level that may send nothing.
+    fireEvent.change(screen.getByLabelText(`${en.modelEffortWire} ${en.effortOff} 1`), { target: { value: 'x' } })
+    fireEvent.change(screen.getByLabelText(`${en.modelEffortWire} ${en.effortOff} 1`), { target: { value: '' } })
+    fireEvent.click(screen.getByText(en.apply))
+
+    await waitFor(() => { expect(mutate).toHaveBeenCalled() })
+    expect(firstMutate(mutate).ops[0]?.value)
+      .toEqual([{ id: 'm', reasoningEfforts: { off: null, low: 'think' } }])
+  })
+
+  it('refuses to apply while an enabled level above Off has no wire value', async () => {
+    const { mutate } = await mountSection({
+      providers: { openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'm' }] } },
+    })
+    openEditor('openai')
+    expandModel(1)
+
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortHigh} 1` }))
+    fireEvent.change(screen.getByLabelText(`${en.modelEffortWire} ${en.effortHigh} 1`), { target: { value: '' } })
+
+    // The host refuses the empty spelling for every level above Off, so the
+    // page names the row instead of writing a route it knows is invalid.
+    expect(screen.getByText(`${en.model} 1: ${en.modelEffortWireRequired}`)).toBeTruthy()
+    expect(buttonNamed(en.apply).disabled).toBe(true)
+    expect(mutate).not.toHaveBeenCalled()
+  })
+  it('disables reasoning for one model without disturbing its neighbor', async () => {
+    const neighbor = { id: 'kept', reasoningEfforts: { low: 'low' } }
+    const { mutate } = await mountSection({
+      providers: { openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'm' }, neighbor] } },
+    })
+    openEditor('openai')
+    expandModel(1)
+
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.modelEffortsDisable} 1` }))
+    fireEvent.click(screen.getByText(en.apply))
+
+    await waitFor(() => { expect(mutate).toHaveBeenCalled() })
+    expect(firstMutate(mutate).ops[0]?.value)
+      .toEqual([{ id: 'm', reasoningEfforts: false }, neighbor])
+  })
+
+  it('spells a stored effort declaration back and drops it when unchecked', async () => {
+    const { mutate } = await mountSection({
+      providers: {
+        openai: {
+          baseURL: 'https://proxy.example/v1',
+          models: [{ id: 'm', reasoningEfforts: { off: null, low: 'think' } }],
+        },
+      },
+    })
+    openEditor('openai')
+    expandModel(1)
+
+    // The stored spelling shows as typed, not as the level name it replaces.
+    expect(screen.getByLabelText<HTMLInputElement>(`${en.modelEffortWire} ${en.effortLow} 1`).value).toBe('think')
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortLow} 1` }))
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.effortOff} 1` }))
+    fireEvent.click(screen.getByText(en.apply))
+
+    await waitFor(() => { expect(mutate).toHaveBeenCalled() })
+    // Unchecking every level restores inheritance: the field leaves the profile.
+    expect(firstMutate(mutate).ops[0]?.value).toEqual([{ id: 'm' }])
+  })
+
+  it('re-enables a disabled model into inheritance', async () => {
+    const { mutate } = await mountSection({
+      providers: {
+        openai: { baseURL: 'https://proxy.example/v1', models: [{ id: 'm', reasoningEfforts: false }] },
+      },
+    })
+    openEditor('openai')
+    expandModel(1)
+
+    fireEvent.click(screen.getByRole('checkbox', { name: `${en.modelEffortsDisable} 1` }))
+    fireEvent.click(screen.getByText(en.apply))
+
+    await waitFor(() => { expect(mutate).toHaveBeenCalled() })
+    // Un-disabling writes nothing: the installed catalog decides again.
+    expect(firstMutate(mutate).ops[0]?.value).toEqual([{ id: 'm' }])
   })
 
   it('spells a stored capacity back the way it is typed', async () => {

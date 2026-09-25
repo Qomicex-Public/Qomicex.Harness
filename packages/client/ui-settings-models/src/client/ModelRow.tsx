@@ -6,6 +6,7 @@ import {
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { DeepSeekModelDraft } from './DeepSeekModelsEditor.tsx'
 import type { ModelsKey } from './locales.ts'
+import { ModelEffortsEditor } from './ModelEffortsEditor.tsx'
 import { ModelInputTypes } from './ModelInputTypes.tsx'
 import styles from './ModelsSection.module.css'
 
@@ -29,6 +30,8 @@ interface ModelRowProps {
   t: (key: ModelsKey) => string
   contextWindow: CapacityInput
   maxTokens: CapacityInput
+  /** When present, the disclosure also edits the row's reasoning efforts. */
+  efforts?: { onChange: (model: DeepSeekModelDraft) => void }
   onFieldChange: (field: 'id' | 'name', value: string | undefined) => void
   onIdBlur?: (value: string) => void
   onChange: (model: DeepSeekModelDraft) => void
@@ -106,6 +109,14 @@ export function ModelRow(props: ModelRowProps): ReactNode {
               model={model} field={props.inputField} position={position}
               fallback={props.inputFallback} disabled={disabled || props.inputLoading === true} t={t} onChange={props.onChange}
             />
+            {props.efforts === undefined
+              ? null
+              : (
+                <ModelEffortsEditor
+                  model={model} position={position} disabled={disabled} t={t}
+                  onChange={props.efforts.onChange}
+                />
+              )}
           </div>
         )
         : null}
