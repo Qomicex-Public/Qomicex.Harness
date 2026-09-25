@@ -517,27 +517,10 @@
 }
 
 .effortBlock {
-  grid-column: 1 / -1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.effortHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 8px;
-}
-
-.effortDisable {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
-  line-height: 18px;
 }
 
 .effortHint {
@@ -547,41 +530,216 @@
   line-height: 18px;
 }
 
-.effortRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+/* The default-level row: label left, selector pill right — the same row
+   rhythm the theme settings pages use. */
+.effortDefaultRow {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.effortDefaultRow select {
+  flex: none;
+  width: 160px;
+}
+
+.modelPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.modelChips {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.effortLevel {
+/* Option tracks speak the app's segmented-control language (ui-primitives
+ * SegmentedControl): one translucent rounded-rectangle track holding the
+ * options side by side, the chosen segment raised onto the layer-1 surface.
+ * Toggle buttons carry `aria-pressed`, so the same track serves the
+ * single-select presets and the multi-select input types. */
+.segmentTrack {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.segment,
+.segmentToggle {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 4px;
-  min-width: 0;
+  justify-content: center;
+  height: 28px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
   color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
-  line-height: 18px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.modelInputTypes {
-  grid-column: 1 / -1;
-  min-width: 0;
+/* The checkbox stays the control (assistive tech and tests read the checked
+   state) and covers the segment: opacity 0 rather than clipped out of flow,
+   so a click focuses a box the size of the segment instead of a 1px
+   off-flow box the browser scrolls the panel to reveal. */
+.segmentToggle {
+  position: relative;
+}
+
+.segmentToggle input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   margin: 0;
-  padding: 0;
-  border: none;
+  opacity: 0;
+  cursor: pointer;
 }
 
-.modelInputTypes legend {
-  padding: 0;
-  margin-bottom: 4px;
+.segment:hover:not(:disabled):not([aria-pressed='true']),
+.segmentToggle:hover:not(:has(input:disabled)) {
+  color: var(--dsw-alias-label-primary);
 }
 
-.modelInputChoices {
+.segment[aria-pressed='true'],
+.segmentToggle:has(input:checked) {
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: var(--dsw-elevation-soft);
+  color: var(--dsw-alias-label-primary);
+}
+
+.segment:disabled,
+.segmentToggle:has(input:disabled) {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.segment:focus-visible,
+.segmentToggle:has(input:focus-visible) {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: -2px;
+}
+
+/* Model-selection tiles: outlined rounded rectangles on the editor fill, the
+   chosen one raised like a selected segment rather than filled with an accent
+   the rest of the settings surfaces never use. */
+.modelChip {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 0.5px solid var(--dsw-alias-border-l4);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.modelChip:hover:not(.modelChipActive):not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.modelChip:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* Applied beside `modelChip` on the selected tile; carries only the deltas. */
+.modelChipActive {
+  border-color: var(--dsw-static-neutral-bluish-400);
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: var(--dsw-elevation-soft);
+  color: var(--dsw-alias-label-primary);
+}
+
+.modelChipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.modelChipMeta {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.modelChipRemove {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 999px;
+  corner-shape: round;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.modelChipRemove:hover {
+  color: var(--dsw-static-red-500);
+}
+
+.modelSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 0.5px solid var(--dsw-alias-border-l4);
+  border-radius: 10px;
+}
+
+.modelFieldRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.modelChipRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  min-height: 32px;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Labeled group: the Appearance-row pattern — a 14px title above its options,
+   the same rhythm (gap 8) the theme rows use. */
+.modelGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.modelGroupTitle {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.modelAddRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
 }
 
