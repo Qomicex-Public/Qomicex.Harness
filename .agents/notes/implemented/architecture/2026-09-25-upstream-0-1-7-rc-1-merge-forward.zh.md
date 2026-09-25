@@ -15,6 +15,7 @@ Status: implemented
 ### 本地特性为在上游新架构中存活而迁移的位置
 
 - **预设变成插件行。** 上游用 bundle patch 文件里的 `@deepseek-ai/dsh-agent-preset` 行取代了目录发现的预设（`packages/preset/agent-presets/presets/<name>/`）。JunSi 与渗透测试预设现在是 `packages/bundle/web-app/presets/junsi.patch.yml` 与 `pentest.patch.yml`，其 skills 从 `packages/bundle/web-app/presets/skills/<name>/` 发布。`bundled-skills.spec.ts` 验证每个 patch 的 `!!js` skills 根可解析且提供方能发现这些 skills。
+- **插件市场重新钉版。** `dshmarket` 从 1.48.0 升到 1.65.1：旧打包对着重写后的客户端渲染即崩（React 错误 130，被自有恢复面板兜住），1.65.1 自包含且市场界面完整渲染。
 - **Settings 变成 volatile Config。** `installSection`、`SettingsProvider`、`settings.register()` 已移除；插件声明 `.volatile()` schema 叶子，由 forms 系统投影。bio-memory 配置（65 个叶子）、shell-command guard、web 运行时选择、浏览器自动化设置与个性化设置全部完成迁移。memory 配置的 `Config` 为每个分组使用一个显式 `Volatile*` 接口：目录扫描器会展开映射类型别名并拒绝泛型形式。
 - **消息源由生产者命名。** 上游移除了共享的 `plugin` 消息源 kind。记忆注入改用既有的 `runtime-context` kind，形状完全一致（`{ kind, form: 'snapshot', sections }`，在插件自己的程序里重复声明同一成员），使 fork 不新增 session 日志词汇表变体。
 
