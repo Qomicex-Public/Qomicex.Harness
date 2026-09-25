@@ -335,7 +335,6 @@ describe('WorkspaceController commands', () => {
     await expect(controller.unpinSession({ sessionId: session.id }))
       .resolves.toEqual({ pinnedSessionIds: [] })
   })
-  })
 })
 
 describe('WorkspaceController follow', () => {

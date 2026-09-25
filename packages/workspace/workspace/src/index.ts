@@ -529,7 +529,6 @@ export class WorkspaceRegistry extends Service {
       })
     })
   }
-  }
 
   /**
    * Whether a session is live, header-indexed, or present in a fresh

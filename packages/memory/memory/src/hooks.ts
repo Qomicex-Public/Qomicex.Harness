@@ -18,6 +18,16 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
+import type { ContextFormed } from '@deepseek-ai/dsh-llm'
+// The runtime-context snapshot source this plugin's injections ride. The
+// declaration repeats the agent-loop owner's identical member: declaration
+// merging needs the variant in this program too, and an identical member
+// merges without changing the logged structure.
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'runtime-context': { kind: 'runtime-context' } & ContextFormed
+  }
+}
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { PreStepDecision } from '@deepseek-ai/dsh-agent'
 import { hybridRetrieve } from './algorithms/retrieval.ts'
@@ -26,7 +36,11 @@ import { readableScopes } from './scope/namespace.ts'
 import type { MemoryCore } from './memory/core.ts'
 import type { HotPack, Memory, ScopeNode } from './types.ts'
 
-/** Plugin name stamped on injected messages. */
+/**
+ * Plugin name. Injected messages are logged under the shared
+ * `runtime-context` source kind, whose snapshot sections name this plugin's
+ * contributions.
+ */
 export const PLUGIN_NAME = 'bio-memory'
 
 /** Marker opening the hot-pack block. */
@@ -152,8 +166,7 @@ export function registerRecallHook(ctx: Context, deps: HookContext): () => void 
         createUserMessage({
           content: [{ type: 'text', text: block }],
           source: {
-            kind: 'plugin',
-            plugin: PLUGIN_NAME,
+            kind: 'runtime-context',
             form: 'snapshot',
             sections: [{ name: step === 1 ? 'memory-hot-pack' : 'memory-recall', text: block }],
           },
@@ -267,8 +280,7 @@ function registerPatternHook(ctx: Context, deps: HookContext): () => void {
         createUserMessage({
           content: [{ type: 'text', text: block }],
           source: {
-            kind: 'plugin',
-            plugin: PLUGIN_NAME,
+            kind: 'runtime-context',
             form: 'snapshot',
             sections: [{ name: 'memory-patterns', text: block }],
           },

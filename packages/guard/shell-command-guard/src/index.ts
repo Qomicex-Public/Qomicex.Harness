@@ -8,11 +8,11 @@
  * The built-in deny set is a security invariant held in code. Everything a user
  * may tune — the master switch, keyword checks, regular-expression rules, the
  * inline check script, and the recursive-delete allow paths — lives in the
- * durable `shell-command-guard` settings namespace that the Security Review
- * settings page edits. Precedence is fixed: a built-in deny is final, then user
- * deny, then user ask, then the built-in allow-path exemption and ask. When no
- * settings provider is composed the schema defaults apply, so the guard's
- * behaviour does not depend on the provider's presence
+ * plugin's volatile Config, which the Security Review settings page edits
+ * through the profile. Precedence is fixed: a built-in deny is final, then user
+ * deny, then user ask, then the built-in allow-path exemption and ask. The
+ * schema defaults ride inside the volatile snapshots, so the guard's behaviour
+ * does not depend on the Settings service's presence
  * ([configuration](../README.md#use-this-package)).
  *
  * @module @deepseek-ai/dsh-shell-command-guard
@@ -20,8 +20,10 @@
 
 import { homedir } from 'node:os'
 import type { Context } from '@deepseek-ai/cordis'
-// Type-only: merges `ctx.settings`, its SettingsScope surface, and the provider type into this program.
-import type { SettingsProvider } from '@deepseek-ai/dsh-settings'
+// Type-only: merges the `settings` service whose page policy this plugin registers.
+import type {} from '@deepseek-ai/dsh-settings'
+// Type-only: merges the `loader/volatile-update` event this plugin recompiles on.
+import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type { PreToolDecision, ToolExecution } from '@deepseek-ai/dsh-tools'
 import {
   analyzeCommand, commandTextFromArguments, compileUserRules, evaluateUserRules, isShellTool, mergeVerdicts,
@@ -30,21 +32,17 @@ import {
 import type { CompiledUserRules } from './rules.ts'
 import { compileCheckScript } from './script.ts'
 import type { CheckScript } from './script.ts'
-import {
-  defaultSecurityReviewSettings, SECURITY_REVIEW_NAMESPACE, SecurityReviewSettingsSchema,
-  validateSecurityReviewSettings,
-} from './settings.ts'
-import type { SecurityReviewSettings } from './settings.ts'
+import { Config } from './settings.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'shell-command-guard'
 
 export { DEFAULT_ALLOW_PATHS } from './rules.ts'
 export type { AnalyzeOptions, CommandVerdict, CompiledUserRules, KeywordRule, PatternRule, ReviewAction } from './rules.ts'
-export { REVIEW_ACTIONS, SECURITY_REVIEW_NAMESPACE, SecurityReviewSettingsSchema, validateSecurityReviewSettings } from './settings.ts'
+export { Config, REVIEW_ACTIONS, SECURITY_REVIEW_NAMESPACE, validateSecurityReviewSettings } from './settings.ts'
 export type { SecurityReviewSettings } from './settings.ts'
 
-/** Compiled, ready-to-enforce view of one settings document. */
+/** Compiled, ready-to-enforce view of the live configuration. */
 interface RuntimeConfig {
   /** Whether any check runs at all. */
   enabled: boolean
@@ -57,47 +55,39 @@ interface RuntimeConfig {
 }
 
 /**
- * Compile one settings document into the enforcement form, reporting a broken
+ * Compile the live configuration into the enforcement form, reporting a broken
  * check script through `report` rather than throwing: a bad script must not
  * stop the built-in deny set from protecting the host.
- * @param settings - the resolved settings value.
+ * @param config - the live configuration references.
  * @param report - receives one message per broken check script.
  * @returns the compiled runtime configuration.
  */
-function compileRuntime(settings: SecurityReviewSettings, report: (message: string) => void): RuntimeConfig {
+function compileRuntime(config: Config, report: (message: string) => void): RuntimeConfig {
   return {
-    enabled: settings.enabled,
-    allowPaths: [...DEFAULT_ALLOW_PATHS, ...settings.allowPaths],
-    userRules: compileUserRules(settings.keywords, settings.rules),
-    script: compileCheckScript(settings.script, report),
+    enabled: config.enabled.get(),
+    allowPaths: [...DEFAULT_ALLOW_PATHS, ...config.allowPaths.get()],
+    userRules: compileUserRules(config.keywords.get(), config.rules.get()),
+    script: compileCheckScript(config.script.get(), report),
   }
 }
 
 /**
- * Install the gate and bind the settings namespace it enforces.
- * @param ctx - plugin context; the listener and the namespace observer are disposed with it.
+ * Install the gate over the plugin's live configuration. A malformed rule
+ * pattern fails plugin load, so a stored document cannot leave a rule silently
+ * inert; a later rejected candidate keeps the last compiled runtime.
+ * @param ctx - plugin context; the listener and the page policy are disposed with it.
+ * @param config - the live security-review configuration; every field is a volatile reference.
  */
-export function apply(ctx: Context): void {
+export function apply(ctx: Context, config: Config): void {
   const home = homedir()
   const report = (message: string): void => { ctx.logger.warn(`[shell-command-guard] ${message}`) }
-  let runtime = compileRuntime(defaultSecurityReviewSettings(), report)
+  let runtime = compileRuntime(config, report)
 
-  /** Register the namespace on the context that owns the settings service, and follow it. */
-  const bindNamespace = (host: Context, settings: SettingsProvider): void => {
-    const scope = settings.register(SECURITY_REVIEW_NAMESPACE, SecurityReviewSettingsSchema, {
-      validate: validateSecurityReviewSettings,
-    })
-    const adopt = (): void => { runtime = compileRuntime(scope.get(), report) }
-    adopt()
-    host.effect(() => scope.watch(() => { adopt() }), 'shell-command-guard: settings adoption')
-  }
+  ctx.on('loader/volatile-update', () => { runtime = compileRuntime(config, report) })
 
-  // Register eagerly when the provider is already composed, so a malformed
-  // stored document fails plugin load; otherwise wait for the provider, since
-  // the service is optional and row order is not fixed.
-  const settings = ctx.get('settings')
-  if (settings !== undefined) bindNamespace(ctx, settings)
-  else ctx.inject(['settings'], (settingsCtx) => { bindNamespace(settingsCtx, settingsCtx.settings) })
+  // The Security Review page owns the presentation, so this entry opts out of
+  // the generated page; the service is optional and row order is not fixed.
+  ctx.inject(['settings'], (child) => { child.effect(() => child.settings.configure({ auto: false }, ctx.fiber)) })
 
   ctx.on('tools/pre-execute', async (exec: ToolExecution, next: () => Promise<PreToolDecision>): Promise<PreToolDecision> => {
     const downstream = await next()

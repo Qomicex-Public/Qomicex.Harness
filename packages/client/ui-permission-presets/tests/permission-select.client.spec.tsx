@@ -165,6 +165,8 @@ describe('PermissionSelect', () => {
         ...CATALOG.options,
         { value: 'yolo', name: 'YOLO', description: 'auto-approve every action' },
       ],
+      defaultPreset: CATALOG.defaultPreset,
+      defaultOptions: CATALOG.defaultOptions,
     }
     const { select, selection } = setup({ catalog })
     fireEvent.click(trigger())

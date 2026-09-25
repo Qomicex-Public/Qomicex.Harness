@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Use Playwright MCP to inspect pages and operate Chromium through its upstream tools. The provider initializes a Session's MCP connection before creation or resume completes and retains it across turns. Launch a separate browser or attach one Session to an existing browser with its current tabs and login state. A launch reads the `automation` settings namespace at each browser start, so the browser channel, executable path, and headless choice a user made on the Settings page reach every browser opened afterwards. This published experimental package activates only when explicitly mounted.
+Use Playwright MCP to inspect pages and operate Chromium through its upstream tools. The provider initializes a Session's MCP connection before creation or resume completes and retains it across turns. Launch a separate browser or attach one Session to an existing browser with its current tabs and login state. A launch reads the live provider configuration at each browser start, so the browser channel, executable path, and headless choice a user made on the Settings page reach every browser opened afterwards. This published experimental package activates only when explicitly mounted.
 
 ## Table of Contents
 
@@ -49,9 +49,9 @@ Use `mode: attach` and set `endpoint` to an HTTP(S) debugging URL or WS(S) brows
 
 The [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-browser-use-playwright-mcp) lists accepted fields. The profile or preset selects the browser mode. The child process clears inherited `PLAYWRIGHT_MCP_*` options so they cannot replace that configuration.
 
-### The automation settings namespace
+### The automation settings fields
 
-A launch registers the `automation` settings namespace with the composition entry as its base layer, so the `browser`, `executablePath`, and `headless` fields also resolve from the user section of `settings.yaml` — edited by the [Automation settings rows](../../client/ui-settings-automation/README.md) in the General section of Settings. A user value resolves above the composition entry; clearing it returns to that entry. The provider reads the namespace when each browser starts, so a change reaches every browser opened afterwards while a running browser keeps the selection it started with. Without a settings provider the schema defaults apply, and behavior does not change. Attachment mode registers no namespace.
+The `browser`, `executablePath`, and `headless` fields are live Config fields of the `browser-use-playwright-mcp` profile entry, edited by the [Automation settings rows](../../client/ui-settings-automation/README.md) in the General section of Settings and persisted through the profile patch. The fields are `Config` schema leaves marked volatile, so the provider composes without configuration and the same edits apply at runtime without a restart. The provider reads the fields when each browser starts, so a change reaches every browser opened afterwards while a running browser keeps the selection it started with. Without a settings provider the schema defaults apply, and behavior does not change. Attachment mode reads no launch selection.
 
 When configuring the system prompt's `toolOrder` for the whole process, leave browser tools under `<unlisted-tools>`. Explicitly listing browser tool names can make prompt assembly fail for Sessions without a browser connection.
 

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Two rows in the General section of the Settings page choose the web backends: **Web search backend** and **Web fetch backend**. Each row mirrors the Host `web` settings namespace and writes the pick through the settings scope, so a deployment switches `web_search` and `web_fetch` to another mounted provider without a configuration file. The rows list the provider ids the shipped provider packages register; a composition that mounts a different provider edits the same two namespace fields.
+Two rows in the General section of the Settings page choose the web backends: **Web search backend** and **Web fetch backend**. Each row mirrors the Host `web` entry's settings section and writes the pick through the shared configuration form, so a deployment switches `web_search` and `web_fetch` to another mounted provider without a configuration file. The rows list the provider ids the shipped provider packages register; a composition that mounts a different provider edits the same two fields.
 
 ## Table of Contents
 
@@ -26,7 +26,7 @@ Two rows in the General section of the Settings page choose the web backends: **
 
 Mount `@deepseek-ai/dsh-client-ui-settings-web` in a Web composition that already provides the settings shell; the rows register themselves and need no configuration. Open Settings, select **General**, and pick a backend on either row.
 
-The rows read the resolved value of the `web` namespace: schema defaults, then the composition entry, then the user layer. A pick writes the user layer, so the composition default keeps serving until a user overrides it. A provider id the Host has not mounted fails at call time with `WEB_PROVIDER_CONFIGURED_MISSING`, and one whose credential is missing fails with `WEB_PROVIDER_CONFIGURED_UNAVAILABLE` — the seam reports both to the model-facing tools rather than the row.
+The rows read the resolved value of the `web` entry's section: schema defaults, then the composition entry, then the user layer. A pick writes the user layer, so the composition default keeps serving until a user overrides it. A provider id the Host has not mounted fails at call time with `WEB_PROVIDER_CONFIGURED_MISSING`, and one whose credential is missing fails with `WEB_PROVIDER_CONFIGURED_UNAVAILABLE` — the seam reports both to the model-facing tools rather than the row.
 
 -----
 
@@ -40,7 +40,7 @@ This section explains the design decisions behind the rows; the observable behav
 
 ### One store, two rows
 
-`apply()` binds one settings scope over the `web` namespace and shares one row store between both registrations, because the two selections share one revision and one write transport. Each registration injects its own face carrying its capability, so the shared component renders the capability's title and candidate list without a per-capability store.
+`apply()` binds one form over the `web` entry through `ctx.configForms.get()` and shares one row store between both registrations, because the two selections share one revision and one write transport. Each registration injects its own face carrying its capability, so the shared component renders the capability's title and candidate list without a per-capability store.
 
 ### Source map
 

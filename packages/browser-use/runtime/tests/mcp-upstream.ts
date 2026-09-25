@@ -18,12 +18,12 @@ import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import Sessions, { SessionId } from '@deepseek-ai/dsh-session'
 import Agents from '@deepseek-ai/dsh-agent'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
+import type { BrowserMcpConfig } from '../src/mcp.ts'
 import Projections from '@deepseek-ai/dsh-session-projection'
 import { expect, vi } from 'vitest'
-import type { BrowserMcpConfig } from '../src/mcp.ts'
 
 export async function verifyMcpBrowser(
-  provider: Pick<Plugin.Object<BrowserMcpConfig>, 'apply'>,
+  provider: Pick<Plugin.Object<unknown>, 'apply'>,
   namespace: string,
   navigate: { name: string; arguments(url: string): Record<string, unknown> },
   mode: 'launch' | 'attach',

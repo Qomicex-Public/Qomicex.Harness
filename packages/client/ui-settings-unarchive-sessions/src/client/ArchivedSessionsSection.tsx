@@ -6,7 +6,7 @@
  */
 import { useMemo, useState, type ReactNode } from 'react'
 import {
-  Button, IconSearchOutline16, RiskConfirmation, relativeTime,
+  Button, IconSearchOutlineRegular, RiskConfirmation, relativeTime,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
@@ -100,7 +100,7 @@ export function ArchivedSessionsSection(props: ArchivedSessionsSectionProps): Re
   return (
     <div className={css.section}>
       <div className={css.search}>
-        <IconSearchOutline16 aria-hidden="true" />
+        <IconSearchOutlineRegular aria-hidden="true" />
         <input
           type="search"
           value={query}

@@ -2,15 +2,17 @@
  * Durable settings of the Personalization page. Colours, modes, and switches
  * live here in the Host user-settings document; the uploaded image bytes never
  * do — they stay in the browser's IndexedDB (see `src/client/background-store.ts`),
- * and this document only records which image is in use.
+ * and this document only records which image is in use. The plugin `Config`
+ * schema projects the same fields as volatile leaves the settings form edits.
  *
  * @module @deepseek-ai/dsh-client-ui-personalization/personalization-settings
  */
 
+import type { Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 
-/** Settings namespace this plugin registers and its page edits. */
-export const PERSONALIZATION_NAMESPACE = 'personalization'
+/** Profile entry id this plugin's Host half owns and its settings page edits. */
+export const PERSONALIZATION_NAMESPACE = 'ui-personalization'
 
 /** Background paint modes offered by the page. */
 export const BACKGROUND_MODES = ['none', 'solid', 'gradient', 'image'] as const
@@ -139,6 +141,65 @@ export const PersonalizationSettingsSchema: z<PersonalizationSettings> = z.objec
   corner: z.object({
     enabled: z.boolean().default(false),
     position: z.union([...CORNER_POSITIONS]).default('bottom-left'),
+  }).default({ enabled: false, position: 'bottom-left' }),
+})
+
+/** Every leaf of `T` becomes a live reference; nested objects stay plain parents. */
+export type VolatileLeaves<T> = {
+  [K in keyof T]: T[K] extends object ? VolatileLeaves<T[K]> : Volatile<T[K]>
+}
+
+/**
+ * Live plugin configuration. Every leaf is a stable reference whose snapshot
+ * carries the schema default until the user overrides it, and the settings form
+ * edits these fields without remounting the effects. The resolved values have
+ * the {@link PersonalizationSettings} shape.
+ */
+export interface Config extends VolatileLeaves<PersonalizationSettings> {}
+
+/** Plugin Config schema; the volatile leaves are the fields the settings form edits. */
+export const Config = z.object({
+  enabled: z.boolean().default(true).volatile(),
+  themeColor: z.string().default('').volatile(),
+  background: z.object({
+    mode: z.union([...BACKGROUND_MODES]).default('none').volatile(),
+    solid: z.string().default('#1b1e28').volatile(),
+    gradientFrom: z.string().default('#0f1a33').volatile(),
+    gradientTo: z.string().default('#3a6ea5').volatile(),
+    angle: z.number().min(0).max(360).default(135).volatile(),
+    imageSource: z.union([...IMAGE_SOURCES]).default('blob').volatile(),
+    imageUrl: z.string().default('').volatile(),
+    overlay: z.number().min(0).max(100).default(40).volatile(),
+  }).default({
+    mode: 'none',
+    solid: '#1b1e28',
+    gradientFrom: '#0f1a33',
+    gradientTo: '#3a6ea5',
+    angle: 135,
+    imageSource: 'blob',
+    imageUrl: '',
+    overlay: 40,
+  }),
+  glass: z.object({
+    enabled: z.boolean().default(true).volatile(),
+    sidebar: z.boolean().default(true).volatile(),
+    composer: z.boolean().default(true).volatile(),
+    conversation: z.boolean().default(true).volatile(),
+    settings: z.boolean().default(true).volatile(),
+    code: z.boolean().default(true).volatile(),
+    blur: z.number().min(0).max(GLASS_BLUR_MAX).default(20).volatile(),
+  }).default({
+    enabled: true,
+    sidebar: true,
+    composer: true,
+    conversation: true,
+    settings: true,
+    code: true,
+    blur: 20,
+  }),
+  corner: z.object({
+    enabled: z.boolean().default(false).volatile(),
+    position: z.union([...CORNER_POSITIONS]).default('bottom-left').volatile(),
   }).default({ enabled: false, position: 'bottom-left' }),
 })
 

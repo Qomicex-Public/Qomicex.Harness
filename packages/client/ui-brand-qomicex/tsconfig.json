@@ -18,7 +18,7 @@
       "path": "../ui-sidebar"
     },
     {
-      "path": "../ui-conversation"
+      "path": "../ui-conversation/tsconfig.client.json"
     },
     {
       "path": "../ui-slots"

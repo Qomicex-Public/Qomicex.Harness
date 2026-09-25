@@ -71,7 +71,7 @@ function faceOf(slots: SlotRegistry, id: string) {
 
 describe('ui-settings-web apply', () => {
   it('declares the services it injects', () => {
-    expect(inject).toEqual(['slots', 'locale', 'remote', 'settingsScope'])
+    expect(inject).toEqual(['slots', 'locale', 'configForms'])
   })
 
   it('registers both provider rows over the web namespace (declaration before or after apply)', async () => {

@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-**记忆**设置页让用户调节 bio-memory 插件，并看到它存了什么。页面有两块彼此独立的部分。上半部分把每条记忆画成力导向图：节点是记忆，连线表示两条记忆共享同一事实键或同一作用域。下半部分是插件配置，渲染成带标签的表单；写入落在 `settings.yaml` 的用户层，无需重启即可生效。选中节点会打开详情面板，显示记忆内容及其认知、显著度、生命周期各项数值。图的布局在本包内实现；仓库不带任何图库，而算法本身小到不需要引入一个。
+**记忆**设置页让用户调节 bio-memory 插件，并看到它存了什么。页面有两块彼此独立的部分。上半部分把每条记忆画成力导向图：节点是记忆，连线表示两条记忆共享同一事实键或同一作用域。下半部分是插件配置，渲染成带标签的表单；写入落在 profile 文档的用户层，无需重启即可生效。选中节点会打开详情面板，显示记忆内容及其认知、显著度、生命周期各项数值。图的布局在本包内实现；仓库不带任何图库，而算法本身小到不需要引入一个。
 
 ## 目录
 
@@ -49,7 +49,7 @@ kind: "package-reference"
 
 ### 注册与数据来源
 
-`apply()` 注册 locale 命名空间、绑定它，并通过 `ctx.slots.inject()` 贡献该 section。它声明 `remote`、`remote.memory`、`remote.llm` 与 `remote.settings`，以便页面访问 memory Remote 命名空间，并从「模型」页填充蒸馏下拉框；设置 scope 用 `ctx.get('settingsScope')` 惰性绑定而非注入：没有设置服务的部署仍须渲染图那一半，而注入该服务会让整个 section 一直等待一个永不出现的服务。注入面暴露 `loadGraph`、`loadStatus`、`forget`、`loadDistillTargets` 以及可选的 `settings` 句柄；组件永远看不到 `ctx`。服务商下拉框列出可配置的服务商，模型下拉框列出已选服务商声明的 id，因此蒸馏目标只能是「模型」页配置过的。
+`apply()` 注册 locale 命名空间、绑定它，并通过 `ctx.slots.inject()` 贡献该 section。它声明 `remote`、`remote.memory`、`remote.llm`、`remote.settings` 与 `configForms`，以便页面访问 memory Remote 命名空间、从「模型」页填充蒸馏下拉框，并通过 `ctx.configForms.get()` 读取 memory 插件配置项的表单；Host 未提供该条目时设置快照为 `unavailable`，而图那一半照常工作。注入面暴露 `loadGraph`、`loadStatus`、`forget`、`loadDistillTargets` 以及 `settings` 句柄；组件永远看不到 `ctx`。服务商下拉框列出可配置的服务商，模型下拉框列出已选服务商声明的 id，因此蒸馏目标只能是「模型」页配置过的。
 
 ### 图的布局
 

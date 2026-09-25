@@ -59,6 +59,8 @@ kind: "package-reference"
 
 可直接套用的覆盖层位于 [`apps/cli/config/examples/memory/cordis.yml`](../../../apps/cli/config/examples/memory/cordis.yml)；用 `dsh --patch <path>` 应用。
 
+该配置中的每个字段都是 volatile，因此 Harness 会把它投影为记忆设置页中的可编辑表单：提交的编辑无需重启即作用于运行中的插件，并持久化到 profile patch——即上方覆盖层所写入的那一层。
+
 ### 四个工具
 
 | 工具 | 作用 |

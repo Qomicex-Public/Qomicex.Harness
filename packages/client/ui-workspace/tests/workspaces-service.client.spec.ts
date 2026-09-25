@@ -242,7 +242,6 @@ class FakeWorkspaces implements IWorkspaces {
       pinnedSessionIds: state.pinnedSessionIds.filter(id => id !== sessionId),
     }))
   }
-  }
 }
 
 const listing: DirectoryListing = {

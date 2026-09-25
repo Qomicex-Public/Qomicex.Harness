@@ -1,5 +1,5 @@
 ---
-description: "dsh web 客户端「通用设置」中的自动化设置行：覆盖 `automation` 设置命名空间的浏览器类型、可执行路径与无头开关。"
+description: "dsh web 客户端「通用设置」中的自动化设置行：覆盖 `browser-use-playwright-mcp` 配置项的浏览器类型、可执行路径与无头开关。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-「通用设置」中的三个设置行，用于选择自动化启动的浏览器：启动时解析的浏览器系列、可选的可执行路径、以及是否无头运行。这些设置行编辑 Playwright MCP 浏览器提供方在 Host 侧注册的 `automation` 设置命名空间；每次写入落入 `settings.yaml` 的用户段，之后打开的每个浏览器都按新选择启动。未挂载设置服务的部署仍会渲染这些行，但为禁用状态并说明原因。
+「通用设置」中的三个设置行，用于选择自动化启动的浏览器：启动时解析的浏览器系列、可选的可执行路径、以及是否无头运行。这些设置行编辑 Playwright MCP 浏览器提供方在 Host 侧注册的 `browser-use-playwright-mcp` 配置项；每次写入落入 profile 文档的用户段，之后打开的每个浏览器都按新选择启动。Host 未提供该条目时表单快照为 `unavailable`，这些行仍会渲染，但为禁用状态并说明原因。
 
 ## 目录
 
@@ -43,7 +43,7 @@ kind: "package-reference"
 
 ### 注册与数据源
 
-`apply()` 注册 locale 命名空间，并通过 `ctx.slots.inject()` 贡献这些行。它只声明 `slots` 与 `locale`；设置作用域通过 `ctx.get('settingsScope')` 惰性绑定而非注入，因为未挂载设置服务的部署仍须渲染这些行，而注入该服务会让所有行永久等待一个永不到来的依赖。注入面提供带 `snapshot`、`subscribe`、`mutate` 的 `settings` 句柄；组件永远接触不到 `ctx`。
+`apply()` 注册 locale 命名空间，并通过 `ctx.slots.inject()` 贡献这些行。它声明 `slots`、`locale` 与 `configForms`，并通过 `ctx.configForms.get()` 读取该配置项的表单；Host 未提供该条目时快照为 `unavailable`，而不会让这些行永久挂起。注入面提供带 `snapshot`、`subscribe`、`mutate` 的 `settings` 句柄；组件永远接触不到 `ctx`。
 
 每一行都订阅命名空间快照，来自任何位置的写入——另一个标签页、一次文件编辑——都会到达输入框。路径行在失焦前保留本地草稿：正在输入的路径不应每敲一键就写入，而空草稿会写入清除操作，使字段回退到组合配置声明的值。
 

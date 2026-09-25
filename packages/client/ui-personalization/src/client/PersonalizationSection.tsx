@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
-import { Button, IconChevronDownOutline14, Input, Menu, Switch } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, IconChevronDownOutlineRegular, Input, Menu, Switch } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { PersonalizationLocaleKey } from './locales.ts'
 import { readValue, saveOps, resetOps, firstInvalidColor, THEME_COLOR_PRESETS, type PersonalizationPathOp } from './model.ts'
@@ -30,7 +30,7 @@ export interface PersonalizationSnapshot {
   readonly writable: boolean
 }
 
-/** The settings face for the personalization namespace; absent when no provider is mounted. */
+/** The settings face over the personalization profile entry. */
 export interface PersonalizationFace {
   /** Current snapshot of the personalization settings section. */
   readonly snapshot: () => PersonalizationSnapshot
@@ -42,8 +42,8 @@ export interface PersonalizationFace {
 
 /** Registration-side face used by the page. */
 export interface PersonalizationInjected {
-  /** The settings face, or `undefined` when no settings provider is mounted. */
-  readonly settings: PersonalizationFace | undefined
+  /** The settings face over the plugin's profile entry. */
+  readonly settings: PersonalizationFace
 }
 
 /** Full component props assembled by the Settings slot renderer. */
@@ -66,7 +66,6 @@ type Feedback =
  */
 export function PersonalizationSection(props: PersonalizationSectionProps): ReactNode {
   const { settings, t } = props
-  if (settings === undefined) return <p className={css.muted}>{t('unavailable')}</p>
   return <PersonalizationForm settings={settings} t={t} />
 }
 
@@ -326,7 +325,7 @@ function PositionMenu(props: {
           onClick={() => { setOpen(value => !value) }}
         >
           {t(positionKey(value))}
-          <IconChevronDownOutline14 className={css.chevron} />
+          <IconChevronDownOutlineRegular className={css.chevron} />
         </button>
       )}
     />

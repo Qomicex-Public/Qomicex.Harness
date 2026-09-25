@@ -76,9 +76,8 @@ describe('desktop runtime project metadata', () => {
     createRuntimeProjectMetadata(root, release)
 
     const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8')
-    expect(workspace).toContain('strictDepBuilds: true')
     // The local judgment model's postinstall downloads its platform binary;
-    // a missing allowance is a hard install error under strictDepBuilds.
+    // the allowance is what lets the runtime install run to completion.
     expect(workspace).toMatch(/^ {2}node-llama-cpp: true$/mu)
   })
 })

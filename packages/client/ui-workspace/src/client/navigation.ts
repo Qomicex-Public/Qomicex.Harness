@@ -271,7 +271,6 @@ class UiWorkspaceService extends Service implements UiWorkspace {
   async unpinSession(sessionId: SessionId): Promise<void> {
     await this.workspaces.unpinSession(sessionId)
   }
-  }
 
   async pickDirectory(): Promise<string | null> {
     const result = await this.directoryPicker.pick()

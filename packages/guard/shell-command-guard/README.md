@@ -41,7 +41,7 @@ For every tool call whose name reads as a shell or database family, or whose arg
 
 ### Tuning it
 
-Everything a user may change lives in the durable `shell-command-guard` settings namespace, edited on the [Security Review Settings page](../../client/ui-settings-security-review/README.md) and stored in `settings.yaml`. No `Config` field exists, so the guard composes without configuration and the same edits apply at runtime without a restart.
+Everything a user may change is a live Config field of the `shell-command-guard` profile entry, edited on the [Security Review Settings page](../../client/ui-settings-security-review/README.md) and persisted through the profile patch. The fields are `Config` schema leaves marked volatile, so the guard composes without configuration and the same edits apply at runtime without a restart.
 
 | Setting | Effect |
 |---|---|
@@ -70,9 +70,9 @@ This section explains how the guard reaches its verdict and how the settings doc
 The guard is built on four commitments:
 
 - **The deny set is a security invariant.** `src/rules.ts` holds the built-in patterns and imports neither Cordis nor Harness code, so the rules stay independently testable and cannot fail to load with the plugin. No settings value can express an `allow` rule.
-- **Settings carry the tunable layer.** `src/settings.ts` owns the `shell-command-guard` schema and the `validate` hook; the plugin registers the namespace through the settings provider and recompiles the resolved document on every change.
+- **Settings carry the tunable layer.** `src/settings.ts` owns the plugin `Config` schema — every field a volatile leaf the settings form projects — and the write-validation hook; the plugin recompiles the values its references carry whenever the Loader commits a change.
 - **Precedence is fixed, not configurable.** `mergeVerdicts` applies built-in deny > user deny > user ask > built-in ask > allow. A user rule therefore escalates but never relaxes.
-- **No provider, no change in behavior.** When no settings provider is composed, `defaultSecurityReviewSettings()` matches the schema defaults, so the guard enforces the built-in rules either way.
+- **No settings service, no change in behavior.** The schema defaults ride inside the volatile snapshots the plugin receives at load, so the guard enforces the built-in rules whether or not the Settings service is composed.
 
 ### Detection and classification
 
@@ -82,13 +82,13 @@ One `tools/pre-execute` listener awaits the downstream decision first, then, whe
 
 ### The user layer and the check script
 
-`compileUserRules` compiles the keyword list and the non-empty regular expressions once per settings change; `evaluateUserRules` scans keywords then patterns, letting a deny win outright and the first ask stand, so no later rule can soften an earlier match. `validateSecurityReviewSettings` compiles the same layers at the write and at registration, so a malformed expression is rejected before it can persist as a silently inert rule.
+`compileUserRules` compiles the keyword list and the non-empty regular expressions once per committed change; `evaluateUserRules` scans keywords then patterns, letting a deny win outright and the first ask stand, so no later rule can soften an earlier match. `validateSecurityReviewSettings` compiles the same layers, so a malformed expression is rejected when the guard adopts the configuration — at plugin load and on every live update — instead of persisting as a silently inert rule.
 
 `compileCheckScript` wraps the inline body in an isolated `node:vm` context that receives only `command` and `context`, then runs it with a 50 ms timeout. The script may return a `deny` or `ask` verdict; anything else — no result, an unknown action, or `allow` — is "no opinion". A compile or run failure is reported through the plugin logger and never throws, so a broken script cannot stop the built-in deny set from protecting the host.
 
-### Settings binding
+### Configuration binding
 
-The plugin reads `ctx.get('settings')` and binds the namespace eagerly when a provider is already composed; otherwise it waits through `ctx.inject(['settings'], …)`, because the service is optional and row order is not fixed. `scope.watch` recompiles the runtime configuration whenever the resolved document moves, and the observer is disposed with the plugin.
+The plugin receives its tunable layer as the volatile `Config` references `apply` is called with, so no service lookup stands between the guard and its values. A `loader/volatile-update` event recompiles the runtime configuration, the Security Review page keeps its own presentation through a `configure({ auto: false })` page policy registered as an effect when the optional Settings service is composed, and a commit the plugin cannot compile leaves the last good runtime in place.
 
 ### Source map
 
@@ -96,7 +96,7 @@ The plugin reads `ctx.get('settings')` and binds the namespace eagerly when a pr
 |---|---|
 | [`src/index.ts`](src/index.ts) | Plugin entry: `name`/`apply`, settings binding, the `tools/pre-execute` listener |
 | [`src/rules.ts`](src/rules.ts) | Built-in patterns, verdict merging, user-rule compilation, allow-path matching |
-| [`src/settings.ts`](src/settings.ts) | Namespace name, schema, resolved-value type, write validation, provider-less defaults |
+| [`src/settings.ts`](src/settings.ts) | Plugin `Config` schema, resolved-value type, compile-time validation, and the default document |
 | [`src/script.ts`](src/script.ts) | Inline check-script compilation and the restricted `node:vm` run |
 | − | No runtime invariant companion is published. A pure classifier plus one waterfall listener over user-owned settings has no package-owned event history or mutable relation an independent companion could observe; the fixed deny precedence is pinned by the unit suite instead. |
 
@@ -110,8 +110,8 @@ The plugin reads `ctx.get('settings')` and binds the namespace eagerly when a pr
 Read these pages when the package-level contract is not enough. They move from the tool-call pipeline to the settings document and the group map.
 
 - [Tools subsystem reference](../../../docs/subsystems/tools.md) — the `tools/pre-execute` waterfall and the `PreToolDecision` shapes this guard returns.
-- [Settings subsystem reference](../../../docs/subsystems/settings.md) — the namespace registration, schema, and write-validation path the guard binds.
-- [Security Review Settings page](../../client/ui-settings-security-review/README.md) — the UI that edits this plugin's namespace.
+- [Settings subsystem reference](../../../docs/subsystems/settings.md) — the volatile Config projection and profile-backed edit path this plugin's fields travel.
+- [Security Review Settings page](../../client/ui-settings-security-review/README.md) — the UI that edits this plugin's configuration fields.
 - [guard group map](../README.md) — the sibling guard packages.
 
 -----

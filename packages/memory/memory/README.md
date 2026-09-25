@@ -59,6 +59,8 @@ Enable it in a profile patch layer:
 
 A ready-to-apply overlay lives at [`apps/cli/config/examples/memory/cordis.yml`](../../../apps/cli/config/examples/memory/cordis.yml); apply it with `dsh --patch <path>`.
 
+Every field in that configuration is volatile, so the harness projects it into the memory Settings page as an editable form: a committed edit reaches the running plugin without a restart and persists in the profile patch, the layer the overlay above writes.
+
 ### The four tools
 
 | Tool | Does |

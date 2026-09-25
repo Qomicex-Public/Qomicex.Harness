@@ -53,7 +53,7 @@ describe('release families', () => {
       '@deepseek-ai/dsh-experimental-api-speech-to-text',
       '@deepseek-ai/dsh-experimental-auto-review',
       '@deepseek-ai/dsh-experimental-client-ui-agent-team',
-       '@deepseek-ai/dsh-experimental-client-ui-voice-input',
+      '@deepseek-ai/dsh-experimental-client-ui-voice-input',
       '@deepseek-ai/dsh-experimental-inspector',
       '@deepseek-ai/dsh-experimental-ptc-runtime-python',
       '@deepseek-ai/dsh-experimental-speech-to-text-sensevoice',

@@ -59,7 +59,7 @@ This section explains how the page reaches the guard's settings namespace and wr
 
 ### Registration and data sources
 
-`apply()` registers the `settings.security-review` dictionaries and contributes one `settings.section` entry with id `security-review`; the Settings shell owns the navigation entry, the modal, and the mounted section, so none of that chrome lives here. The plugin declares `slots` and `locale`, and resolves `settingsScope` through `ctx.get` rather than injecting it: a deployment with no settings provider must still render the page's unavailable state instead of holding the entry pending forever.
+`apply()` registers the `settings.security-review` dictionaries and contributes one `settings.section` entry with id `security-review`; the Settings shell owns the navigation entry, the modal, and the mounted section, so none of that chrome lives here. The plugin declares `slots`, `locale`, and `configForms`, and reads the guard's entry form through `ctx.configForms.get()`; a Host that serves no such entry leaves the snapshot `unavailable`, which the page renders instead of holding the entry pending.
 
 The injected face exposes a `settings` handle with `snapshot`, `subscribe`, and `mutate`; the component never sees `ctx`. The handle is bound to the `shell-command-guard` namespace, which the Host guard plugin registers; the page owns presentation only and never validates or enforces a rule itself.
 
@@ -125,7 +125,7 @@ These limits define what this page can edit. They are current package constraint
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The page deliberately holds no validation authority: it re-checks a regular expression before writing so the user gets an immediate message, but the Host guard's `validateSecurityReviewSettings` is the enforcement, and the page must keep working if that check changes. The `settingsScope` binding stays lazy through `ctx.get` for the same reason the memory page does it: the section must render its unavailable state, not hang, when no provider is composed.
+The page deliberately holds no validation authority: it re-checks a regular expression before writing so the user gets an immediate message, but the Host guard's `validateSecurityReviewSettings` is the enforcement, and the page must keep working if that check changes. The `configForms` read keeps the section rendering its unavailable state rather than hanging when the Host composes no such entry.
 
 </details>
 

@@ -41,7 +41,11 @@ function props(overrides: Partial<MemorySectionProps> = {}): MemorySectionProps 
     loadStatus: async () => ({ mounted: true, total: 3 }),
     forget: async () => ({ kind: 'ok', value: { detail: 'done' } }),
     loadDistillTargets: async () => ({ providers: [] }),
-    settings: undefined,
+    settings: {
+      snapshot: () => ({ status: 'unavailable', value: undefined, user: undefined, writable: false, revision: undefined }),
+      subscribe: () => () => {},
+      mutate: async () => {},
+    },
     ...overrides,
   } as unknown as MemorySectionProps
 }
@@ -103,7 +107,7 @@ describe('MemorySection', () => {
     })
   })
 
-  it('notes when no settings provider is mounted', async () => {
+  it('notes when the memory settings entry is not served', async () => {
     render(<MemorySection {...props()} />)
     await waitFor(() => {
       expect(screen.getByText('No settings service is mounted in this deployment.')).toBeTruthy()

@@ -1,5 +1,5 @@
 ---
-description: "Personalization Settings page for the dsh web client: background paint, an anchor-colour brand scale, glass surfaces, and an uploaded corner decoration, over a Host-persisted personalization namespace."
+description: "Personalization Settings page for the dsh web client: background paint, an anchor-colour brand scale, glass surfaces, and an uploaded corner decoration, over the Host-persisted `ui-personalization` profile entry."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The **Personalization** Settings page restyles the web client. A background can be a solid colour, a gradient, an uploaded image, or a remote image URL; one anchor colour generates the whole brand scale through the theme's token override; glass surfaces render the sidebar, composer, conversation, settings dialog, and code blocks translucent over that background; and an uploaded image can sit in a screen corner. Uploaded images stay in the browser's IndexedDB, while colours and switches live in the `personalization` settings namespace. Glass is on by default; every other effect starts off.
+The **Personalization** Settings page restyles the web client. A background can be a solid colour, a gradient, an uploaded image, or a remote image URL; one anchor colour generates the whole brand scale through the theme's token override; glass surfaces render the sidebar, composer, conversation, settings dialog, and code blocks translucent over that background; and an uploaded image can sit in a screen corner. Uploaded images stay in the browser's IndexedDB, while colours and switches live in the `ui-personalization` profile entry. Glass is on by default; every other effect starts off.
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ The **Personalization** Settings page restyles the web client. A background can 
 <a id="use-this-package"></a>
 ## Use this package
 
-Open Settings and select **Personalization**. Mount `@deepseek-ai/dsh-client-ui-personalization` in a Web composition that provides the settings shell and the theme service; the page registers its own navigation entry and needs no configuration. The plugin has one Host-persisted namespace, `personalization`, so the Host half mounts in every Web composition.
+Open Settings and select **Personalization**. Mount `@deepseek-ai/dsh-client-ui-personalization` in a Web composition that provides the settings shell and the theme service; the page registers its own navigation entry and needs no configuration. The plugin has one Host-persisted profile entry, `ui-personalization`, so the Host half mounts in every Web composition.
 
 ### The background
 
@@ -51,7 +51,7 @@ This section explains how the page reaches the namespace and how the effects rea
 
 ### Two halves and one namespace
 
-The Host half (`src/index.ts`) registers the `personalization` settings namespace with its schema and a `validate` hook that rejects a malformed colour at the write. The browser half owns every effect. The page's `apply()` registers the `settings.personalization` dictionaries, contributes one `settings.section` entry with id `personalization`, and resolves `settingsScope` through `ctx.get` rather than injecting it, so a deployment without a settings provider still renders the unavailable state.
+The Host half (`src/index.ts`) owns the `ui-personalization` profile entry's `Config` schema, whose volatile leaves the settings form edits, and opts the entry out of the generated page; the browser half owns every effect and the page presentation. The page's `apply()` registers the `settings.personalization` dictionaries, contributes one `settings.section` entry with id `personalization`, and reads the entry's form through `ctx.configForms.get()`; a Host that serves no such entry leaves the snapshot `unavailable`, which the page renders instead of holding the entry pending.
 
 ### Effects
 
@@ -67,8 +67,8 @@ The stylesheet keys off the body attributes and never off a class name, so the b
 
 | File | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | Host loader entry: registers the `personalization` namespace and its validation |
-| [`src/personalization-settings.ts`](src/personalization-settings.ts) | Namespace name, schema, resolved-value types, defaults, and write validation |
+| [`src/index.ts`](src/index.ts) | Host loader entry: owns the `ui-personalization` entry's Config and its page policy |
+| [`src/personalization-settings.ts`](src/personalization-settings.ts) | Schema, resolved-value types, defaults, and write validation of the entry's section |
 | [`src/client/index.ts`](src/client/index.ts) | Browser plugin: dictionaries, section registration, effects lifecycle, injected face |
 | [`src/client/PersonalizationSection.tsx`](src/client/PersonalizationSection.tsx) | The page: master switch, background, theme colour, glass, corner, save/reset |
 | [`src/client/color-scale.ts`](src/client/color-scale.ts) | Anchor colour to the full brand and companion `--dsw-static-*` scales |
@@ -89,9 +89,9 @@ The stylesheet keys off the body attributes and never off a class name, so the b
 These pages cover the services the effects build on and the settings surface that hosts the page.
 
 - [ui-theme](../ui-theme/README.md) — provides the token override layer the anchor colour writes.
-- [ui-settings](../ui-settings/README.md) — the domain base declaring `settings.section` and the namespace scope service.
+- [ui-settings](../ui-settings/README.md) — the domain base declaring `settings.section` and the shared configuration forms.
 - [ui-settings-general](../ui-settings-general/README.md) — the Settings shell that renders the navigation and mounts the section.
-- [Settings subsystem reference](../../../docs/subsystems/settings.md) — the namespace registration and write-validation path both halves share.
+- [Settings subsystem reference](../../../docs/subsystems/settings.md) — the profile-entry projection and write-validation path both halves share.
 
 -----
 
@@ -116,6 +116,7 @@ These limits define what this page can change. They are current package constrai
 - **Uploaded images are per-browser** — the bytes live in IndexedDB, so the settings document carries no image and another browser shows none until it uploads one.
 - **Glass depends on anchor attributes owned by other packages** — the blur targets `data-dsh-sidebar`, `data-dsh-conversation`, `data-dsh-settings`, `data-dsh-app`, and `data-composer-card`; a composition that omits one of those packages renders no glass on that surface.
 - **Glass is per surface, not per panel** — the switch covers a whole surface; finer targeting is not offered.
+- **The write-validation hook is gone** — the `validate` hook that rejected a malformed colour at the write was removed with the profile-entry `Config` model, so a value written outside the form persists; the page's own save path still refuses an invalid colour.
 
 <a id="dev-note"></a>
 ### Dev Note

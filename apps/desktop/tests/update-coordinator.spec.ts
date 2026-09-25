@@ -226,14 +226,14 @@ describe('desktop update coordinator', () => {
 
   it('offers a prerelease build the prerelease channel and a stable build none', async () => {
     const checkForUpdates = vi.fn(async () => ({ isUpdateAvailable: false, updateInfo: { version: '1.2.4' } }))
-    const updater = { checkForUpdates } as unknown as AppUpdater
+    const updater = { checkForUpdates, on: () => () => {} } as unknown as AppUpdater
 
     application.version = '1.2.3'
-    await new DesktopUpdateCoordinator(state => state, async () => {}, updater, () => true).check()
+    await new DesktopUpdateCoordinator(state => state, async () => true, updater, () => true).check()
     expect(updater.allowPrerelease).toBe(false)
 
     application.version = '1.3.0-alpha.2'
-    await new DesktopUpdateCoordinator(state => state, async () => {}, updater, () => true).check()
+    await new DesktopUpdateCoordinator(state => state, async () => true, updater, () => true).check()
     expect(updater.allowPrerelease).toBe(true)
   })
 })

@@ -3368,7 +3368,7 @@
       "kind": "event",
       "event": "approval/policy",
       "surface": false,
-      "digest": "26718e15e7e395bce9642dba5bbe09b3b1a4ce2213d20d566cd9207d7fc5fb78",
+      "digest": "df0897d75c5fda23013f4b3c5bbd0ae9e753cfe7f7e3dc4990b894f76df755bd",
       "schema": {
         "root": 0,
         "nodes": [
@@ -3382,22 +3382,22 @@
               },
               {
                 "name": "ignorable",
-                "type": 6,
+                "type": 7,
                 "optional": true
               },
               {
                 "name": "seq",
-                "type": 7,
+                "type": 8,
                 "optional": false
               },
               {
                 "name": "time",
-                "type": 7,
+                "type": 8,
                 "optional": false
               },
               {
                 "name": "type",
-                "type": 8,
+                "type": 9,
                 "optional": false
               }
             ],
@@ -3413,7 +3413,7 @@
               },
               {
                 "name": "source",
-                "type": 5,
+                "type": 6,
                 "optional": true
               }
             ],
@@ -3423,8 +3423,13 @@
             "kind": "union",
             "types": [
               3,
-              4
+              4,
+              5
             ]
+          },
+          {
+            "kind": "literal",
+            "value": "always"
           },
           {
             "kind": "literal",
@@ -21810,35 +21815,6 @@
       "sources": []
     },
     {
-      "digest": "05d2ae1e0c7f8770f83f9a09047afb39a335d8ac986df3193659aa1e581472cf",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "union",
-            "types": [
-              1,
-              2
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "ask"
-          },
-          {
-            "kind": "literal",
-            "value": "never"
-          }
-        ]
-      },
-      "names": [
-        "packages/interaction/user-approval/src/index.ts#ApprovalPolicy"
-      ],
-      "sources": [
-        "packages/interaction/user-approval/src/index.ts:67"
-      ]
-    },
-    {
       "digest": "0657d3ca5ac4e7bf79b00bcf860b1c7159d01a9da137497221ec2f1776e365f7",
       "schema": {
         "root": 0,
@@ -22493,6 +22469,40 @@
       },
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "0b3908a4bf31f4acd8c66477499742923cbf3c557df2853baabcc53ed4bcec7b",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "union",
+            "types": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "always"
+          },
+          {
+            "kind": "literal",
+            "value": "ask"
+          },
+          {
+            "kind": "literal",
+            "value": "never"
+          }
+        ]
+      },
+      "names": [
+        "packages/interaction/user-approval/src/index.ts#ApprovalPolicy"
+      ],
+      "sources": [
+        "packages/interaction/user-approval/src/index.ts:70"
+      ]
     },
     {
       "digest": "0b6d718c693fdf7f06dcccb0bcbbabe78cc63514eafc62d6b2a3899735279d6f",
@@ -25128,53 +25138,6 @@
       "names": [],
       "sources": [
         "packages/hooks/hook-protocol/src/types.ts:19"
-      ]
-    },
-    {
-      "digest": "11f70b595aa76897fc4e25a352bfa718c659f44b799e5aa14e84e5a38fe72912",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "policy",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "source",
-                "type": 4,
-                "optional": true
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              2,
-              3
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "ask"
-          },
-          {
-            "kind": "literal",
-            "value": "never"
-          },
-          {
-            "kind": "literal",
-            "value": "delegation"
-          }
-        ]
-      },
-      "names": [],
-      "sources": [
-        "packages/interaction/user-approval/src/index.ts:40"
       ]
     },
     {
@@ -32494,94 +32457,6 @@
           {
             "kind": "literal",
             "value": "tool-goal"
-          }
-        ]
-      },
-      "names": [],
-      "sources": []
-    },
-    {
-      "digest": "26718e15e7e395bce9642dba5bbe09b3b1a4ce2213d20d566cd9207d7fc5fb78",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "data",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "ignorable",
-                "type": 6,
-                "optional": true
-              },
-              {
-                "name": "seq",
-                "type": 7,
-                "optional": false
-              },
-              {
-                "name": "time",
-                "type": 7,
-                "optional": false
-              },
-              {
-                "name": "type",
-                "type": 8,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "policy",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "source",
-                "type": 5,
-                "optional": true
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              3,
-              4
-            ]
-          },
-          {
-            "kind": "literal",
-            "value": "ask"
-          },
-          {
-            "kind": "literal",
-            "value": "never"
-          },
-          {
-            "kind": "literal",
-            "value": "delegation"
-          },
-          {
-            "kind": "literal",
-            "value": true
-          },
-          {
-            "kind": "primitive",
-            "type": "number"
-          },
-          {
-            "kind": "literal",
-            "value": "approval/policy"
           }
         ]
       },
@@ -41733,6 +41608,58 @@
       ],
       "sources": [
         "packages/llm/llm/src/message.ts:136"
+      ]
+    },
+    {
+      "digest": "410873493adcc7673e1d50ff1dc85cd16af442d5cc2642814048b0b19c94d2ca",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "policy",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "source",
+                "type": 5,
+                "optional": true
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "always"
+          },
+          {
+            "kind": "literal",
+            "value": "ask"
+          },
+          {
+            "kind": "literal",
+            "value": "never"
+          },
+          {
+            "kind": "literal",
+            "value": "delegation"
+          }
+        ]
+      },
+      "names": [],
+      "sources": [
+        "packages/interaction/user-approval/src/index.ts:40"
       ]
     },
     {
@@ -81334,6 +81261,99 @@
           {
             "kind": "literal",
             "value": "plan-mode"
+          }
+        ]
+      },
+      "names": [],
+      "sources": []
+    },
+    {
+      "digest": "df0897d75c5fda23013f4b3c5bbd0ae9e753cfe7f7e3dc4990b894f76df755bd",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 7,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 9,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "policy",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "source",
+                "type": 6,
+                "optional": true
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              3,
+              4,
+              5
+            ]
+          },
+          {
+            "kind": "literal",
+            "value": "always"
+          },
+          {
+            "kind": "literal",
+            "value": "ask"
+          },
+          {
+            "kind": "literal",
+            "value": "never"
+          },
+          {
+            "kind": "literal",
+            "value": "delegation"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "approval/policy"
           }
         ]
       },

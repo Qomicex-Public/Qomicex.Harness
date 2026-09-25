@@ -123,8 +123,9 @@ const sectionProps = (settings: SecurityReviewInjected['settings']): SecurityRev
   ({ close: () => {}, t, settings } as unknown as SecurityReviewSectionProps)
 
 describe('section states', () => {
-  it('reports a missing settings provider', () => {
-    render(<SecurityReviewSection {...sectionProps(undefined)} />)
+  it('reports a namespace the Host does not serve', () => {
+    const { face } = makeFace(section(), { status: 'unavailable' })
+    render(<SecurityReviewSection {...sectionProps(face)} />)
     expect(screen.getByText('unavailable')).toBeTruthy()
   })
 
@@ -328,7 +329,7 @@ describe('form behavior', () => {
   it('disables every control when the document is not writable', () => {
     const { face } = makeFace(section(), { writable: false })
     render(<SecurityReviewForm settings={face} t={t} />)
-    expect((screen.getByRole('switch', { name: 'enabled' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole<HTMLButtonElement>('switch', { name: 'enabled' }).disabled).toBe(true)
     for (const button of screen.getAllByText(/save|reset|add|remove/)) {
       expect((button as HTMLButtonElement).disabled).toBe(true)
     }
@@ -337,49 +338,56 @@ describe('form behavior', () => {
 
 describe('browser plugin registration', () => {
   /** A slot registry plus locale runtime, with the section slot declared. */
-  async function bench(): Promise<{ ctx: Context; slots: SlotRegistry }> {
+  async function bench(): Promise<{
+    ctx: Context
+    slots: SlotRegistry
+    publish: (snapshot: unknown) => void
+    observed: string[]
+  }> {
     const ctx = new Context()
     await ctx.plugin(SlotRegistry).await()
     ctx.provide('locale', new LocaleRuntime(ctx))
+    let snapshot: unknown = { status: 'unavailable', value: undefined, writable: false, revision: undefined }
+    const observed: string[] = []
+    const form = {
+      getSnapshot: () => snapshot,
+      subscribe: (listener: () => void) => { observed.push('subscribe'); listener(); return () => {} },
+      mutate: async () => { observed.push('mutate'); return true },
+    }
+    ctx.provide('configForms', { get: () => form } as never)
     const slots = ctx.get('slots') as SlotRegistry
     slots.register({ name: 'root', children: { 'settings.section': { kind: 'list', scope: 'root' } } } as never, () => null)
-    return { ctx, slots }
+    return { ctx, slots, publish: (next: unknown) => { snapshot = next }, observed }
   }
 
-  it('declares only the slot registry and locale services', () => {
-    expect(inject).toEqual(['slots', 'locale'])
+  it('declares the slot registry, locale, and configuration-form services', () => {
+    expect(inject).toEqual(['slots', 'locale', 'configForms'])
   })
 
   it('leaves the host half a no-op', () => {
     expect(() => { hostApply() }).not.toThrow()
   })
 
-  it('registers one Security Review section without a settings provider', async () => {
+  it('registers one Security Review section over the guard namespace', async () => {
     const b = await bench()
     await b.ctx.plugin({ inject: [...inject], apply }).await()
     const entry = b.slots.entries('settings.section')[0]!
     expect(entry.options.id).toBe('security-review')
     expect(entry.options.order).toBe(13)
     expect(resolveSlotLabel(entry.options.label)).toBe('Security review')
-    expect(((entry.inject as unknown as () => SecurityReviewInjected)()).settings).toBeUndefined()
+    const injected = (entry.inject as unknown as () => SecurityReviewInjected)()
+    expect(injected.settings.snapshot().status).toBe('unavailable')
   })
 
-  it('binds the guard namespace through the settings scope service', async () => {
+  it('binds the guard namespace through the shared configuration form', async () => {
     const b = await bench()
-    const observed: string[] = []
-    const scope = {
-      getSnapshot: () => ({ status: 'ready', value: section(), writable: true }),
-      subscribe: () => { observed.push('subscribe'); return () => {} },
-      mutate: async () => { observed.push('mutate') },
-    }
-    b.ctx.provide('settingsScope', { bind: () => scope, describe: () => [] } as never)
+    b.publish({ status: 'ready', value: section(), writable: true, revision: 1 })
     await b.ctx.plugin({ inject: [...inject], apply }).await()
     const entry = b.slots.entries('settings.section')[0]!
     const injected = (entry.inject as unknown as () => SecurityReviewInjected)()
-    expect(injected.settings).toBeDefined()
-    expect(injected.settings!.snapshot().status).toBe('ready')
-    injected.settings!.subscribe(() => {})
-    await injected.settings!.mutate(saveOps(section()))
-    expect(observed).toEqual(['subscribe', 'mutate'])
+    expect(injected.settings.snapshot().status).toBe('ready')
+    injected.settings.subscribe(() => {})
+    await injected.settings.mutate(saveOps(section()))
+    expect(b.observed).toEqual(['subscribe', 'mutate'])
   })
 })

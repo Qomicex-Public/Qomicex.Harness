@@ -39,6 +39,7 @@
     "presets/minimal.patch.yml",
     "presets/pentest.patch.yml",
     "presets/ptc.patch.yml",
+    "presets/skills",
     "presets/standard.patch.yml"
   ],
   "license": "MIT",

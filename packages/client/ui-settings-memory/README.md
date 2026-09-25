@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The **Memory** Settings page is where a user tunes the bio-memory plugin and sees what it has stored. The upper half draws every memory as a force-directed graph: nodes are memories, and a link means two memories share a fact key or a scope. Selecting a node opens a detail panel with its content and lifecycle figures. The lower half is the plugin's configuration, a labeled form whose writes land in the user section of `settings.yaml` and take effect without a restart. The layout lives here: the repository ships no graph library, and the algorithm needs none.
+The **Memory** Settings page is where a user tunes the bio-memory plugin and sees what it has stored. The upper half draws every memory as a force-directed graph: nodes are memories, and a link means two memories share a fact key or a scope. Selecting a node opens a detail panel with its content and lifecycle figures. The lower half is the plugin's configuration, a labeled form whose writes land in the user section of the profile document and take effect without a restart. The layout lives here: the repository ships no graph library, and the algorithm needs none.
 
 ## Table of Contents
 
@@ -49,7 +49,7 @@ The page is one localized `settings.section` contribution with id `memory`; the 
 
 ### Registration and data sources
 
-`apply()` registers the locale namespace, binds it, and contributes the section through `ctx.slots.inject()`. It declares `remote`, `remote.memory`, `remote.llm`, and `remote.settings` so the page can reach the memory Remote namespace and fill the distillation dropdowns from the Models page; it binds the settings scope lazily through `ctx.get('settingsScope')` rather than injecting it: a deployment without a settings provider must still render the graph half, and injecting the service would hold the whole section pending on one that never arrives. The injected face exposes `loadGraph`, `loadStatus`, `forget`, `loadDistillTargets`, and an optional `settings` handle; the component never sees `ctx`. The provider dropdown lists the configurable providers, and the model dropdown lists the ids of the provider already chosen, so a distillation target can only be one the Models page configured.
+`apply()` registers the locale namespace, binds it, and contributes the section through `ctx.slots.inject()`. It declares `remote`, `remote.memory`, `remote.llm`, `remote.settings`, and `configForms` so the page can reach the memory Remote namespace, fill the distillation dropdowns from the Models page, and read the memory plugin's entry form through `ctx.configForms.get()`; a Host that serves no such entry leaves the settings snapshot `unavailable` while the graph half keeps working. The injected face exposes `loadGraph`, `loadStatus`, `forget`, `loadDistillTargets`, and a `settings` handle; the component never sees `ctx`. The provider dropdown lists the configurable providers, and the model dropdown lists the ids of the provider already chosen, so a distillation target can only be one the Models page configured.
 
 ### The graph layout
 

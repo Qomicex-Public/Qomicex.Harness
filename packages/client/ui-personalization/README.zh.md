@@ -1,5 +1,5 @@
 ---
-description: "dsh Web 客户端的「个性化」设置页：背景绘制、锚点色品牌色阶、毛玻璃表面，以及上传的角落装饰图，基于 Host 持久化的 personalization 命名空间。"
+description: "dsh Web 客户端的「个性化」设置页：背景绘制、锚点色品牌色阶、毛玻璃表面，以及上传的角落装饰图，基于 Host 持久化的 `ui-personalization` 配置项。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-**个性化**设置页用于重绘 Web 客户端外观。背景可以是纯色、渐变、上传的图片或远端图片 URL；一个锚点色经主题的 token 覆盖生成整套品牌色阶；毛玻璃让侧边栏、输入框、对话区、设置弹窗与代码块在当前背景上半透明；上传的图片还可贴在屏幕某个角落。上传的图片保存在浏览器 IndexedDB 中，颜色与开关保存在 `personalization` settings 命名空间。毛玻璃默认开启，其余效果默认关闭。
+**个性化**设置页用于重绘 Web 客户端外观。背景可以是纯色、渐变、上传的图片或远端图片 URL；一个锚点色经主题的 token 覆盖生成整套品牌色阶；毛玻璃让侧边栏、输入框、对话区、设置弹窗与代码块在当前背景上半透明；上传的图片还可贴在屏幕某个角落。上传的图片保存在浏览器 IndexedDB 中，颜色与开关保存在 `ui-personalization` 配置项的设置段。毛玻璃默认开启，其余效果默认关闭。
 
 ## 目录
 
@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-打开「设置」并选择**个性化**。在提供设置外壳与主题服务的 Web 组合中挂载 `@deepseek-ai/dsh-client-ui-personalization`；本页自行注册导航项，无需配置。插件拥有一个 Host 持久化命名空间 `personalization`，因此 Host 半边会在每个 Web 组合中挂载。
+打开「设置」并选择**个性化**。在提供设置外壳与主题服务的 Web 组合中挂载 `@deepseek-ai/dsh-client-ui-personalization`；本页自行注册导航项，无需配置。插件拥有一个 Host 持久化配置项 `ui-personalization`，因此 Host 半边会在每个 Web 组合中挂载。
 
 ### 背景
 
@@ -51,7 +51,7 @@ kind: "package-reference"
 
 ### 两个半边与一个命名空间
 
-Host 半边（`src/index.ts`）注册 `personalization` settings 命名空间，附带 schema 与一个在写入时拒绝非法颜色的 `validate` 钩子。浏览器半边拥有全部效果。页面的 `apply()` 注册 `settings.personalization` 字典，贡献一个 id 为 `personalization` 的 `settings.section` 条目，并通过 `ctx.get` 解析 `settingsScope` 而非注入它，因此没有 settings 提供者的部署仍会渲染不可用状态。
+Host 半边（`src/index.ts`）拥有 `ui-personalization` 配置项的 `Config` schema——其 volatile 叶子由设置表单编辑——并使该条目退出自动生成页面；浏览器半边拥有全部效果与页面呈现。页面的 `apply()` 注册 `settings.personalization` 字典，贡献一个 id 为 `personalization` 的 `settings.section` 条目，并通过 `ctx.configForms.get()` 读取该配置项的表单；Host 未提供该条目时快照为 `unavailable`，页面据此渲染，而不会让该条目永远挂起。
 
 ### 效果
 
@@ -67,8 +67,8 @@ Host 半边（`src/index.ts`）注册 `personalization` settings 命名空间，
 
 | 文件 | 职责 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | Host 加载入口：注册 `personalization` 命名空间及其校验 |
-| [`src/personalization-settings.ts`](src/personalization-settings.ts) | 命名空间名、schema、已解析值类型、默认值与写入校验 |
+| [`src/index.ts`](src/index.ts) | Host 加载入口：拥有 `ui-personalization` 配置项的 Config 与页面策略 |
+| [`src/personalization-settings.ts`](src/personalization-settings.ts) | 该配置项设置段的 schema、已解析值类型、默认值与写入校验 |
 | [`src/client/index.ts`](src/client/index.ts) | 浏览器插件：字典、区域注册、效果生命周期、注入面 |
 | [`src/client/PersonalizationSection.tsx`](src/client/PersonalizationSection.tsx) | 页面：总开关、背景、主题色、毛玻璃、角落、保存/重置 |
 | [`src/client/color-scale.ts`](src/client/color-scale.ts) | 锚点色 → 整套品牌与伴生 `--dsw-static-*` 色阶 |
@@ -89,9 +89,9 @@ Host 半边（`src/index.ts`）注册 `personalization` settings 命名空间，
 这些页面涵盖效果所依赖的服务，以及承载本页的设置界面。
 
 - [ui-theme](../ui-theme/README.zh.md)——提供锚点色写入的 token 覆盖层。
-- [ui-settings](../ui-settings/README.zh.md)——声明 `settings.section` 与命名空间 scope 服务的领域基础层。
+- [ui-settings](../ui-settings/README.zh.md)——声明 `settings.section` 与共享配置表单的领域基础层。
 - [ui-settings-general](../ui-settings-general/README.zh.md)——渲染导航并挂载区域的 Settings 外壳。
-- [设置子系统参考](../../../docs/subsystems/settings.zh.md)——两侧共享的命名空间注册与写入校验路径。
+- [设置子系统参考](../../../docs/subsystems/settings.zh.md)——两侧共享的配置项投影与写入校验路径。
 
 -----
 
@@ -116,6 +116,7 @@ Host 半边（`src/index.ts`）注册 `personalization` settings 命名空间，
 - **上传的图片是每浏览器独立的**——字节存在 IndexedDB 中，设置文档不携带图片，换一个浏览器在上传前不会显示。
 - **毛玻璃依赖其他包提供的锚点属性**——模糊指向 `data-dsh-sidebar`、`data-dsh-conversation`、`data-dsh-settings`、`data-dsh-app` 与 `data-composer-card`；组合中缺少其中某个包时，该表面不会渲染毛玻璃。
 - **毛玻璃按表面而非按面板**——开关覆盖整个表面，不提供更细粒度的定位。
+- **写入校验钩子已移除**——随配置项 `Config` 模型一同移除的 `validate` 钩子曾拒绝非法颜色的写入，因此表单之外写入的非法值会被持久化；页面自身的保存路径仍然拒绝非法颜色。
 
 <a id="dev-note"></a>
 ### 开发备注

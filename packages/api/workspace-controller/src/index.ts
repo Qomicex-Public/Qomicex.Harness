@@ -174,7 +174,6 @@ export class WorkspaceController extends TypertRemoteService {
   }
 
   /**
-  /**
    * Permanently erase one Session and its durable log.
    * @param request - Session identity to erase.
    * @returns deletion confirmation.
@@ -202,7 +201,6 @@ export class WorkspaceController extends TypertRemoteService {
   @Remote('unpinSession')
   unpinSession(request: WorkspaceUnpinSessionRequest): Promise<WorkspacePinValue> {
     return this.commands.unpinSession(request)
-  }
   }
 
   /**

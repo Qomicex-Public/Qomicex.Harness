@@ -33,7 +33,7 @@ Choose the service when a plugin or tool must search or fetch without hard-codin
 
 ### Minimal configuration
 
-Load the service and let a single mounted backend auto-select, or pin a provider id with `searchProvider`/`fetchProvider`. The environment variables `$DSH_WEB_SEARCH_PROVIDER` and `$DSH_WEB_FETCH_PROVIDER` feed the same fields and are not a separate priority chain. The same two fields also live in the `web` settings namespace, so the shipped General settings page can switch either backend without a configuration file; selection is re-read on every call, so a committed change takes effect on the next search or fetch.
+Load the service and let a single mounted backend auto-select, or pin a provider id with `searchProvider`/`fetchProvider`. The environment variables `$DSH_WEB_SEARCH_PROVIDER` and `$DSH_WEB_FETCH_PROVIDER` feed the same fields and are not a separate priority chain. The same two fields are live configuration, so the shipped General settings page can switch either backend without a configuration file and the edit persists through the profile; selection is re-read on every call, so a committed change takes effect on the next search or fetch.
 
 ```yaml
 - name: '@deepseek-ai/dsh-web'
