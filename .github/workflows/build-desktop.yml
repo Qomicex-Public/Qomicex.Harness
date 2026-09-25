@@ -24,6 +24,14 @@ on:
         type: string
         required: false
         default: com.qomicex.harness
+      mandatory_update_origin:
+        description: 'Test 部署的 mandatory-update 策略服务源（HTTPS 根 origin）。该值写入安装器，留空则构建失败。'
+        type: string
+        required: false
+      mandatory_update_auth_origin:
+        description: 'Test 部署的 allowedAuthOrigins（HTTPS 根 origin）。该值写入安装器，留空则构建失败。'
+        type: string
+        required: false
 
 permissions:
   contents: write
@@ -114,6 +122,25 @@ jobs:
       - name: Build the native system library
         shell: pwsh
         run: pnpm --filter @deepseek-ai/node-addon-system run build:js
+
+      # The packaging preflight reads release settings from apps/desktop/.env.windows
+      # only — it deliberately strips ambient release variables — and the file is
+      # gitignored, so CI writes it from these inputs. Both origins are baked into
+      # the installer, so an omitted input fails the build instead of defaulting.
+      - name: Write the desktop release environment
+        shell: pwsh
+        run: |
+          $origin = "${{ inputs.mandatory_update_origin }}"
+          $authOrigin = "${{ inputs.mandatory_update_auth_origin }}"
+          if ([string]::IsNullOrWhiteSpace($origin) -or [string]::IsNullOrWhiteSpace($authOrigin)) {
+            throw "mandatory_update_origin and mandatory_update_auth_origin are required dispatch inputs; they are baked into the installer"
+          }
+          $config = '{"allowedAuthOrigins":["' + $authOrigin + '"]}'
+          Set-Content -Path apps/desktop/.env.windows -Value @(
+            "DSH_DESKTOP_APP_ID=${{ inputs.app_id }}"
+            "DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN=$origin"
+            "DSH_DESKTOP_MANDATORY_UPDATE_CONFIG='$config'"
+          ) -Encoding utf8
 
       - name: Build the unsigned Windows x64 installer
         shell: pwsh
