@@ -15,6 +15,10 @@
  * the strongest any copy earned, so a fact reaffirmed nine times is not retired
  * by a schedule computed from its weakest copy.
  *
+ * Only live memories take part. A dead row is a decision the user made, and this
+ * is a cleanup, not an amnesty — see the filter in {@link dedupeMemories} for
+ * what joining a group would cost.
+ *
  * @module @deepseek-ai/dsh-memory/src/algorithms/dedupe
  */
 
@@ -56,7 +60,17 @@ export async function dedupeMemories(
   repository: MemoryRepository,
   now: number,
 ): Promise<DedupeReport> {
-  const all = (await repository.everyMemory()).map(entry => entry.memory)
+  // Only live memories take part. A deleted row is a decision the user made,
+  // and this pass is a cleanup, not an amnesty: letting one join a group either
+  // costs the fact its readable copy (when the dead row wins on importance) or
+  // spends a second tombstone on a row that already has one. `archived` and
+  // `disputed` are left alone for the same reason — the archive is where a fact
+  // waits to be forgotten deliberately, and this pass must not decide that.
+  // "Live" is what the hot pack means by it, so what survives a merge is always
+  // something the pack would still show.
+  const all = (await repository.everyMemory())
+    .map(entry => entry.memory)
+    .filter(memory => memory.lifecycle.state === 'active' || memory.lifecycle.state === 'consolidated')
   const groups = new Map<string, Memory[]>()
   for (const memory of all) {
     const key = normalize(memory.content.raw)
