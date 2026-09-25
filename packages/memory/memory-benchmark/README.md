@@ -130,3 +130,5 @@ A scenario is a function rather than a data list because several checks must rea
 The runner owns its own in-memory backend rather than importing `storage-domain`'s test helper: a published `src` may not reach into a sibling package's `tests/`, and the helper would not exist in a packed install.
 
 </details>
+
+**Runtime invariant:** No companion is published. The suite is a CI harness that runs scripted scenarios against a throwaway in-memory backend and exits; it registers no product services, emits no Cordis events, and keeps no state that outlives the run, so it owns no runtime relation an independent companion could observe.

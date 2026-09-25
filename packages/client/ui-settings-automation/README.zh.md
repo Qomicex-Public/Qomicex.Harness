@@ -95,3 +95,5 @@ kind: "package-reference"
 无。
 
 </details>
+
+**Runtime invariant:** 不发布伴随包。本包以随 fiber 销毁的效果贡献三个设置行与一个语言命名空间，不发出任何 Cordis 事件；这些行显示与写入的每个值都在调用时通过注入的 settings 接口重新读回，因此本包不持有任何可能偏离的独立观测。

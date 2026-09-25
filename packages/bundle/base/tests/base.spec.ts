@@ -41,7 +41,11 @@ describe('dsh-base bundle', () => {
     })
     expect(rows.filter(row => row.id === 'subagent-codex')).toHaveLength(0)
     expect(rows.filter(row => row.id === 'subagent-claude-code')).toHaveLength(0)
-    expect(rows.find(row => row.id === 'web')?.config).toMatchObject({ fetchProvider: 'http' })
+    // The fork ships Firecrawl as the default search and fetch backend, so the
+    // `web` row pins `firecrawl` instead of upstream's `http` selection.
+    expect(rows.find(row => row.id === 'web')?.config).toMatchObject({
+      searchProvider: 'firecrawl', fetchProvider: 'firecrawl',
+    })
     expect(rows.find(row => row.id === 'web-fetch-http')).toBeDefined()
     expect(rows.find(row => row.id === 'tool-web')?.config).toMatchObject({ fetch: true })
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-codex')

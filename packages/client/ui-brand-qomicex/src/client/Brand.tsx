@@ -1,6 +1,7 @@
 import type { HeroBrandMarkOwnerProps } from '@deepseek-ai/dsh-client-ui-conversation/client'
-import type { SidebarBrandMarkOwnerProps } from '@deepseek-ai/dsh-client-ui-sidebar/client'
+import type { SidebarBrandMarkOwnerProps, SidebarBrandNameOwnerProps } from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import { QOMICEX_MARK_DATA_URL } from './mark.ts'
+import type { QomicexBrandLocaleKey } from './locales.ts'
 
 /**
  * Render the Qomicex mark at the square edge its host surface requests.
@@ -25,10 +26,13 @@ export function QomicexHeroMark({ size, className }: HeroBrandMarkOwnerProps) {
  *
  * The name is set as text rather than artwork: the supplied logo is a raster
  * export, so a text wordmark stays crisp and adapts to the theme foreground.
+ * @param props - Owner share plus the framework `t` seat the registration declares.
  * @returns the Qomicex wordmark.
  */
-export function QomicexBrandName() {
-  return <span className="qomicex-brand-name">Qomicex</span>
+export function QomicexBrandName({ t }: SidebarBrandNameOwnerProps & {
+  readonly t: (key: QomicexBrandLocaleKey) => string
+}) {
+  return <span className="qomicex-brand-name">{t('brandName')}</span>
 }
 
 /**

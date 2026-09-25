@@ -10,7 +10,7 @@ The fork sat on upstream `0.1.6-alpha.1` plus 108 local commits while upstream p
 
 ## Decision
 
-Merge-forward in one merge commit: `git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git`, then merge `upstream/master` (rc.1, `46a7f68b09`) onto the local tip. Conflict resolution followed one rule: keep every Qomicex customization, adopt every upstream functional change, and never touch a released session-format edge (`session-format-v2-to-v3` and its validators stay byte-frozen).
+Merge-forward in one merge commit: `git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git`, then merge `upstream/master` (rc.1, `dsh-v0.1.7-rc.1`) onto the local tip. Conflict resolution followed one rule: keep every Qomicex customization, adopt every upstream functional change, and never touch a released session-format edge (`session-format-v2-to-v3` and its validators stay byte-frozen).
 
 ### Where local features moved to survive upstream's new architecture
 

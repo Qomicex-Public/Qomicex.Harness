@@ -97,3 +97,5 @@ The rows reach only what the provider and settings service they edit own.
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published. The package contributes three settings rows and one locale namespace as fiber-disposed effects and emits no Cordis events; every value the rows display and write is read back through the injected settings face at call time, so the package holds no independent observation that could diverge.

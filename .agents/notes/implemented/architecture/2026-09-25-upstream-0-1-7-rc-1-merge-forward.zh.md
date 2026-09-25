@@ -10,7 +10,7 @@ Status: implemented
 
 ## 决策
 
-一次 merge-forward 合并提交：`git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git`，把 `upstream/master`（rc.1，`46a7f68b09`）合到本地 tip 上。冲突解决遵循一条规则：保留每一项 Qomicex 定制，采纳每一项上游功能变更，绝不改动已发布的 session 格式边（`session-format-v2-to-v3` 及其校验器保持字节冻结）。
+一次 merge-forward 合并提交：`git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git`，把 `upstream/master`（rc.1，`dsh-v0.1.7-rc.1`）合到本地 tip 上。冲突解决遵循一条规则：保留每一项 Qomicex 定制，采纳每一项上游功能变更，绝不改动已发布的 session 格式边（`session-format-v2-to-v3` 及其校验器保持字节冻结）。
 
 ### 本地特性为在上游新架构中存活而迁移的位置
 

@@ -47,8 +47,8 @@ function downloadViewOf(value: unknown): DownloadView | undefined {
 }
 
 /** One progress figure, in the unit a human reads. */
-function formatBytes(bytes: number): string {
-  if (bytes <= 0) return '0 MB'
+function formatBytes(bytes: number, t: (key: MemoryLocaleKey) => string): string {
+  if (bytes <= 0) return t('bytesZero')
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
@@ -56,11 +56,12 @@ function formatBytes(bytes: number): string {
 export interface MemorySettingsFormProps {
   readonly settings: MemorySettingsFace
   /**
-   * Translate one key of this page's dictionary. Passed as a function rather
-   * than a bag of pre-resolved strings so the field table can name its own copy
-   * by key; the page stays the only place that knows the namespace.
+   * Translate one key of this page's dictionary, with optional `{name}`
+   * template params. Passed as a function rather than a bag of pre-resolved
+   * strings so the field table can name its own copy by key; the page stays
+   * the only place that knows the namespace.
    */
-  readonly t: (key: MemoryLocaleKey) => string
+  readonly t: (key: MemoryLocaleKey, params?: Record<string, unknown>) => string
   /** Providers and their configured models, for the distillation dropdowns. */
   readonly distillTargets: DistillTargets
   /**
@@ -540,8 +541,13 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
                       <div className={css.patternBody}>
                         <span className={css.patternContent}>{row.content}</span>
                         <span className={css.patternMeta}>
-                          {`${row.kind} · ${row.state} · 置信度 ${row.confidence.toFixed(2)} · `
-                            + `出现 ${row.occurrenceCount} 次 · 跨 ${row.projectCount} 个项目`}
+                          {t('field.patternPanel.meta', {
+                            kind: row.kind,
+                            state: row.state,
+                            confidence: row.confidence.toFixed(2),
+                            occurrences: row.occurrenceCount,
+                            projects: row.projectCount,
+                          })}
                         </span>
                       </div>
                       {decidePattern !== undefined && (
@@ -613,8 +619,8 @@ export function MemorySettingsForm(props: MemorySettingsFormProps): ReactNode {
               <div className={css.row}>
                 <div className={css.rowText}>
                   <span className={css.hint}>
-                    {`${formatBytes(download.receivedBytes)} / ${
-                      download.totalBytes > 0 ? formatBytes(download.totalBytes) : '?'
+                    {`${formatBytes(download.receivedBytes, t)} / ${
+                      download.totalBytes > 0 ? formatBytes(download.totalBytes, t) : '?'
                     }`}
                   </span>
                 </div>

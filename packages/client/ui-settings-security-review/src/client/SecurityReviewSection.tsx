@@ -316,16 +316,16 @@ function ActionMenu(props: {
 }): ReactNode {
   const { id, value, disabled, t, onChange } = props
   const [open, setOpen] = useState(false)
-  const options: readonly { id: ReviewAction; label: SecurityReviewLocaleKey }[] = [
-    { id: 'ask', label: 'actionAsk' },
-    { id: 'deny', label: 'actionDeny' },
+  const options: readonly { id: ReviewAction; labelKey: SecurityReviewLocaleKey }[] = [
+    { id: 'ask', labelKey: 'actionAsk' },
+    { id: 'deny', labelKey: 'actionDeny' },
   ]
   const selected = value === 'deny' ? 'actionDeny' : 'actionAsk'
   return (
     <Menu
       open={open}
       onClose={() => { setOpen(false) }}
-      items={options.map(option => ({ id: option.id, label: t(option.label) }))}
+      items={options.map(option => ({ id: option.id, label: t(option.labelKey) }))}
       selectedId={value}
       onSelect={(id) => {
         setOpen(false)

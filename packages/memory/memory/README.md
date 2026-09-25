@@ -252,3 +252,5 @@ Two known places where the implementation diverges from the document, both delib
 The `bio_memory` storage domain is version 1. Changing a record schema means bumping the domain version and adding a migration path, because the domain rejects records that fail their schema rather than degrading them.
 
 </details>
+
+**Runtime invariant:** No companion is published. Every relation the implementation section lists is enforced inside the operation that owns the decision — the gates, lineage assignment, and conflict marking run on the write path itself — and the durable record guarantees belong to the `bio_memory` storage domain; the plugin keeps no second, independently maintained projection of its own state for a companion to compare.
