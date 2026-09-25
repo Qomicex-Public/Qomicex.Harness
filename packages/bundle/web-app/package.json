@@ -50,7 +50,9 @@
         "./presets/standard.patch.yml",
         "./presets/ptc.patch.yml",
         "./presets/minimal.patch.yml",
-        "./presets/cordis.patch.yml"
+        "./presets/cordis.patch.yml",
+        "./presets/junsi.patch.yml",
+        "./presets/pentest.patch.yml"
       ]
     }
   },
