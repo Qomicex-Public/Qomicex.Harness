@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-26-desktop-installer-brand-runtime-deps.md
+2026-09-26-desktop-installer-brand-runtime-deps.md: 88abd306f66ccf3246254862511cb9d6b04cf497
+2026-09-26-desktop-installer-brand-runtime-deps.zh.md: 75698ca9b9b5e97ce1ffa05bd8dae86d4e590987

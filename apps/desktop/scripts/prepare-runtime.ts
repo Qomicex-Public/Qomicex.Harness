@@ -22,6 +22,9 @@ import { preparePrimaryRuntime } from './prepare-primary-runtime.ts'
  * @param destination - Absolute directory that receives the extracted tree.
  */
 async function extractZipArchive(archive: string, destination: string): Promise<void> {
+  // `tar -C` chdirs into the destination, and the caller removes it first, so
+  // the directory must exist again before extraction.
+  mkdirSync(destination, { recursive: true })
   const result = spawnSync('tar', ['-xf', archive, '-C', destination], { encoding: 'utf8' })
   if (result.error !== undefined) {
     throw new Error(`desktop runtime: tar is unavailable to extract ${archive}: ${result.error.message}`)

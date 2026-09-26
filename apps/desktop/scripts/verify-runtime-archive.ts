@@ -2,8 +2,17 @@
 import { createHash } from 'node:crypto'
 import { lstat, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { excludedNames } from 'app-builder-lib/out/fileMatcher.js'
 import { readAsar, type Node } from 'app-builder-lib/out/asar/asar.js'
 import type { DesktopRuntimeDescriptor, DesktopRuntimeFile } from '../src/runtime-tree.ts'
+
+// electron-builder's packer strips these basenames from every archive, so the
+// prepared inventory can list a marker no packed archive will ever contain —
+// vendor tarballs ship `.gitkeep` files. Both sides drop them before comparing.
+const PACKER_STRIPPED = new Set(excludedNames.split(',').map(name => name.trim()).filter(name => name.length > 0))
+// Both separators: the prepared inventory is built with `path.join` on Windows.
+const basename = (path: string): string => path.slice(Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\')) + 1)
+const packerKeeps = (path: string): boolean => !PACKER_STRIPPED.has(basename(path))
 
 /**
  * Compare the complete archived dsh tree with the sealed preparation inventory.
@@ -46,8 +55,16 @@ export async function verifyRuntimeArchive(archivePath: string, expected: Deskto
   for (const entry of entries) {
     if (entry.isDirectory()) continue
     const path = join(entry.parentPath, entry.name)
+    // A marker the packer strips from the archive can still sit inside a
+    // wholesale-copied unpacked directory; it is not an inventory violation.
+    if (!packerKeeps(path)) continue
     if (!entry.isFile() || !unpacked.has(path)) throw new Error(`desktop runtime: unexpected unpacked entry ${path}`)
   }
   files.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
-  if (JSON.stringify(files) !== JSON.stringify(expected.files)) throw new Error('desktop runtime: ASAR integrity verification failed')
+  // The packer strips marker basenames from the archive and wholesale-copies
+  // some unpacked directories over them, so either side can still list a
+  // marker; both sides drop them and compare the rest.
+  const archived = files.filter(file => packerKeeps(file.path))
+  const comparable = expected.files.filter(file => packerKeeps(file.path))
+  if (JSON.stringify(archived) !== JSON.stringify(comparable)) throw new Error('desktop runtime: ASAR integrity verification failed')
 }

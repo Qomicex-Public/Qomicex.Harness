@@ -1690,6 +1690,13 @@ export interface PiAiModelProfile {
    * declares the offered levels and their wire spellings.
    */
   reasoningEfforts?: false | PiAiReasoningEfforts
+  /**
+   * The offered level a new session preselects. Absent defers to the route's
+   * `reasoning`; a level the model does not offer is dropped at resolution
+   * rather than refused, so tightening `reasoningEfforts` never leaves a
+   * stranded default behind.
+   */
+  defaultReasoningEffort?: ModelThinkingLevel
   /** pi-ai wire-compatibility switches for this model, winning over the route's per field; one its protocol does not declare is refused. */
   compat?: PiAiCompatProfile
 }
