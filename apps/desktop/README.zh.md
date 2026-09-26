@@ -54,7 +54,7 @@ Node 准备内置解释器和 Python 库，无需系统 Python 或 pip。[下载
 
 Electron 拥有 `$DSH_HOME/profiles/desktop`。其 `dependencies` 包含 pnpm 安装的包；`dsh.profile.bundles` 包含内置 bundle，后接已启用插件。签名应用从 `resources/app.asar/dsh` 提供 dsh、私有 Desktop Host 及其生产依赖。打包应用选择 runtime profile 解析，不创建包链接；开发 profile 使用文件系统链接。宿主与插件在同一个 Electron Node 模式进程中执行；Desktop 不启用 `--preserve-symlinks`。CLI 不能启动或修改此 profile。
 
-Electron 壳在构建期将自己的一方 workspace 依赖打入 `lib/main.js`（tsdown 对 `@deepseek-ai/*` 使用 `deps.alwaysBundle`，其三方闭包如 `js-yaml` 随行；已废弃的 `noExternal` 写法会被打包 workflow 所用的根级 workspace 构建忽略），主进程运行期不从打包的 `node_modules` 解析这些包。否则打包闭包会被截断：vendored 清单声明 `workspace:~` 范围，electron-builder 收集器无法解析并静默跳过（cordis 的 `@deepseek-ai/cosmokit`）。三方与原生依赖保持外联由收集器打包；renderer 继续走独立的 Vite bundle。
+Electron 壳在构建期将自己的一方 workspace 依赖打入 `lib/main.js`。打包在仓库构建之后，对该包单独跑一次 tsdown（配置中对 `@deepseek-ai/*` 的 `deps.alwaysBundle`）：`build:official` 内部的 workspace 级 tsdown 会以内联设置构建该包并丢弃 `alwaysBundle`，其产出的主进程会保留打包 `node_modules` 无法解析的一方 import。bundle 同时带入 `js-yaml` 等三方闭包，主进程运行期不从打包的 `node_modules` 解析这些包。否则打包闭包会被截断：vendored 清单声明 `workspace:~` 范围，electron-builder 收集器无法解析并静默跳过（cordis 的 `@deepseek-ai/cosmokit`）。三方与原生依赖保持外联由收集器打包；renderer 继续走独立的 Vite bundle。
 
 按显式路径加载库的原生包整体进入解包平面：electron-builder 会解包每个原生二进制文件，而加载路径由模块解析推导的包——Cua Driver 平台包从解析出的 `package.json` 所在目录打开其 DLL——还会整体解包，使该目录成为真实路径。Host 在每个模块 URL 存在对应解包文件时把它重写到解包文件，从而让原生库拿到真实文件系统路径，同时所有打包模块仍从归档内读取。
 

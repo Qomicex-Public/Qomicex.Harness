@@ -448,6 +448,13 @@ export async function packageTarget(
     })
   }
   await execute(['run', 'build:official'], buildEnv, REPOSITORY_ROOT)
+  // The workspace tsdown pass `build:official` triggers builds this package with
+  // inline settings that drop the `deps.alwaysBundle` list its config relies on,
+  // so its emitted `lib/main.js` keeps first-party imports the packaged
+  // `app.asar` tree cannot resolve (js-yaml is its transitive dependency and the
+  // packer collects only the direct dependency list). Bundle the host through
+  // its own config here, before anything consumes `lib/`.
+  await execute(['--dir', 'apps/desktop', 'exec', 'tsdown'], buildEnv, REPOSITORY_ROOT)
   await execute(['run', 'release:pack', '--family', 'dsh', '--out', buildPaths.packedDsh, ...packArguments], buildEnv, REPOSITORY_ROOT)
   await execute([
     '--dir',
