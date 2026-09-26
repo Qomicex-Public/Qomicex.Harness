@@ -17,6 +17,7 @@ kind: "package-reference"
 - [引用预览](#reference-previews)
 - [Chat 隐藏的行](#system-prompt-row)
 - [指令与失败行](#command-and-failure-rows)
+- [用户消息操作](#user-message-actions)
 - [轮次 token 用量](#turn-token-usage)
 - [已完成轮次的页脚](#completed-turn-footer)
 - [轮次过程折叠](#turn-process-folding)
@@ -48,6 +49,13 @@ Assistant 尝试结束且没有可见消息时，Chat 隐藏已发布的 Node，
 ## 指令与失败行
 
 通用指令行在所有生命周期状态中都保留普通指令图标；失败仍通过行状态与摘要明确表达。终止轮次的错误仍是独立的红点提示；模型的中间重试不会创建该提示，达到输出 token 上限时使用琥珀色警告点。
+
+<a id="user-message-actions"></a>
+## 用户消息操作
+
+每条耐久的用户消息在操作行中提供复制、撤回和编辑，与消息时钟并列。复制把拼接后的消息文本写入剪贴板。撤回把当前会话回退到该消息之前的状态：客户端 fork 该消息之前的精确事件前缀，打开子会话，归档源会话并停止其工作，随后在 Host 允许时抹除源会话；Host 仍持有的源会话保持归档且可恢复。编辑执行同样的回退，然后把消息文本回填到子会话的编辑框并聚焦，重发由用户完成。已接纳的插话消息不提供这两个操作。
+
+Fork 失败时当前视图保持不变。
 
 -----
 
