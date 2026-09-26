@@ -47,11 +47,11 @@ export default defineConfig([
     // The first-party workspace deps travel inside the bundle: the app's
     // packaged node_modules cannot carry their closure, because vendored
     // manifests declare `workspace:~` ranges that the packer's collector
-    // silently skips (cosmokit via cordis). Bundling the main process keeps
-    // the launch path self-contained; third-party and native deps stay
+    // silently skips (cordis's cosmokit). `alwaysBundle` rather than the
+    // deprecated `noExternal`: the workspace-level build this config also
+    // takes part in ignores `noExternal`. Third-party and native deps stay
     // external for the packer to collect.
-    noExternal: [/^@deepseek-ai\//],
-    deps: { neverBundle: ['electron'] },
+    deps: { alwaysBundle: [/^@deepseek-ai\//], neverBundle: ['electron'] },
   },
   ...(['preload-app', 'preload-welcome', 'preload-platform-account', 'preload-mandatory', 'preload-update-dialog'] as const).map(name => ({
     // Sandboxed Electron preloads run as CommonJS even though the application package is ESM.
