@@ -133,7 +133,7 @@ interface ResolvedWatchConfig {
 /** Register the local filesystem skill provider on `ctx.skills`. */
 export function apply(ctx: Context, config: Config = {}): void {
   let provider!: FileSystemSkillProvider
-  ctx.skills.registerProvider((control) => {
+  ctx.skills.registerProvider(ctx, (control) => {
     provider = new FileSystemSkillProvider(ctx, control, config)
     return provider
   })

@@ -217,7 +217,7 @@ describe('dsh-tool-skill', () => {
     const home = await tempDir('tool-prefix-signal')
     const ctx = await setup(home)
     let seenSignal: AbortSignal | undefined
-    ctx.skills.registerProvider(() => ({
+    ctx.skills.registerProvider(ctx, () => ({
       name: 'signal-probe',
       async list(options) {
         seenSignal = options.signal
@@ -362,7 +362,7 @@ describe('dsh-tool-skill', () => {
       },
     }
     let invalidate = (): void => {}
-    ctx.skills.registerProvider((control) => {
+    ctx.skills.registerProvider(ctx, (control) => {
       invalidate = control.invalidate
       return provider
     })
@@ -732,7 +732,7 @@ describe('dsh-tool-skill', () => {
     openMessageTurn(session)
     expect(JSON.stringify(await composePrefixForAgent(ctx, agent))).toContain('stable-skill')
 
-    ctx.skills.registerProvider(() => ({
+    ctx.skills.registerProvider(ctx, () => ({
       name: 'failing',
       async list() {
         throw new Error('temporarily unavailable')
@@ -930,7 +930,7 @@ describe('dsh-tool-skill', () => {
     const home = await tempDir('tool-policy-before-load')
     const ctx = await setup(home)
     const getCalls: string[] = []
-    ctx.skills.registerProvider(() => ({
+    ctx.skills.registerProvider(ctx, () => ({
       name: 'policy-probe',
       async list() {
         return [

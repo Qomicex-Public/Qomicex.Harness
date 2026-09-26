@@ -93,5 +93,5 @@ export function apply(ctx: Context, config: Config = {}): void {
       return { ...summary, content: parseSkill(raw, locator as string).content + runtime }
     },
   }
-  ctx.skills.registerProvider(() => provider)
+  ctx.skills.registerProvider(ctx, () => provider)
 }

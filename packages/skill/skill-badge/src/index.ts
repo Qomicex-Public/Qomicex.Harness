@@ -56,5 +56,5 @@ export const inject = ['skills']
 
 /** Register the bundled `dsh-badge` provider on `ctx.skills`. */
 export function apply(ctx: Context): void {
-  ctx.skills.registerProvider(() => provider)
+  ctx.skills.registerProvider(ctx, () => provider)
 }
