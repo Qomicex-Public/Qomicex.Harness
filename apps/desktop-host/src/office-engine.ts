@@ -3,10 +3,13 @@ import { createHash } from 'node:crypto'
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync } from 'node:fs'
 import { registerHooks, type ModuleHooks } from 'node:module'
 import { tmpdir } from 'node:os'
-import { basename, dirname, join, relative } from 'node:path'
+import { basename, dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-/** Engine package names the short tree mirrors. */
+/** Engine package specifiers the hook redirects: the wrapper and its platform packages. The WASM engine stays archived. */
+const ENGINE_SPECIFIER = /^@deepseek-ai\/libreoffice-kit(?:-(?:darwin|win32|linux)-[a-z0-9]+)?(?:\/|$)/u
+
+/** Engine package directory names the short tree mirrors. */
 const ENGINE_PACKAGE = /^libreoffice-kit(?:-(?:darwin|win32|linux)-[a-z0-9]+)?$/u
 
 /**
@@ -68,10 +71,13 @@ export function shortEngineTree(archive: string, runtimeSegment: string): string
   }
   return tree
 }
-
 /**
  * Keep engine executable and resource paths usable by native child processes outside Electron.
- * Hooks apply only to this thread; worker threads must install their own resolver.
+ *
+ * The platform engine and its wrapper both resolve to the short tree: the
+ * wrapper's own `require.resolve` (which bypasses these hooks) then finds the
+ * platform engine as its short-path sibling. Hooks apply only to this thread;
+ * worker threads must install their own resolver.
  * @param runtimeDir - Prepared or ASAR-contained dsh runtime directory.
  * @returns Installed resolver for the Host lifetime, or undefined for a non-ASAR runtime.
  */
@@ -80,16 +86,17 @@ export function installOfficeEngineResolution(runtimeDir: string): ModuleHooks |
   const root = realpathSync(runtimeDir)
   const archive = dirname(root)
   const runtimeSegment = relative(archive, root)
+  const engineDirectory = join('node_modules', '@deepseek-ai')
   const shortTree = shortEngineTree(archive, runtimeSegment)
-  const base = shortTree === undefined
-    ? join(`${archive}.unpacked`, runtimeSegment, 'node_modules', '@deepseek-ai', 'libreoffice-kit-')
-    : join(shortTree, 'node_modules', '@deepseek-ai', 'libreoffice-kit-')
-  const source = pathToFileURL(join(root, 'node_modules', '@deepseek-ai', 'libreoffice-kit-')).href
-  const destination = pathToFileURL(base).href
+  const redirectRoot = shortTree === undefined
+    ? join(`${archive}.unpacked`, runtimeSegment, engineDirectory)
+    : join(shortTree, 'node_modules', '@deepseek-ai')
+  const source = pathToFileURL(join(root, engineDirectory) + sep).href
+  const destination = pathToFileURL(redirectRoot + sep).href
   return registerHooks({
     resolve(specifier, context, nextResolve) {
       const resolved = nextResolve(specifier, context)
-      if (!/^@deepseek-ai\/libreoffice-kit-(?:darwin|win32|linux)-/u.test(specifier)) return resolved
+      if (!ENGINE_SPECIFIER.test(specifier)) return resolved
       const canonical = pathToFileURL(realpathSync(fileURLToPath(resolved.url))).href
       if (!canonical.startsWith(source)) {
         if (canonical.startsWith(pathToFileURL(archive + '/').href)) {
