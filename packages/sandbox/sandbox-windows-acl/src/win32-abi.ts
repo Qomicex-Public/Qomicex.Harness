@@ -42,8 +42,14 @@ export const TokenGroups = 2
 export const TokenDefaultDacl = 6
 /** SECURITY_INFORMATION flag selecting the DACL. */
 export const DACL_SECURITY_INFORMATION = 0x00000004
+/** SECURITY_INFORMATION flag selecting the owner. */
+export const OWNER_SECURITY_INFORMATION = 0x00000001
 /** SECURITY_INFORMATION flag selecting the mandatory integrity label. */
 export const LABEL_SECURITY_INFORMATION = 0x00000010
+/** Standard right to modify an object's owner. */
+export const WRITE_OWNER = 0x00080000
+/** Win32 error reported when a security descriptor edit is denied. */
+export const ERROR_ACCESS_DENIED = 5
 /** ACE type carrying a mandatory integrity label. */
 export const SYSTEM_MANDATORY_LABEL_ACE_TYPE = 0x11
 /**

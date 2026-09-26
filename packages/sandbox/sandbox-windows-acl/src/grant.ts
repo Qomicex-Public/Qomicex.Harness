@@ -12,8 +12,8 @@
  * @module @deepseek-ai/dsh-sandbox-windows-acl/grant
  */
 
-import { grantWrite, revokeWrite } from './acl.ts'
-import { allocPtrSlot, decodePtr, isNullPtr, throwLastError, win32Sync } from './ffi.ts'
+import { ensureWriteOwner, grantWrite, revokeWrite } from './acl.ts'
+import { allocPtrSlot, decodePtr, isNullPtr, throwLastError, win32Sync, Win32Error } from './ffi.ts'
 import type { NativePtr, Win32Bindings } from './ffi.ts'
 import { makeWellKnownSid } from './token.ts'
 import * as abi from './win32-abi.ts'
@@ -97,6 +97,11 @@ export class AclWriteGrant {
    * ungranted path is a no-op merge. Callers treat a throw as a failed
    * materialization and dispose the instance to revoke the paths granted so
    * far.
+   *
+   * An access-denied grant means the label edit (the SACL) was refused: an
+   * owner-only directory lacks the explicit WRITE_OWNER owner-implicit rights
+   * do not cover. The DACL edit the owner may still make grants it once, and
+   * the grant retries behind that self-grant; every other failure stands.
    * @param path - the directory whose DACL and label gain the grant.
    * @param standing - the edits outlive this grant (the workspace reuse
    *   cache; dispose() skips revoking it). Default false (revoked on
@@ -104,7 +109,16 @@ export class AclWriteGrant {
    */
   add(path: string, standing = false): void {
     ;(standing ? this.standingPaths : this.revocablePaths).push(path)
-    grantWrite(this.api, path, this.sidPtr, this.lowLabelSidPtr, this.worldSidPtr)
+    try {
+      grantWrite(this.api, path, this.sidPtr, this.lowLabelSidPtr, this.worldSidPtr)
+    } catch (error) {
+      if (error instanceof Win32Error && error.win32Code === abi.ERROR_ACCESS_DENIED) {
+        ensureWriteOwner(this.api, path)
+        grantWrite(this.api, path, this.sidPtr, this.lowLabelSidPtr, this.worldSidPtr)
+        return
+      }
+      throw error
+    }
   }
 
   /** Every directory currently carrying the grant, in grant order. */

@@ -60,6 +60,25 @@ describe.skipIf(!isWin32)('AclWriteGrant (server-side materialization)', () => {
     expect(icaclsText(standingDir)).toContain('S-1-4-9000-77')
   })
 
+  it('add self-grants the owner WRITE_OWNER when the directory is owner-only', () => {
+    const dir = scratch()
+    // An owner-only workspace: inheritance removed and the caller's propagated
+    // ACEs stripped leaves the caller as owner with no WRITE_OWNER grant — the
+    // state whose SACL label edit alone reports access denied.
+    const strip = spawnSync('icacls', [dir, '/inheritance:r'])
+    expect(strip.status, strip.stderr).toBe(0)
+    const removeUser = spawnSync('icacls', [dir, '/remove:g', process.env.USERNAME])
+    expect(removeUser.status, removeUser.stderr).toBe(0)
+    const grant = AclWriteGrant.create('S-1-4-9000-80')
+    grant.add(dir)
+    expect(icaclsText(dir)).toContain('S-1-4-9000-80')
+    expect(icaclsText(dir)).toContain('(OI)(CI)(WO)') // the self-grant, inheritable
+    grant.dispose()
+    // The strip left the caller without DELETE: restore full control so afterEach removal succeeds.
+    const restore = spawnSync('icacls', [dir, '/grant', `${process.env.USERDOMAIN}\\${process.env.USERNAME}:(OI)(CI)(F)`])
+    expect(restore.status, restore.stderr).toBe(0)
+  })
+
   it('two grants with different SIDs coexist and revoke independently', () => {
     const dir = scratch()
     const grantA = AclWriteGrant.create('S-1-4-9000-78')
