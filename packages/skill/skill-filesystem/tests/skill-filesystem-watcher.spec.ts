@@ -359,7 +359,7 @@ describe('skill-filesystem watcher failures', () => {
     const ctx = new Context()
     await ctx.plugin(SkillRegistry)
     let provider!: InstanceType<typeof SkillFileSystem.FileSystemSkillProvider>
-    const disposeProvider = ctx.skills.registerProvider((control) => {
+    const disposeProvider = ctx.skills.registerProvider(ctx, (control) => {
       provider = new SkillFileSystem.FileSystemSkillProvider(ctx, control, {
         dshHome: join(home, '.dsh'),
         agentsHome: join(home, '.agents'),
@@ -396,7 +396,7 @@ describe('skill-filesystem watcher failures', () => {
     const ctx = new Context()
     await ctx.plugin(SkillRegistry)
     let provider!: InstanceType<typeof SkillFileSystem.FileSystemSkillProvider>
-    const disposeProvider = ctx.skills.registerProvider((control) => {
+    const disposeProvider = ctx.skills.registerProvider(ctx, (control) => {
       provider = new SkillFileSystem.FileSystemSkillProvider(ctx, control, {
         dshHome: join(home, '.dsh'),
         agentsHome: join(home, '.agents'),
@@ -427,7 +427,7 @@ describe('skill-filesystem watcher failures', () => {
     const ctx = new Context()
     await ctx.plugin(SkillRegistry)
     let provider!: InstanceType<typeof SkillFileSystem.FileSystemSkillProvider>
-    const disposeProvider = ctx.skills.registerProvider((control) => {
+    const disposeProvider = ctx.skills.registerProvider(ctx, (control) => {
       provider = new SkillFileSystem.FileSystemSkillProvider(ctx, control, {
         dshHome: join(home, '.dsh'),
         agentsHome: join(home, '.agents'),

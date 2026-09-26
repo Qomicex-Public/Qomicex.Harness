@@ -2582,9 +2582,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Layered registry of skill providers, the host+per-scope shape the tools registry established. A registration files into the layer of its calling context\'s scope (scopeOf): host rows and repository plugins land in the global layer, while a plugin mounted by an agent preset\'s standing composition lands in that preset\'s layer. A read merges the global layer with the viewing scope\'s chain — the nearest layer\'s entry wins a duplicate name outright, and the rank order decides duplicates only within one layer. It exposes sorted invocation-neutral summaries and loads full skill bodies on demand.',
     methods: [
       {
-        signature: 'registerProvider(create: (control: SkillProviderControl) => SkillProvider): () => void',
-        description: 'Register a borrowed same-process provider synchronously during plugin apply, into the calling context\'s layer: a scoped context (an agent preset\'s standing mount) registers for that scope alone, an unscoped context registers globally. Duplicate names within one layer and reserved names throw; remote initialization belongs in `list()`. Fiber disposal unregisters the provider and invalidates catalog caches.',
-        parameters: [{ name: 'create', description: 'synchronous factory receiving this registration\'s lifecycle and invalidation control.' }],
+        signature: 'registerProvider(caller: Context, create: (control: SkillProviderControl) => SkillProvider): () => void',
+        description: 'Register a borrowed same-process provider synchronously during plugin apply, into the CALLING context\'s layer: a scoped context (an agent preset\'s standing mount) registers for that scope alone, an unscoped context registers globally. Duplicate names within one layer and reserved names throw; remote initialization belongs in `list()`. The caller\'s fiber owns the registration: fiber disposal unregisters the provider and invalidates catalog caches.',
+        parameters: [
+          { name: 'caller', description: 'the plugin-applied context whose scope selects the layer.' },
+          { name: 'create', description: 'synchronous factory receiving this registration\'s lifecycle and invalidation control.' },
+        ],
         returns: 'the exact Cordis effect disposer that unregisters this provider; composite effects may yield it directly to preserve teardown ordering.',
       },
       {

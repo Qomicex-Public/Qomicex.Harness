@@ -47,7 +47,7 @@ class MemoryProvider implements SkillProvider {
 }
 
 function registerProvider(ctx: Context, provider: SkillProvider): () => void {
-  return ctx.skills.registerProvider(() => provider)
+  return ctx.skills.registerProvider(ctx, () => provider)
 }
 
 /** The skills service as a scoped caller resolves it (scope contexts declare no inject). */
@@ -119,7 +119,7 @@ describe('SkillRegistry registry', () => {
       },
     })).rejects.toThrow('already registered')
     let rejectedSignal: AbortSignal | undefined
-    expect(() => ctx.skills.registerProvider((control) => {
+    expect(() => ctx.skills.registerProvider(ctx, (control) => {
       rejectedSignal = control.signal
       return {
         name: 'runtime',
@@ -135,7 +135,7 @@ describe('SkillRegistry registry', () => {
 
     const factoryFailure = new Error('factory failed')
     let failedSignal: AbortSignal | undefined
-    expect(() => ctx.skills.registerProvider((control) => {
+    expect(() => ctx.skills.registerProvider(ctx, (control) => {
       failedSignal = control.signal
       throw factoryFailure
     })).toThrow(factoryFailure)
@@ -146,7 +146,7 @@ describe('SkillRegistry registry', () => {
     const effectFailure = new Error('effect registration failed')
     vi.spyOn(effectContext, 'effect').mockImplementation(() => { throw effectFailure })
     let effectSignal: AbortSignal | undefined
-    expect(() => effectService.registerProvider((control) => {
+    expect(() => effectService.registerProvider(effectContext, (control) => {
       effectSignal = control.signal
       return {
         name: 'effect-provider',
@@ -711,7 +711,7 @@ describe('SkillRegistry registry', () => {
     const provider = new MemoryProvider([memorySkill('first-skill', 'First', 10)])
     let invalidate = (): void => {}
     let signal: AbortSignal | undefined
-    const dispose = ctx.skills.registerProvider((control) => {
+    const dispose = ctx.skills.registerProvider(ctx, (control) => {
       invalidate = control.invalidate
       signal = control.signal
       return provider
@@ -742,7 +742,7 @@ describe('SkillRegistry registry', () => {
     ctx.on('skills/change', () => { changes += 1 })
 
     let invalidate = (): void => {}
-    const disposeProvider = ctx.skills.registerProvider((control) => {
+    const disposeProvider = ctx.skills.registerProvider(ctx, (control) => {
       invalidate = control.invalidate
       return provider
     })
@@ -808,7 +808,7 @@ describe('SkillRegistry registry', () => {
       return await originalList(options)
     }
     let invalidate = (): void => {}
-    ctx.skills.registerProvider((control) => {
+    ctx.skills.registerProvider(ctx, (control) => {
       invalidate = control.invalidate
       return provider
     })
@@ -827,7 +827,7 @@ describe('SkillRegistry registry', () => {
     const ctx = new Context()
     await ctx.plugin(SkillRegistry)
     let listCalls = 0
-    ctx.skills.registerProvider(control => ({
+    ctx.skills.registerProvider(ctx, control => ({
       name: 'self-invalidating',
       async list() {
         listCalls += 1
@@ -1129,7 +1129,7 @@ describe('SkillRegistry scoped layers', () => {
         return { ...candidate, content: (candidate.locator as { content: string }).content }
       },
     }
-    scopedSkills(preset.ctx).registerProvider(() => presetProvider)
+    scopedSkills(preset.ctx).registerProvider(preset.ctx, () => presetProvider)
 
     expect((await ctx.skills.list()).map(skill => skill.name)).toEqual(['global-skill'])
     const scoped = await ctx.skills.list({ scope: scopeOf(preset.ctx) })
@@ -1144,7 +1144,7 @@ describe('SkillRegistry scoped layers', () => {
     await ctx.plugin(SkillRegistry)
     registerProvider(ctx, new MemoryProvider([memorySkill('shared-name', 'Global wins ranks', 10)]))
     const preset = createScope(ctx, { preset: 'shadow' })
-    scopedSkills(preset.ctx).registerProvider(() => ({
+    scopedSkills(preset.ctx).registerProvider(preset.ctx, () => ({
       name: 'preset-local',
       async list() {
         return [{
@@ -1200,9 +1200,9 @@ describe('SkillRegistry scoped layers', () => {
     registerProvider(ctx, new MemoryProvider([]))
     const presetA = createScope(ctx, { preset: 'a' })
     const presetB = createScope(ctx, { preset: 'b' })
-    scopedSkills(presetA.ctx).registerProvider(() => new MemoryProvider([memorySkill('a-only', 'A', 100)]))
-    scopedSkills(presetB.ctx).registerProvider(() => new MemoryProvider([memorySkill('b-only', 'B', 100)]))
-    expect(() => scopedSkills(presetA.ctx).registerProvider(() => new MemoryProvider([])))
+    scopedSkills(presetA.ctx).registerProvider(presetA.ctx, () => new MemoryProvider([memorySkill('a-only', 'A', 100)]))
+    scopedSkills(presetB.ctx).registerProvider(presetB.ctx, () => new MemoryProvider([memorySkill('b-only', 'B', 100)]))
+    expect(() => scopedSkills(presetA.ctx).registerProvider(presetA.ctx, () => new MemoryProvider([])))
       .toThrow('a skill provider named "memory" is already registered in this scope')
     expect((await ctx.skills.list({ scope: scopeOf(presetA.ctx) })).map(skill => skill.name)).toEqual(['a-only'])
     expect((await ctx.skills.list({ scope: scopeOf(presetB.ctx) })).map(skill => skill.name)).toEqual(['b-only'])
@@ -1240,7 +1240,7 @@ describe('SkillRegistry scoped layers', () => {
     ctx.on('skills/change', changes)
     const preset = createScope(ctx, { preset: 'hmr' })
     const provider = new MemoryProvider([memorySkill('scoped-skill', 'Scoped', 100)])
-    scopedSkills(preset.ctx).registerProvider(() => provider)
+    scopedSkills(preset.ctx).registerProvider(preset.ctx, () => provider)
     expect((await ctx.skills.list({ scope: scopeOf(preset.ctx) })).map(skill => skill.name)).toEqual(['scoped-skill'])
     const notified = changes.mock.calls.length
     await preset.dispose()
@@ -1254,7 +1254,7 @@ describe('SkillRegistry scoped layers', () => {
     const preset = createScope(ctx, { preset: 'invalidate' })
     const provider = new MemoryProvider([memorySkill('watched', 'Watched', 100)])
     let control: { invalidate: () => void } | undefined
-    const dispose = scopedSkills(preset.ctx).registerProvider((given) => {
+    const dispose = scopedSkills(preset.ctx).registerProvider(preset.ctx, (given) => {
       control = given
       return provider
     })
