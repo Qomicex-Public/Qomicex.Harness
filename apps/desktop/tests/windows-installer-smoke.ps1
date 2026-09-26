@@ -183,31 +183,20 @@ try {
 
     $process = Start-Setup dark
     Click-Control $process $copy.INSTALLER_INSTALL
-    [void](Wait-Control $process $copy.INSTALLER_RUNNING -Dialog)
-    $visible = [InstallerCapture]::VisibleText($process.Id)
-    if ($visible.Contains('msctls_progress32') -ne $expected.nativeProgressVisible) { throw 'Stock green progress bar is visible' }
-    if (-not $visible.Contains('HarnessInstallerProgress')) { throw 'Custom progress page is missing' }
-    $window = [InstallerCapture]::Find($process.Id)
-    $source = [InstallerCapture]::FindClass($window, 'msctls_progress32')
-    if ($source -eq [IntPtr]::Zero) { throw 'Stock progress source is missing' }
-    # Directory staging finishes before the running-app prompt; promotion has not started.
-    if ([InstallerCapture]::GetProp($window, 'HarnessInstaller.Stage').ToInt32() -ne 1) { throw 'Running-app prompt reached the wrong installation stage' }
-    $previous = [InstallerCapture]::Progress($window)
-    foreach ($sample in @(@(100, 95), @(100, 59), @(1000, 0), @(1000, 950), @(100, 59), @(100, 100))) {
-        [void][InstallerCapture]::SendMessage($source, 0x406, [IntPtr]::Zero, [IntPtr]$sample[0])
-        [void][InstallerCapture]::SendMessage($source, 0x402, [IntPtr]$sample[1], [IntPtr]::Zero)
-        $percent = [InstallerCapture]::Progress($window)
-        if ($percent -lt $previous -or $percent -ge 100) { throw "Progress regressed or completed before success: $previous -> $percent" }
-        $previous = $percent
-    }
-    if ($previous -gt 94) { throw 'Internal progress escaped the extraction stage' }
-    $results.Add('progress-remains-monotonic-across-native-resets')
-    [void][InstallerCapture]::Save([InstallerCapture]::Find($process.Id), (Join-Path $OutputDirectory 'dark-progress.png'))
-    Dismiss $process $copy.INSTALLER_RUNNING
-    if (-not $process.WaitForExit(10000) -or $app.HasExited) { throw 'Running application was not preserved' }
-    Dismiss $app 'Installer test application is running.'
-    if (-not $app.WaitForExit(10000)) { throw 'Test application did not exit' }
-    $results.Add('running-app-preserved-and-native-progress-hidden')
+    # The installer ends the affected installation's own running application and continues
+    # unattended: no running-app prompt, and the install reaches the finish page. The
+    # unterminatable-process fallback (the prompt this replaces) needs a process the
+    # installer cannot terminate, which a per-user test application cannot be.
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    do {
+        if ($process.HasExited) { throw "Setup exited during the running-app end: $($process.ExitCode)" }
+        if ([InstallerCapture]::FindDialogText($process.Id, $copy.INSTALLER_RUNNING) -ne [IntPtr]::Zero) { throw 'Running-app prompt is still shown' }
+        Start-Sleep -Milliseconds 50
+    } until ($app.HasExited -or $timer.Elapsed.TotalSeconds -gt 20)
+    if (-not $app.HasExited) { throw 'Running application was not ended by the installer' }
+    $bounds = [InstallerCapture]::Bounds([InstallerCapture]::Find($process.Id))
+    Finish-Setup $process $false dark $bounds
+    $results.Add('running-application-ended-and-install-completes')
 
     $otherPath = Join-Path $OutputDirectory 'Other Installation'
     New-Item -ItemType Directory -Path $otherPath | Out-Null

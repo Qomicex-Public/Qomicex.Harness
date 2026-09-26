@@ -183,6 +183,24 @@ ManifestDPIAware true
       ${Loop}
     ${EndIf}
     ${If} $R0 == 0
+      ; The affected installation's own processes end so the person does not have to
+      ; close the application first; an unrelated same-named installation survives the
+      ; path match, and a process that cannot be terminated still falls through to the
+      ; prompt below.
+      System::Call '$PLUGINSDIR\window-frame.dll::InstallerEndProcess(w "$INSTDIR\${APP_EXECUTABLE_FILENAME}") i.R2 ?c'
+      ${If} $R2 > 0
+        StrCpy $R1 0
+        ${DoWhile} $R0 == 0
+          Sleep 250
+          System::Call '$PLUGINSDIR\window-frame.dll::InstallerFindProcess(w "$INSTDIR\${APP_EXECUTABLE_FILENAME}") i.R0 ?c'
+          IntOp $R1 $R1 + 1
+          ${If} $R1 >= 20
+            ${ExitDo}
+          ${EndIf}
+        ${Loop}
+      ${EndIf}
+    ${EndIf}
+    ${If} $R0 == 0
       MessageBox MB_OK|MB_ICONINFORMATION "$(INSTALLER_RUNNING)" /SD IDOK
       SetErrorLevel 2
       Quit
