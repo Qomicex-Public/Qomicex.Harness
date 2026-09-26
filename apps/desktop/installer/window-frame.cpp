@@ -83,6 +83,57 @@ extern "C" __declspec(dllexport) int __cdecl InstallerFindProcess(LPCWSTR execut
     return result;
 }
 
+// The open handle for a process whose image path equals the affected executable, or nullptr.
+static HANDLE MatchableProcess(DWORD processId, LPCWSTR expected) {
+    HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+    if (!process) return nullptr;
+    WCHAR path[32768];
+    DWORD count = ARRAYSIZE(path);
+    if (!QueryFullProcessImageNameW(process, 0, path, &count) || _wcsicmp(path, expected) != 0) {
+        CloseHandle(process);
+        return nullptr;
+    }
+    return process;
+}
+
+// Terminate every process of one installation's own executable so an installer proceeds
+// without asking the person to close the application first. The image path is matched
+// exactly (InstallerFindProcess's rule), so an unrelated same-named installation survives.
+// Returns the number of processes terminated, or -1 when the process list cannot be read.
+extern "C" __declspec(dllexport) int __cdecl InstallerEndProcess(LPCWSTR executable) {
+    WCHAR target[32768];
+    DWORD length = GetLongPathNameW(executable, target, ARRAYSIZE(target));
+    LPCWSTR expected = length > 0 && length < ARRAYSIZE(target) ? target : executable;
+    LPCWSTR filename = wcsrchr(expected, L'\\');
+    filename = filename ? filename + 1 : expected;
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE) return -1;
+    PROCESSENTRY32W entry = {};
+    entry.dwSize = sizeof(entry);
+    int terminated = 0;
+    BOOL present = Process32FirstW(snapshot, &entry);
+    while (present) {
+        if (_wcsicmp(entry.szExeFile, filename) == 0 && entry.th32ProcessID != GetCurrentProcessId()) {
+            HANDLE matched = MatchableProcess(entry.th32ProcessID, expected);
+            if (matched) {
+                CloseHandle(matched);
+                HANDLE killer = OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, entry.th32ProcessID);
+                if (killer) {
+                    if (TerminateProcess(killer, 0)) {
+                        WaitForSingleObject(killer, 5000);
+                        terminated += 1;
+                    }
+                    CloseHandle(killer);
+                }
+            }
+        }
+        present = Process32NextW(snapshot, &entry);
+    }
+    bool listed = present != FALSE || GetLastError() == ERROR_NO_MORE_FILES;
+    CloseHandle(snapshot);
+    return listed ? terminated : -1;
+}
+
 struct ProgressPage {
     InstallProgress progress{GetTickCount64()};
     bool dark;
