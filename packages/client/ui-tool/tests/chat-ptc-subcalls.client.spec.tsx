@@ -112,6 +112,9 @@ async function bench(snapshot: ChatSnapshot) {
     groups: { register: () => () => {} },
     binding: () => ({ target: () => chat, snapshot: conversation }),
   } as never)
+  ctx.provide('conversation', {
+    input: { for: () => ({ setDraft: () => {}, focus: () => {} }) },
+  } as never)
   ctx.uiSession.provide({
     hooks: ['conversation'],
     resolve: () => ({ hooks: { conversation } }),

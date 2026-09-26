@@ -2166,11 +2166,11 @@ describe('ChatView', () => {
       turnEnds: new Map([[1, 4], [2, 6]]),
     })
     const view = render(<h.ChatView {...h.props} />)
-    // Branch renders only under assistant answers; user bubbles carry copy,
-    // retract, and edit.
+    // Branch renders only under assistant answers; the two user bubbles carry
+    // copy, retract, and edit, while assistant rows keep copy alone.
     expect(view.getAllByRole('button', { name: '复制' })).toHaveLength(4)
-    expect(view.getAllByRole('button', { name: '撤回' })).toHaveLength(4)
-    expect(view.getAllByRole('button', { name: '编辑' })).toHaveLength(4)
+    expect(view.getAllByRole('button', { name: '撤回' })).toHaveLength(2)
+    expect(view.getAllByRole('button', { name: '编辑' })).toHaveLength(2)
     const branchButtons = view.getAllByRole('button', { name: '在新对话中分支' })
     expect(branchButtons).toHaveLength(2)
     expect(branchButtons.map(button => button.getAttribute('aria-disabled'))).toEqual([null, null])
