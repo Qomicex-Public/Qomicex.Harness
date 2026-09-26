@@ -5,10 +5,14 @@ import { StateDot } from '@deepseek-ai/dsh-client-ui-primitives/src/StateDot.tsx
 import type { AccountView } from '@deepseek-ai/dsh-deepseek-account/types'
 import type { WelcomeApi } from '../welcome-api.ts'
 
-type Page = 'entry' | 'key' | 'account'
+type Page = 'entry' | 'account'
 
 /**
  * Render the standalone welcome flow using shell-owned operations and localized copy.
+ *
+ * The entry page carries the API-key form directly — the key input, save, and
+ * the skip action sit together, with account sign-in as the secondary path —
+ * so configuring a key never passes through a second page.
  * @param props.api - isolated preload API; no account credentials reach the renderer.
  * @returns welcome pages with fixed bottom actions.
  */
@@ -37,7 +41,11 @@ export function Welcome({ api }: { api: WelcomeApi }) {
     setPage(next)
   }
   function showAccount(state: AccountView) {
-    if (pageRef.current === 'key' || (state.attempt === null && pageRef.current === 'entry')) return
+    // An in-progress key is never interrupted by an account notification; an
+    // idle entry page follows the notification to the account page. The input
+    // ref is read directly: the account listener keeps its first render's
+    // closure, so component state would be stale here.
+    if (pageRef.current === 'entry' && (input.current?.value ?? '') !== '') return
     attemptRef.current = state.attempt
     setAttempt(state.attempt)
     setStarting(false)
@@ -57,8 +65,8 @@ export function Welcome({ api }: { api: WelcomeApi }) {
   }, [api, m.welcomeTitle])
 
   useEffect(() => {
-    if (page === 'key') input.current?.focus()
-    else if (page === 'entry' && focusEntry.current) {
+    if (page === 'entry') input.current?.focus()
+    else if (focusEntry.current) {
       focusEntry.current = false
       keyButton.current?.focus()
     }
@@ -153,7 +161,7 @@ export function Welcome({ api }: { api: WelcomeApi }) {
   const title = phase === 'initializing' ? m.welcomeAuthStarting
     : waiting ? m.welcomeAuthWaiting : phase === 'expired' ? m.welcomeAuthExpired
       : phase === 'failed' ? m.welcomeAuthFailed : m.welcomeAuthExchanging
-  const heading = page === 'entry' ? 'welcome-heading' : page === 'key' ? 'key-title' : 'auth-status'
+  const heading = page === 'entry' ? 'welcome-heading' : 'auth-status'
 
   return <>
     <div className="titlebar" aria-hidden="true" />
@@ -163,12 +171,11 @@ export function Welcome({ api }: { api: WelcomeApi }) {
         <h1 id="welcome-heading"><span>{m.welcomeTaglineBefore}</span><em>{m.welcomeTaglineBrand}</em><span>{m.welcomeTaglineAfter}</span></h1>
         <p id="welcome-description">{m.welcomeDescription}</p>
       </div>
-      <form id="key-form" className="key-form" hidden={page !== 'key'} noValidate onSubmit={(event) => { void saveKey(event) }} aria-busy={busy}>
-        <header className="key-heading"><h1 id="key-title">{m.welcomeKeyTitle}</h1><p id="key-description">{m.welcomeKeyDescription}</p></header>
+      <form id="key-form" className="key-form" hidden={page !== 'entry'} noValidate onSubmit={(event) => { void saveKey(event) }} aria-busy={busy}>
         <div className="key-field">
           <label className="visually-hidden" htmlFor="key-input">{m.welcomeKeyPlaceholder}</label>
           <input ref={input} id="key-input" type="password" autoComplete="off" autoCapitalize="off" spellCheck={false} required
-            aria-describedby="key-description key-error" aria-invalid={error !== ''} placeholder={m.welcomeKeyPlaceholder}
+            aria-describedby="key-error" aria-invalid={error !== ''} placeholder={m.welcomeKeyPlaceholder}
             value={draft} disabled={busy} onChange={(event) => { setDraft(event.target.value); setError('') }} />
           <p id="key-error" className="key-error" role="alert" hidden={error === ''}>{error}</p>
         </div>
@@ -186,22 +193,15 @@ export function Welcome({ api }: { api: WelcomeApi }) {
           <StateDot state="ongoing" size={16} className="welcome-loading" />
         </button>
         <button id="auth-retry" className="primary" type="button" hidden={!failed} onClick={() => { void start() }}>{m.welcomeAuthRetry}</button>
-        <button id="auth-api-key" className="secondary" type="button" hidden={!failed} onClick={() => { navigate('key') }}>{m.welcomeApiKey}</button>
+        <button id="auth-api-key" className="secondary" type="button" hidden={!failed} onClick={() => { navigate('entry') }}>{m.welcomeApiKey}</button>
         <button id="auth-cancel" className="secondary" type="button" hidden={failed}
           disabled={cancelling || phase === 'committing' || phase === 'succeeded' || (phase === 'initializing' && !attempt?.id)}
           onClick={() => { void cancel() }}>{m.welcomeAuthCancel}</button>
       </div>
       <div id="entry-actions" className="actions" hidden={page !== 'entry'}>
-        <button id="sign-in" className="primary" type="button" onClick={() => { void start() }}>{m.welcomeSignIn}</button>
-        <button ref={keyButton} id="api-key" className="secondary" type="button" onClick={() => { navigate('key') }}>{m.welcomeApiKey}</button>
-      </div>
-      <div id="key-actions" className="actions" hidden={page !== 'key'}>
         <button id="save-key" className="primary" type="submit" form="key-form" disabled={busy || draft.trim() === ''}>{m.welcomeKeySave}</button>
         <button id="skip-key" className="secondary" type="button" disabled={busy} onClick={() => { void skip() }}>{m.welcomeKeyLater}</button>
-        <button id="back-to-login" className="back" type="button" disabled={busy} onClick={() => {
-          if (busyRef.current) return
-          setDraft(''); setError(''); focusEntry.current = true; navigate('entry')
-        }}>{m.welcomeKeyBack}</button>
+        <button ref={keyButton} id="sign-in" className="back" type="button" disabled={busy} onClick={() => { void start() }}>{m.welcomeSignIn}</button>
       </div>
     </main>
   </>

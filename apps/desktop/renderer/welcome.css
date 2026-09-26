@@ -78,16 +78,26 @@ body {
   display: grid;
   flex: 1;
   min-height: 0;
-  grid-template-rows: 40px minmax(0, 1fr) 104px;
+  /* Brand, tagline, key form, actions: the entry page shows the form beneath
+     the tagline instead of stacking them on one row. */
+  grid-template-rows: 40px auto minmax(0, 1fr) 104px;
   justify-items: center;
   align-items: center;
   padding: 24px 48px 76px;
 }
 
-.welcome > .tagline,
-.welcome > .key-form,
-.welcome > #auth-page {
+.welcome > .tagline {
   grid-row: 2;
+  grid-column: 1;
+}
+
+.welcome > .key-form {
+  grid-row: 3;
+  grid-column: 1;
+}
+
+.welcome > #auth-page {
+  grid-row: 2 / span 2;
   grid-column: 1;
 }
 
@@ -130,7 +140,7 @@ body {
 
 .actions {
   position: relative;
-  grid-row: 3;
+  grid-row: 4;
   grid-column: 1;
   align-self: stretch;
   display: flex;

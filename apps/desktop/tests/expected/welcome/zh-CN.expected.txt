@@ -2,5 +2,7 @@ Qomicex Harness
 Qomicex Harness
 欢迎使用 Qomicex Harness
 组装无限可能，共探智能上限
+输入 API 密钥 [password]
+保存并继续 [disabled]
+稍后配置
 登录
-添加 API Key

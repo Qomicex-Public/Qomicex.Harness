@@ -2,5 +2,7 @@ Qomicex Harness
 Qomicex Harness
 Welcome to Qomicex Harness
 Build potential. Explore intelligence.
+Enter API key [password]
+Save and continue [disabled]
+Set up later
 Sign in
-Add API Key
