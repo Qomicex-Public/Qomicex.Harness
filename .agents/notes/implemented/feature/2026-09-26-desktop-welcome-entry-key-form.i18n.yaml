@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-26-desktop-welcome-entry-key-form.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-26-desktop-welcome-entry-key-form.md
-2026-09-26-desktop-welcome-entry-key-form.md: 394e146b0ac3c4ebbc4c5c2a6c5c43fb4739affc
-2026-09-26-desktop-welcome-entry-key-form.zh.md: 1da10762d99d3beede8f3d9d1e7c6421ad5a5ad8
+/agent-note-desktop-welcome-entry-page-carries-the-api-key-form-inline:
+  en: a750a0c445bf406a
+  zh: df36223598a14a9f
+/agent-note-desktop-welcome-entry-page-carries-the-api-key-form-inline/problem:
+  en: 04f08b36fa84d9b3
+  zh: e99cfe4b52f8f1aa
+/agent-note-desktop-welcome-entry-page-carries-the-api-key-form-inline/decision:
+  en: dd6195b80cfbd0e4
+  zh: 690c8a49a1c83a90
+/agent-note-desktop-welcome-entry-page-carries-the-api-key-form-inline/consequences:
+  en: 1d472229dcfb0cb6
+  zh: 6011eac9f2c42537
+/agent-note-desktop-welcome-entry-page-carries-the-api-key-form-inline/alternatives-considered:
+  en: 18545e866c14d1fc
+  zh: 45f91702705a7e89
+/agent-note-desktop-welcome-entry-page-carries-the-api-key-form-inline/verification:
+  en: c662f097acbc988e
+  zh: b51f39b625cf214e

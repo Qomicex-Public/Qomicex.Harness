@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/memory/README.md
-README.md: 950bffb516736cc0d45aefa2abb516f3a6e24f01
-README.zh.md: a3b57069a316004560f88dde7d7dd60c8ccf5ffc
+/:
+  en: 49df42b9ef83cf43
+  zh: 62b059f815c379f6
+/memory-bio-inspired-global-memory:
+  en: 54bcdf6ac138ef5d
+  zh: 5e4f019319ee0e3c
+/memory-bio-inspired-global-memory/summary:
+  en: 96c5e1d26b39ee06
+  zh: 6fd5cf6dad552d43
+/memory-bio-inspired-global-memory/table-of-contents:
+  en: 1eb35b015a6c423f
+  zh: 8a8265618cd3762f
+/memory-bio-inspired-global-memory/packages:
+  en: 19a20d613205a55d
+  zh: fb1be75bde874ef9
+/memory-bio-inspired-global-memory/related-documentation:
+  en: e9e402832e96ccee
+  zh: 2b565cee00a15d23
+/memory-bio-inspired-global-memory/dev-note:
+  en: 5de1d6304e00c58f
+  zh: a2efee0c451b32fa

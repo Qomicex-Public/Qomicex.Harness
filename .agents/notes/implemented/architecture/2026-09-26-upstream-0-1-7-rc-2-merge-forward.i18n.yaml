@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-09-26-upstream-0-1-7-rc-2-merge-forward.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-26-upstream-0-1-7-rc-2-merge-forward.md
+/agent-note-upstream-0-1-7-rc-2-merged-forward-over-the-fork-s-154-commits:
+  en: 7a580638646b1525
+  zh: ff6ae8dd108d32ab
+/agent-note-upstream-0-1-7-rc-2-merged-forward-over-the-fork-s-154-commits/problem:
+  en: 70e1a1bae0109914
+  zh: 88f1de5cfb5a74d2
+/agent-note-upstream-0-1-7-rc-2-merged-forward-over-the-fork-s-154-commits/decision:
+  en: c1ec029098d0ac53
+  zh: 792f375e54d1c72d
+/agent-note-upstream-0-1-7-rc-2-merged-forward-over-the-fork-s-154-commits/decision/where-the-fork-s-customizations-met-upstream-s-new-architecture:
+  en: 774fce21e201c0e1
+  zh: 5593c62641d82ed1
+/agent-note-upstream-0-1-7-rc-2-merged-forward-over-the-fork-s-154-commits/decision/local-gaps-this-merge-surfaced:
+  en: 7e0e87fd272d669d
+  zh: bfcaf4368b3009bb
+/agent-note-upstream-0-1-7-rc-2-merged-forward-over-the-fork-s-154-commits/consequences:
+  en: 2e9fa7f5d18f40e4
+  zh: 5e3eb8b6167b1f95
+/agent-note-upstream-0-1-7-rc-2-merged-forward-over-the-fork-s-154-commits/alternatives-considered:
+  en: 73942862be37c7af
+  zh: 3310258da672ad33
+/agent-note-upstream-0-1-7-rc-2-merged-forward-over-the-fork-s-154-commits/verification:
+  en: 870eaa07ba4b429b
+  zh: 59a219b9ef3ee5d9

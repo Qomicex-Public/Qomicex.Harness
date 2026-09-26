@@ -1,6 +1,70 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/guard/shell-command-guard/README.md
-README.md: 3c0906c0621f5f60e18e7fd46d9d9c1d2bbdfba6
-README.zh.md: e065592a4c34a291432deb8bc2fe4dd9ea93877c
+/:
+  en: 07f47ddfc112b754
+  zh: 2b8079fcd9ab251e
+/deepseek-ai-dsh-shell-command-guard:
+  en: 68bd8843da4c99a6
+  zh: 5445dd865f3ab978
+/deepseek-ai-dsh-shell-command-guard/summary:
+  en: 71de2904d531d570
+  zh: 0206017e3bc561a9
+/deepseek-ai-dsh-shell-command-guard/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 82bbd1ae631975a1
+/deepseek-ai-dsh-shell-command-guard/use-this-package:
+  en: d9d5a691be8a6af4
+  zh: 2ae86c0cd56c16fb
+/deepseek-ai-dsh-shell-command-guard/use-this-package/what-it-decides:
+  en: 5d7c9c439d8ff5bd
+  zh: 293e36e7b17605bb
+/deepseek-ai-dsh-shell-command-guard/use-this-package/tuning-it:
+  en: af0f377f100033ff
+  zh: 622bd3a9fed5cb15
+/deepseek-ai-dsh-shell-command-guard/use-this-package/precedence:
+  en: 5344d3563914ac6d
+  zh: a1a44bd0b0a63b44
+/deepseek-ai-dsh-shell-command-guard/understand-the-implementation:
+  en: f1dc77bf2c5eedf5
+  zh: 33eb04ec15eda77c
+/deepseek-ai-dsh-shell-command-guard/understand-the-implementation/design-philosophy:
+  en: dd876e8bc1f59abc
+  zh: 9905ec114a2db960
+/deepseek-ai-dsh-shell-command-guard/understand-the-implementation/detection-and-classification:
+  en: 9bb2f9e7b245c086
+  zh: aebf04270138bc7e
+/deepseek-ai-dsh-shell-command-guard/understand-the-implementation/the-user-layer-and-the-check-script:
+  en: 38cc53f9fa5409e6
+  zh: 54c497f69c3f77e2
+/deepseek-ai-dsh-shell-command-guard/understand-the-implementation/configuration-binding:
+  en: 169991e82b17f633
+  zh: 6320311ce0d6e282
+/deepseek-ai-dsh-shell-command-guard/understand-the-implementation/source-map:
+  en: 9f6b30ed7a354af4
+  zh: 60145e4202be89a9
+/deepseek-ai-dsh-shell-command-guard/further-exploration:
+  en: be5646bf2c15a0f1
+  zh: 0003e897e9064392
+/deepseek-ai-dsh-shell-command-guard/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-shell-command-guard/model-experience/denied-or-approval-required-tool-call:
+  en: 7f4d026def109abe
+  zh: 4d2541dc90824331
+/deepseek-ai-dsh-shell-command-guard/model-experience/denied-or-approval-required-tool-call/what-the-model-sees:
+  en: 35302e57e3f3c2b4
+  zh: 94fa45a9899b5202
+/deepseek-ai-dsh-shell-command-guard/model-experience/denied-or-approval-required-tool-call/token-effect:
+  en: 9081588e4d484483
+  zh: 80dc421bd778c969
+/deepseek-ai-dsh-shell-command-guard/model-experience/denied-or-approval-required-tool-call/kv-cache-effect:
+  en: f5d5f97a153f7c70
+  zh: bc10e99a8641ad7a
+/deepseek-ai-dsh-shell-command-guard/known-limitations-and-deferred-work:
+  en: 3c0b6dc43c779f22
+  zh: 53a9e571b720db48
+/deepseek-ai-dsh-shell-command-guard/known-limitations-and-deferred-work/dev-note:
+  en: 20b4098c740baa3d
+  zh: 56b8a7fdd569df04

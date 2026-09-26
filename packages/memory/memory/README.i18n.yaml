@@ -1,6 +1,85 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/memory/memory/README.md
-README.md: f74e8531044fd45463c0a857ac2122bc4a70530f
-README.zh.md: d3b8425af7400676761f08e72a1964b498436312
+/:
+  en: 2b68c090c0940822
+  zh: d0e2062f456d3a74
+/deepseek-ai-dsh-memory:
+  en: bbf00b4347d57138
+  zh: dc66c1ce3d7fb64d
+/deepseek-ai-dsh-memory/summary:
+  en: a9cf2a4fbacf2ba7
+  zh: 3997d4cca2411766
+/deepseek-ai-dsh-memory/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: ffab54373e9e61f0
+/deepseek-ai-dsh-memory/use-this-package:
+  en: f69264011df61594
+  zh: 506d94a030f35266
+/deepseek-ai-dsh-memory/use-this-package/the-four-tools:
+  en: ed3fe77cafdeca7a
+  zh: 2be1ba18147bb206
+/deepseek-ai-dsh-memory/use-this-package/scope-where-a-memory-lives:
+  en: 1bcbb5154f5ddd1a
+  zh: 577fe7318fd1e7a8
+/deepseek-ai-dsh-memory/use-this-package/when-to-enable-authorization:
+  en: 00896ba08fac1ba6
+  zh: 2b431ae2520deccd
+/deepseek-ai-dsh-memory/understand-the-implementation:
+  en: 541f543a38fc7b01
+  zh: da81761f2452c7f3
+/deepseek-ai-dsh-memory/further-exploration:
+  en: 815ed4ee5763726b
+  zh: 37ff5976852deb50
+/deepseek-ai-dsh-memory/model-experience:
+  en: 215e7ba838619b7b
+  zh: 215e7ba838619b7b
+/deepseek-ai-dsh-memory/model-experience/static-capability-instruction:
+  en: 366755b06e9792f5
+  zh: 366755b06e9792f5
+/deepseek-ai-dsh-memory/model-experience/static-capability-instruction/what-the-model-sees:
+  en: 59b081fb46cb3b2a
+  zh: ebc530a782262b45
+/deepseek-ai-dsh-memory/model-experience/static-capability-instruction/what-the-model-sees/verbatim-text:
+  en: c2b7140873db3fd3
+  zh: c2b7140873db3fd3
+/deepseek-ai-dsh-memory/model-experience/static-capability-instruction/token-effect:
+  en: 0eb4b7c5e18ed48a
+  zh: 3a12e041d07319ae
+/deepseek-ai-dsh-memory/model-experience/static-capability-instruction/kv-cache-effect:
+  en: ebf2070595788366
+  zh: dd8c6ef2381bda60
+/deepseek-ai-dsh-memory/model-experience/dynamic-memory-injection:
+  en: 541483abd4b0489b
+  zh: 541483abd4b0489b
+/deepseek-ai-dsh-memory/model-experience/dynamic-memory-injection/what-the-model-sees:
+  en: 8e96490950f4119f
+  zh: 777ea74a39b56a78
+/deepseek-ai-dsh-memory/model-experience/dynamic-memory-injection/what-the-model-sees/verbatim-recall-wrapper:
+  en: 1b300529935c4090
+  zh: 1b300529935c4090
+/deepseek-ai-dsh-memory/model-experience/dynamic-memory-injection/token-effect:
+  en: 04b2ca8fc7b57bca
+  zh: e922244a92d5c7b8
+/deepseek-ai-dsh-memory/model-experience/dynamic-memory-injection/kv-cache-effect:
+  en: 90ce3d019e32cc5b
+  zh: 57a604356a45aba4
+/deepseek-ai-dsh-memory/model-experience/the-three-memory-tools:
+  en: ae166e26d8bd4bf1
+  zh: ae166e26d8bd4bf1
+/deepseek-ai-dsh-memory/model-experience/the-three-memory-tools/what-the-model-sees:
+  en: d49f0a9bbd5001b4
+  zh: cb840d0ff0a30446
+/deepseek-ai-dsh-memory/model-experience/the-three-memory-tools/token-effect:
+  en: 92cc3e11dc143e43
+  zh: b211763ca8bab335
+/deepseek-ai-dsh-memory/model-experience/the-three-memory-tools/kv-cache-effect:
+  en: bc8467290d1c8ef5
+  zh: f1ab88d5ed87f316
+/deepseek-ai-dsh-memory/known-limitations-and-deferred-work:
+  en: c10f14a0997ed207
+  zh: 0cd6b42119988e73
+/deepseek-ai-dsh-memory/known-limitations-and-deferred-work/dev-note:
+  en: 5ca15f61a092e26d
+  zh: f46c4bbbc165ce1d

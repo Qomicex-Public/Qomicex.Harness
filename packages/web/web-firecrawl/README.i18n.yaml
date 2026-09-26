@@ -1,6 +1,64 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/web/web-firecrawl/README.md
-README.md: bd3665c61cb438c76dc4b476850fe5842ce38384
-README.zh.md: a2c3fad55f7144b98bec1fa24defc7ab8a992823
+/:
+  en: 86a0a8c656e285bf
+  zh: a0e2c452ffec4527
+/deepseek-ai-dsh-web-firecrawl:
+  en: 8cef6a45a20c8bda
+  zh: b656f55d0cbf6753
+/deepseek-ai-dsh-web-firecrawl/summary:
+  en: 2e64295d217fce22
+  zh: f1309b33da05afa5
+/deepseek-ai-dsh-web-firecrawl/table-of-contents:
+  en: b563e4ec4727d0de
+  zh: 7472bc771192fe43
+/deepseek-ai-dsh-web-firecrawl/use-this-package:
+  en: 0591417d90dbbf0d
+  zh: 047c2bb1a9a1d5dd
+/deepseek-ai-dsh-web-firecrawl/use-this-package/when-to-choose-it:
+  en: 50bf747dbdf182a3
+  zh: 9794b06bb9afccbd
+/deepseek-ai-dsh-web-firecrawl/use-this-package/minimal-configuration:
+  en: 3303f9ab3b67e5e1
+  zh: 11f8e25e51b0db21
+/deepseek-ai-dsh-web-firecrawl/use-this-package/what-a-search-returns:
+  en: a11f5c37a8aa0b6b
+  zh: 72748eec60e51914
+/deepseek-ai-dsh-web-firecrawl/use-this-package/what-a-fetch-returns:
+  en: 6f1b0b7afd8470a7
+  zh: 4765ad9f0b463f74
+/deepseek-ai-dsh-web-firecrawl/use-this-package/failures-and-recovery:
+  en: 31e21fe755c8348d
+  zh: 7e797b1fcae82524
+/deepseek-ai-dsh-web-firecrawl/understand-the-implementation:
+  en: 7010601542a84afe
+  zh: ee32f3690db5fc47
+/deepseek-ai-dsh-web-firecrawl/understand-the-implementation/design-philosophy:
+  en: fb6de26d17bde506
+  zh: cd8371e63bb66384
+/deepseek-ai-dsh-web-firecrawl/understand-the-implementation/source-map:
+  en: d2feeb45ae3f3207
+  zh: cd247bd84c10dd3f
+/deepseek-ai-dsh-web-firecrawl/understand-the-implementation/request-and-mapping-flow:
+  en: c29ae51e51997df3
+  zh: 0c67c4ee3944bab3
+/deepseek-ai-dsh-web-firecrawl/further-exploration:
+  en: b62fd8f90130fc1a
+  zh: a6b899a6136e62f7
+/deepseek-ai-dsh-web-firecrawl/model-experience:
+  en: c10a09d9f7d2c497
+  zh: a0f83eba79bebc0c
+/deepseek-ai-dsh-web-firecrawl/model-experience/kv-cache-effect:
+  en: e290ccc9b3c92c08
+  zh: fa17346d030ff5fb
+/deepseek-ai-dsh-web-firecrawl/known-limitations-and-deferred-work:
+  en: db072894fc2deb4a
+  zh: c89f5328ec6718d8
+/deepseek-ai-dsh-web-firecrawl/known-limitations-and-deferred-work/dev-note:
+  en: 7f775cc79dbce94b
+  zh: ce5093fa57e7ea71
+/deepseek-ai-dsh-web-firecrawl/known-limitations-and-deferred-work/dev-note/future-richer-scrape-formats:
+  en: ca92672efd5c2877
+  zh: fa5dc3a4d805e4af

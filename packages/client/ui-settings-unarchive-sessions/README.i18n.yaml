@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-settings-unarchive-sessions/README.md
-README.md: 79d0019e1adcf2324af5bc643c3254f10dbe80ae
-README.zh.md: bc4941cb3c0ff242c8108f9a6f56ca43a997f8aa
+/:
+  en: babcef6ff75b6ec5
+  zh: 261bcdb71a36b054
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions:
+  en: 46a8dc82197c7351
+  zh: db84f334c0951c1d
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/summary:
+  en: 94a0a4ecc933251e
+  zh: 1d60e0593523e1aa
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/use-this-package:
+  en: 653b4aa4dde54763
+  zh: 777e1a8de15eb91c
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/use-this-package/reading-a-row:
+  en: 5445c5c721b8db17
+  zh: 167ccf94c562ec95
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/use-this-package/restoring-a-session:
+  en: 3d6badacbc3596b1
+  zh: 7bc5f164e3f7b0b7
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/use-this-package/deleting-a-session:
+  en: 23329dedd9e6da2c
+  zh: 9f0bc063b0c5614e
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/understand-the-implementation:
+  en: 3f8be000388c56e3
+  zh: 30edbe6915f5198c
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/understand-the-implementation/registration-and-data-sources:
+  en: 8fcf0c15dd2fb287
+  zh: 882248accdbeed48
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/understand-the-implementation/row-derivation:
+  en: b1085dd5b11f6493
+  zh: 7ab004a94b29f34c
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/understand-the-implementation/source-map:
+  en: d2f84a459c93a293
+  zh: 77f7887e8f1880d1
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/further-exploration:
+  en: 95663e8d633ea687
+  zh: 83394e6891701d87
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/model-experience:
+  en: 3120df665299c634
+  zh: 1d9f365d091d0d2a
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: de54f3467ef3b9be
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/known-limitations-and-deferred-work:
+  en: 46dd0c1d57b47923
+  zh: c43b5412f56db780
+/deepseek-ai-dsh-client-ui-settings-unarchive-sessions/known-limitations-and-deferred-work/dev-note:
+  en: af8f1b3f61eb1bbb
+  zh: 89e8d125399d7b15

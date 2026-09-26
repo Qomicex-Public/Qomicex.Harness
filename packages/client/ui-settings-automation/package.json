@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-settings-automation",
   "description": "Automation settings rows in the General section: the browser channel, executable path, and headless selection over the `automation` namespace",
-  "version": "0.1.7-rc.1",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },

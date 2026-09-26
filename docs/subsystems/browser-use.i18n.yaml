@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for browser-use.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/browser-use.md
-browser-use.md: 6581514edcdd979fe5d9948d19f8bff1fb862aa6
-browser-use.zh.md: 8b7529a2611b8567ec4b7ccfb7ce89307d26a13d
+/browser-use:
+  en: c4c91e07977a0d7b
+  zh: ae7bf1da6f4019a5
+/browser-use/choose-a-provider:
+  en: db162899a6b3d169
+  zh: 47efd45a8a19f21d
+/browser-use/session-ownership:
+  en: a6cd1aa7ea518c3f
+  zh: 44d2b40a15f81ce9
+/browser-use/mcp-initialization:
+  en: a77715135047d2b7
+  zh: f4044b1e602461cb
+/browser-use/tools-and-recorded-results:
+  en: 968055589fb64b35
+  zh: d549a52809ddcf58

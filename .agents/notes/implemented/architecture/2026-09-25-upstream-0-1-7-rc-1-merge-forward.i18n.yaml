@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-25-upstream-0-1-7-rc-1-merge-forward.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-25-upstream-0-1-7-rc-1-merge-forward.md
-2026-09-25-upstream-0-1-7-rc-1-merge-forward.md: 140d6b47f584bd9acb31b2683cd508bc0458ac6a
-2026-09-25-upstream-0-1-7-rc-1-merge-forward.zh.md: 5b143bb66dfc1b8b6a29af0eff5488148a556f7f
+/agent-note-upstream-0-1-7-rc-1-merged-forward-over-the-fork-s-108-commits:
+  en: 57224ae73c232600
+  zh: 58232bc6742da4a4
+/agent-note-upstream-0-1-7-rc-1-merged-forward-over-the-fork-s-108-commits/problem:
+  en: ba9e5d7c9029ae3c
+  zh: 957423ed83e84a67
+/agent-note-upstream-0-1-7-rc-1-merged-forward-over-the-fork-s-108-commits/decision:
+  en: 0f1efe8a94215dcb
+  zh: a0b6d3f9232eae0d
+/agent-note-upstream-0-1-7-rc-1-merged-forward-over-the-fork-s-108-commits/decision/where-local-features-moved-to-survive-upstream-s-new-architecture:
+  en: 67d98a60b622c4c7
+  zh: 72fc05c11ea75fb8
+/agent-note-upstream-0-1-7-rc-1-merged-forward-over-the-fork-s-108-commits/decision/what-upstream-replaced-wholesale:
+  en: 0f0e680f8a2ca7b1
+  zh: de1b056494997125
+/agent-note-upstream-0-1-7-rc-1-merged-forward-over-the-fork-s-108-commits/consequences:
+  en: d28e866f983a1f5d
+  zh: 13bc47851ce57539
+/agent-note-upstream-0-1-7-rc-1-merged-forward-over-the-fork-s-108-commits/alternatives-considered:
+  en: 2c75072ca6454e54
+  zh: 4e3d1ab8c7455b21
+/agent-note-upstream-0-1-7-rc-1-merged-forward-over-the-fork-s-108-commits/verification:
+  en: e5b7e99cda86bfe9
+  zh: f8e2baaf9fa08485

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-shell-command-guard",
   "description": "Shell-command guard plugin: denies catastrophic shell commands and asks a human before recursively forcing deletion, force-pushing history, running destructive SQL, or powering off the host",
-  "version": "0.1.7-rc.1",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },

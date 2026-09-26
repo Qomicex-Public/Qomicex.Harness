@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-19-personalization-page.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-19-personalization-page.md
-2026-09-19-personalization-page.md: 0a11fd6ecc4eef922ccb0bf7697310c36ea796a4
-2026-09-19-personalization-page.zh.md: de51b0179ed1a94ae4f0fd39c47d9d379542854c
+/agent-note-a-personalization-page-over-settings-theme-token-overrides-and-stable-surface-anchors:
+  en: 64435cdf163b0d55
+  zh: 7c3103133529d3d9
+/agent-note-a-personalization-page-over-settings-theme-token-overrides-and-stable-surface-anchors/problem:
+  en: 40fcb9c7a34bf62e
+  zh: fdfdd0dc443cb327
+/agent-note-a-personalization-page-over-settings-theme-token-overrides-and-stable-surface-anchors/decision:
+  en: e36eb04d922340dd
+  zh: f2482b9ab20e58ed
+/agent-note-a-personalization-page-over-settings-theme-token-overrides-and-stable-surface-anchors/verification:
+  en: c7acdf51251f7736
+  zh: ef46cd996e75bcee
+/agent-note-a-personalization-page-over-settings-theme-token-overrides-and-stable-surface-anchors/alternatives-considered:
+  en: c2fb0ff43c359297
+  zh: 212648a441263b91
+/agent-note-a-personalization-page-over-settings-theme-token-overrides-and-stable-surface-anchors/consequences:
+  en: aab22a998fa01578
+  zh: b24ee8d2f5fb1c0c

@@ -1,6 +1,37 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
-README.md: b42a8a0aa3b8a013224c9aabf571780fbcfb6d9a
-README.zh.md: 888fa9d103e2e68a4a8420fffe3abf84ef0d7089
+/qomicex-harness:
+  en: 39a06f832a7a36e0
+  zh: 5f49bbed04ab086a
+/qomicex-harness/upstream-project:
+  en: 42e61d4aa1b7836e
+  zh: 692ca5b29b939c76
+/qomicex-harness/what-this-distribution-adds:
+  en: c81b3facfa2435f6
+  zh: 341069b12e929915
+/qomicex-harness/build-automation:
+  en: dc2ac1d6764a5a4f
+  zh: 18e4826c63edd1f2
+/qomicex-harness/developer-preview:
+  en: b978569e2d7aa82b
+  zh: 6e2daccde6355330
+/qomicex-harness/run:
+  en: 4e0248e4c6474fc6
+  zh: eb2fb8d78c7d6bc0
+/qomicex-harness/run/run-from-npm:
+  en: e22005cd42e6cbad
+  zh: 0f536f4208df1d60
+/qomicex-harness/run/run-from-source:
+  en: 3d0406556d7b83e9
+  zh: 0a8eb03f0ed1d399
+/qomicex-harness/contributing:
+  en: cabc2d3e9f8898bd
+  zh: 83b6d238bae29ce3
+/qomicex-harness/development:
+  en: 803ca2b11b497bed
+  zh: 8b4071eb0e7783ef
+/qomicex-harness/license:
+  en: 926995344fc1c72b
+  zh: c92fab5abf85932f
