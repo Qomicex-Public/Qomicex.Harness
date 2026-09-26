@@ -24,9 +24,11 @@ function fixture(runtimeName = 'dsh', beforeInstall?: (root: string) => void) {
     mkdirSync(dirname(path), { recursive: true })
     writeFileSync(path, JSON.stringify({ name: '@deepseek-ai/libreoffice-kit-darwin-arm64', path: realpathSync(dirname(path)) }))
   }
-  const api = join(runtime, 'node_modules/@deepseek-ai/libreoffice-kit/package.json')
-  mkdirSync(dirname(api), { recursive: true })
-  writeFileSync(api, '{"name":"@deepseek-ai/libreoffice-kit"}')
+  for (const base of [runtime, join(root, 'app.asar.unpacked', runtimeName)]) {
+    const path = join(base, 'node_modules/@deepseek-ai/libreoffice-kit/package.json')
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, JSON.stringify({ name: '@deepseek-ai/libreoffice-kit', path: realpathSync(dirname(path)) }))
+  }
   beforeInstall?.(root)
   const require: (specifier: string) => unknown = createRequire(join(runtime, 'package.json'))
   const hook = installOfficeEngineResolution(runtime)!
@@ -44,7 +46,12 @@ it('resolves engine manifests to physical directories and leaves unrelated modul
   expect(f.require('@deepseek-ai/libreoffice-kit-darwin-arm64/package.json'))
     .toMatchObject({ path: realpathSync(dirname(join(f.root, 'app.asar.unpacked', 'dsh', f.manifest))) })
   expect((f.require('node:fs') as typeof import('node:fs')).realpathSync).toBe(realpathSync)
-  expect(f.require('@deepseek-ai/libreoffice-kit/package.json')).toEqual({ name: '@deepseek-ai/libreoffice-kit' })
+  // The wrapper resolves from the short tree on Windows so its own
+  // `require.resolve` finds the platform engine at a short path; the manifest
+  // content keeps its unpacked origin either way.
+  expect(f.require('@deepseek-ai/libreoffice-kit/package.json'))
+    .toMatchObject({ name: '@deepseek-ai/libreoffice-kit',
+      path: realpathSync(dirname(join(f.root, 'app.asar.unpacked', 'dsh', 'node_modules/@deepseek-ai/libreoffice-kit/package.json'))) })
   // Windows keeps the engine out of the long packaged path; other platforms resolve it in place.
   if (process.platform === 'win32') expect(f.tree).toBeDefined()
   else expect(f.tree).toBeUndefined()
