@@ -19,6 +19,7 @@ export {
   isNullPtr,
   throwLastError,
   throwWin32,
+  Win32Error,
 } from '@deepseek-ai/dsh-win32-process'
 export type { NativePtr } from '@deepseek-ai/dsh-win32-process'
 

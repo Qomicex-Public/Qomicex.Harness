@@ -127,7 +127,7 @@ export function withPathLock<T>(api: Win32Bindings, path: string, action: () => 
 }
 
 /**
- * Read the directory's current explicit DACL and mandatory label via
+ * Read the directory's current explicit DACL, mandatory label and owner via
  * GetNamedSecurityInfoW.
  * Allocation contract (the POC's RevokeAccess, minus its missing checks): the
  * returned ACL pointer sits INSIDE the security descriptor allocation — only
@@ -135,24 +135,26 @@ export function withPathLock<T>(api: Win32Bindings, path: string, action: () => 
  * SetEntriesInAclW has consumed the ACL. Freeing the ACL pointer itself
  * corrupts the heap (verified the hard way).
  * @param api - the binding table.
- * @param path - the directory whose DACL and label are read.
- * @returns the current explicit DACL and label ACL (null when the directory carries none) plus their owning descriptor.
+ * @param path - the directory whose security is read.
+ * @returns the current explicit DACL and label ACL (null when the directory
+ *   carries none) plus their owning descriptor and the owner SID (null when
+ *   the directory names none).
  */
 function readCurrentSecurity(
   api: Win32Bindings,
   path: string,
-): { oldAcl: NativePtr | null; labelAcl: NativePtr | null; descriptor: NativePtr | null } {
+): { oldAcl: NativePtr | null; labelAcl: NativePtr | null; descriptor: NativePtr | null; owner: NativePtr | null } {
   const ownerSlot = allocPtrSlot()
   const groupSlot = allocPtrSlot()
   const daclSlot = allocPtrSlot()
   const saclSlot = allocPtrSlot()
   const descriptorSlot = allocPtrSlot()
   const readResult = api.getNamedSecurityInfoW(
-    path, abi.SE_FILE_OBJECT, abi.DACL_SECURITY_INFORMATION | abi.LABEL_SECURITY_INFORMATION,
+    path, abi.SE_FILE_OBJECT, abi.DACL_SECURITY_INFORMATION | abi.LABEL_SECURITY_INFORMATION | abi.OWNER_SECURITY_INFORMATION,
     ownerSlot, groupSlot, daclSlot, saclSlot, descriptorSlot,
   )
   if (readResult !== abi.ERROR_SUCCESS) throwWin32(api, 'GetNamedSecurityInfoW', readResult, path)
-  return { oldAcl: decodePtr(daclSlot), labelAcl: decodePtr(saclSlot), descriptor: decodePtr(descriptorSlot) }
+  return { oldAcl: decodePtr(daclSlot), labelAcl: decodePtr(saclSlot), descriptor: decodePtr(descriptorSlot), owner: decodePtr(ownerSlot) }
 }
 
 /**
@@ -351,6 +353,32 @@ function hasForeignGrant(oldAcl: NativePtr, sidPtr: NativePtr): boolean {
 }
 
 /**
+ * Grant the directory's OWNER the WRITE_OWNER right when it lacks it, through
+ * the DACL edit alone (owner-implicit rights cover the DACL). The SACL label a
+ * write grant applies needs WRITE_OWNER, which an owner-only workspace —
+ * owned by the caller without an explicit right ACE — does not carry, so the
+ * denied label edit lands here first and the caller retries the grant. Merged
+ * against the current DACL: pre-existing explicit ACEs survive. Runs under the
+ * per-path lock like every edit.
+ * @param api - the binding table.
+ * @param path - the directory whose owner gains WRITE_OWNER.
+ */
+export function ensureWriteOwner(api: Win32Bindings, path: string): void {
+  withPathLock(api, path, () => {
+    const { oldAcl, descriptor, owner } = readCurrentSecurity(api, path)
+    if (owner === null) {
+      if (descriptor !== null) api.localFree(descriptor)
+      throwWin32(api, 'GetNamedSecurityInfoW', api.getLastError(), `ensureWriteOwner(${path}): null owner`)
+    }
+    mergeAndApply(
+      api, path,
+      buildExplicitAccess(owner, abi.GRANT_ACCESS, abi.WRITE_OWNER),
+      oldAcl, { kind: 'keep' }, descriptor, 'ensureWriteOwner',
+    )
+  })
+}
+
+/**
  * Grant `GRANT_MASK` (Write+Delete, displays as "Modify") to the capability SID
  * on `path`, deny the world SID the ambient `FILE_DELETE_CHILD` right, and
  * apply the Low mandatory label — one merge. The deny inherits to containers
@@ -360,14 +388,16 @@ function hasForeignGrant(oldAcl: NativePtr, sidPtr: NativePtr): boolean {
  * only delete authority inside the root, so a file whose own DACL grants no
  * DELETE is no longer deletable through its parent's rights.
  *
+ * The directory must be owned by the caller. Owner-implicit rights cover
+ * READ_CONTROL and WRITE_DAC only; an owner-only workspace therefore fails the
+ * label edit with access denied, which the caller answers by
+ * {@link ensureWriteOwner} and one retry — no Full-control precondition.
+ *
  * Idempotent: the exact ACE, deny, and label together SKIP the
  * SetNamedSecurityInfoW apply, which would otherwise re-propagate the
  * identical descriptor across the whole tree (eager inheritance; minutes on
  * large workspaces). Otherwise read-merge-write, so pre-existing explicit ACEs
  * survive (same shape as {@link revokeWrite}). Runs under the per-path lock.
- * The directory must be owned by the caller AND grant WRITE_OWNER (the label
- * lives in the SACL; owner-implicit rights cover only READ_CONTROL and
- * WRITE_DAC) — a Full-control workspace satisfies both.
  * @param api - the binding table.
  * @param path - the directory whose DACL and label gain the grant (the workspace or temp root).
  * @param sidPtr - the capability SID the ACE names.
