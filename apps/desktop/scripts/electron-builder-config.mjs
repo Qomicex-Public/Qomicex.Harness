@@ -250,7 +250,11 @@ export function createElectronBuilderConfig(
       oneClick: false,
       perMachine: false,
       allowElevation: false,
-      allowToChangeInstallationDirectory: true,
+      // The branded welcome page carries the install-path controls; the stock
+      // directory page would ask the same question a second time, so the
+      // template omits it (its own $INSTDIR sanitizer goes with it, which
+      // `InstallerSanitizeInstallDir` in lifecycle.nsh now performs).
+      allowToChangeInstallationDirectory: false,
       installerLanguages: ['en_US', 'zh_CN'],
       differentialPackage: true,
       shortcutName: 'Qomicex Harness',

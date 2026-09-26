@@ -42,8 +42,23 @@ Function InstallerWelcome
     Call InstallerCreate
 FunctionEnd
 
+; The stock directory page nested the installation under the application-name
+; subfolder; the template owns that sanitizer behind allowToChangeInstallationDirectory,
+; which the branded welcome page's inline path selection replaces, so the same rule
+; runs here before installation starts.
+Function InstallerSanitizeInstallDir
+    Push $0
+    StrLen $0 "${APP_FILENAME}"
+    StrCpy $0 $INSTDIR "" -$0
+    ${If} $0 != "${APP_FILENAME}"
+        StrCpy $INSTDIR "$INSTDIR\${APP_FILENAME}"
+    ${EndIf}
+    Pop $0
+FunctionEnd
+
 Function InstallerBeforeInstall
     SetAutoClose true
+    Call InstallerSanitizeInstallDir
     Call InstallerPreflight
     ${If} $InstallerError != ""
         MessageBox MB_OK|MB_ICONEXCLAMATION "$InstallerError" /SD IDOK
