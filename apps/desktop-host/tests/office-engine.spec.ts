@@ -3,16 +3,18 @@ import { createRequire, type ModuleHooks } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, expect, it } from 'vitest'
-import { installOfficeEngineResolution } from '../src/office-engine.ts'
+import { installOfficeEngineResolution, shortEngineTree } from '../src/office-engine.ts'
 
 const roots: string[] = []
+const trees: string[] = []
 const hooks: ModuleHooks[] = []
 afterEach(() => {
   for (const hook of hooks.splice(0)) hook.deregister()
+  for (const tree of trees.splice(0)) rmSync(tree, { recursive: true, force: true })
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true })
 })
 
-function fixture(runtimeName = 'dsh') {
+function fixture(runtimeName = 'dsh', beforeInstall?: (root: string) => void) {
   const root = mkdtempSync(join(tmpdir(), 'desktop-office-resolution-'))
   roots.push(root)
   const runtime = join(root, 'app.asar', runtimeName)
@@ -25,10 +27,15 @@ function fixture(runtimeName = 'dsh') {
   const api = join(runtime, 'node_modules/@deepseek-ai/libreoffice-kit/package.json')
   mkdirSync(dirname(api), { recursive: true })
   writeFileSync(api, '{"name":"@deepseek-ai/libreoffice-kit"}')
+  beforeInstall?.(root)
   const require: (specifier: string) => unknown = createRequire(join(runtime, 'package.json'))
   const hook = installOfficeEngineResolution(runtime)!
   hooks.push(hook)
-  return { root, runtime, manifest, require }
+  // The short tree copies the unpacked packages; the manifest content keeps its
+  // unpacked origin, so the redirect target is observed through the tree.
+  const tree = shortEngineTree(join(root, 'app.asar'), runtimeName)
+  if (tree !== undefined) trees.push(tree)
+  return { root, runtime, manifest, require, tree }
 }
 
 it('resolves engine manifests to physical directories and leaves unrelated modules alone', () => {
@@ -38,11 +45,16 @@ it('resolves engine manifests to physical directories and leaves unrelated modul
     .toMatchObject({ path: realpathSync(dirname(join(f.root, 'app.asar.unpacked', 'dsh', f.manifest))) })
   expect((f.require('node:fs') as typeof import('node:fs')).realpathSync).toBe(realpathSync)
   expect(f.require('@deepseek-ai/libreoffice-kit/package.json')).toEqual({ name: '@deepseek-ai/libreoffice-kit' })
+  // Windows keeps the engine out of the long packaged path; other platforms resolve it in place.
+  if (process.platform === 'win32') expect(f.tree).toBeDefined()
+  else expect(f.tree).toBeUndefined()
 })
 
 it('rejects an engine missing from the unpacked tree instead of using its archived copy', () => {
-  const f = fixture()
-  rmSync(join(f.root, 'app.asar.unpacked'), { recursive: true })
+  const f = fixture('dsh', (root) => {
+    rmSync(join(root, 'app.asar.unpacked', 'dsh', 'node_modules', '@deepseek-ai'), { recursive: true })
+  })
+  expect(f.tree).toBeUndefined()
   expect(() => { f.require('@deepseek-ai/libreoffice-kit-darwin-arm64/package.json') }).toThrow()
 })
 
