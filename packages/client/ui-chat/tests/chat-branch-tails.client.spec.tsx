@@ -30,6 +30,8 @@ afterEach(() => {
 
 const t: ChatNodeViewProps['t'] = makeTranslate(zh, commonZh)
 const renderMessageImages: AssistantMarkdownProps['renderMessageImages'] = () => null
+const retractAt = vi.fn<(seq: number) => void>()
+const editAt = vi.fn<(seq: number, text: string) => void>()
 const RETRY_ID = 'retry-fixture' as Extract<ConversationNode, { kind: 'model-retry' }>['retryId']
 
 // Recency scans the whole transcript; a detached fixture is its own latest row.
@@ -68,6 +70,7 @@ function MessageItem({ node, t: translate, referenceLabels, skillNames }: Messag
   }
   const props = {
     node: viewNode, t: translate, renderMessageImages, openFile: vi.fn(), openSkill: vi.fn(), useChat: useDetachedChat,
+    forkAt: vi.fn(), retractAt, editAt,
   } as unknown as ChatNodeViewProps
   switch (node.kind) {
     case 'user':
@@ -158,12 +161,14 @@ describe('MessageItem arms', () => {
     expect(resolved.container.textContent).toContain('/123 then ')
   })
 
-  it('user bubbles expose clock / copy and neither branch nor edit; copy writes the text', () => {
+  it('user bubbles expose clock / copy / retract / edit and no branch; copy writes the text', () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText },
     })
+    retractAt.mockClear()
+    editAt.mockClear()
     // Same-day clock: construct "today at 14:24" so the label stays `HH:mm`.
     const now = new Date()
     const time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 24).getTime()
@@ -177,10 +182,15 @@ describe('MessageItem arms', () => {
     )
     expect(screen.getByText('14:24')).toBeTruthy()
     expect(screen.getByRole('button', { name: '复制' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '撤回' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '编辑' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: '在新对话中分支' })).toBeNull()
-    expect(screen.queryByRole('button', { name: '编辑' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '复制' }))
     expect(writeText).toHaveBeenCalledWith('hello bubble')
+    fireEvent.click(screen.getByRole('button', { name: '撤回' }))
+    expect(retractAt).toHaveBeenCalledWith(1)
+    fireEvent.click(screen.getByRole('button', { name: '编辑' }))
+    expect(editAt).toHaveBeenCalledWith(1, 'hello bubble')
   })
 
   it('user copy falls back to execCommand when clipboard.writeText is unavailable', () => {
@@ -325,6 +335,10 @@ describe('MessageItem arms', () => {
     fireEvent.click(view.getByRole('button', { name: '复制' }))
     expect(writeText).toHaveBeenCalledWith('steer!')
     expect(view.queryByRole('button', { name: '在新对话中分支' })).toBeNull()
+    // Steering messages never offer retract or edit: only the ordinary user
+    // message opens the rollback path.
+    expect(view.queryByRole('button', { name: '撤回' })).toBeNull()
+    expect(view.queryByRole('button', { name: '编辑' })).toBeNull()
   })
 
   it('context uses the Tool calls disclosure chrome and keeps its body collapsed by default', () => {
