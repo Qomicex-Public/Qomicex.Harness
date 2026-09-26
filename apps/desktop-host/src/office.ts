@@ -3,7 +3,7 @@
 import { realpathSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { runtimeArchivePath } from './office-engine.ts'
+import { runtimeArchivePath, shortEngineTree } from './office-engine.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import * as officeSkills from '@deepseek-ai/dsh-skill-office'
 import * as workspaceDependencies from '@deepseek-ai/dsh-tool-workspace-dependencies'
@@ -29,7 +29,15 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   await ctx.plugin(workspaceDependencies, config)
   const archive = runtimeArchivePath(config.runtimeDir) === undefined ? undefined : dirname(realpathSync(config.runtimeDir))
   const manifest = fileURLToPath(import.meta.resolve('@deepseek-ai/libreoffice-kit/package.json'))
-  const packageRoot = dirname(archive === undefined ? manifest : join(`${archive}.unpacked`, relative(archive, manifest)))
+  // The skill CLI runs as its own Node process without the Host's resolver
+  // hooks, so it reads the engine from the same short tree the hook installs;
+  // without one it takes the direct unpacked path.
+  const shortTree = archive === undefined ? undefined : shortEngineTree(archive, relative(archive, realpathSync(config.runtimeDir)))
+  const packageRoot = archive === undefined
+    ? dirname(manifest)
+    : shortTree === undefined
+      ? dirname(join(`${archive}.unpacked`, relative(archive, manifest)))
+      : join(shortTree, 'node_modules', '@deepseek-ai', 'libreoffice-kit')
   await ctx.plugin(officeSkills, {
     assetRoot: join(dirname(config.source), 'office-skills'),
     node: join(config.source, 'dependencies', 'node', 'bin', process.platform === 'win32' ? 'node.exe' : 'node'),
