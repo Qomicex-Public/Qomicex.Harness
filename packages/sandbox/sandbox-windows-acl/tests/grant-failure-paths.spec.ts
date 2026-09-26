@@ -215,9 +215,11 @@ describe('AclWriteGrant failure paths', () => {
     grant.add('C:\\granted')
     expect(grant.paths).toEqual(['C:\\granted'])
     // denied grant → DACL-only self-grant → retried grant with both information classes
-    expect(securityCalls).toHaveLength(3)
-    expect(securityCalls[1]?.info & abi.LABEL_SECURITY_INFORMATION).toBe(0)
-    expect(securityCalls[2]?.info & abi.LABEL_SECURITY_INFORMATION).toBe(abi.LABEL_SECURITY_INFORMATION)
+    expect(securityCalls.map(call => call.info)).toEqual([
+      abi.DACL_SECURITY_INFORMATION | abi.LABEL_SECURITY_INFORMATION,
+      abi.DACL_SECURITY_INFORMATION,
+      abi.DACL_SECURITY_INFORMATION | abi.LABEL_SECURITY_INFORMATION,
+    ])
   })
 
   it('add propagates the access denied failure when the WRITE_OWNER self-grant is also refused', () => {
