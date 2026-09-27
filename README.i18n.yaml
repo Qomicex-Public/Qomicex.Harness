@@ -9,8 +9,26 @@
   en: 42e61d4aa1b7836e
   zh: 692ca5b29b939c76
 /qomicex-harness/what-this-distribution-adds:
-  en: c81b3facfa2435f6
-  zh: 341069b12e929915
+  en: 17d6920943e39443
+  zh: 936236ef7038e8e1
+/qomicex-harness/what-this-distribution-adds/runtime-plugins:
+  en: 4049649788f57ec0
+  zh: 9758dd7ad4dd9805
+/qomicex-harness/what-this-distribution-adds/presets-and-skills:
+  en: 6252ed1c225a7326
+  zh: cd0f3efe08725cdc
+/qomicex-harness/what-this-distribution-adds/desktop-distribution:
+  en: b0ea9bba86362cf5
+  zh: 1ed5772b7e713e75
+/qomicex-harness/what-this-distribution-adds/build-and-release-automation:
+  en: 746784b57500def9
+  zh: 66384f3600a3ad8c
+/qomicex-harness/what-this-distribution-adds/ported-fixes-and-default-changes:
+  en: a9ee4e862a711488
+  zh: 7c32d7928105b3b7
+/qomicex-harness/what-this-distribution-adds/distribution-notes:
+  en: d1b4bf2de831dc26
+  zh: 4c76fe62006a6cad
 /qomicex-harness/build-automation:
   en: dc2ac1d6764a5a4f
   zh: 18e4826c63edd1f2
