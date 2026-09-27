@@ -43,4 +43,21 @@ describe('writableRoots', () => {
     // Deduplicated after canonicalization (/tmp and os.tmpdir() may coincide).
     expect(new Set(writable).size).toBe(writable.length)
   })
+
+  it('workspace-write also grants the policy extra writable roots, canonical and deduplicated', () => {
+    const ws = mkdtempSync(join(tmpdir(), 'dsh-ws-'))
+    roots.push(ws)
+    const extra = mkdtempSync(join(tmpdir(), 'dsh-extra-'))
+    roots.push(extra)
+    const writable = writableRoots({ mode: 'workspace-write', workspaceRoot: ws, extraWritableRoots: [extra, extra] })
+    expect(writable).toContain(realpathSync.native(extra))
+    expect(writable.filter(root => root === realpathSync.native(extra))).toHaveLength(1)
+  })
+
+  it('read-only and danger-full-access ignore extra writable roots', () => {
+    const extra = mkdtempSync(join(tmpdir(), 'dsh-extra-'))
+    roots.push(extra)
+    expect(writableRoots({ mode: 'read-only', workspaceRoot: '/ws', extraWritableRoots: [extra] })).toEqual([])
+    expect(writableRoots({ mode: 'danger-full-access', workspaceRoot: '/ws', extraWritableRoots: [extra] })).toEqual([])
+  })
 })

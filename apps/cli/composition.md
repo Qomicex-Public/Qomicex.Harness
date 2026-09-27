@@ -156,6 +156,10 @@ flowchart LR
   cfg --> plugin_dsh_base_timeout_policy
   plugin_dsh_base_shell_command_guard["shell-command-guard<br/>@deepseek-ai/dsh-shell-command-guard"]
   cfg --> plugin_dsh_base_shell_command_guard
+  plugin_dsh_base_sandbox_trust["sandbox-trust<br/>@deepseek-ai/dsh-sandbox-trust"]
+  cfg --> plugin_dsh_base_sandbox_trust
+  plugin_dsh_base_tool_trust["tool-trust<br/>@deepseek-ai/dsh-tool-trust"]
+  cfg --> plugin_dsh_base_tool_trust
   plugin_dsh_base_spill_local["spill-local<br/>@deepseek-ai/dsh-spill-local"]
   cfg --> plugin_dsh_base_spill_local
   plugin_dsh_base_spill_policy["spill-policy<br/>@deepseek-ai/dsh-spill-policy"]
@@ -286,6 +290,8 @@ flowchart LR
 | `tool-workflow` | `@deepseek-ai/dsh-tool-workflow` |
 | `timeout-policy` | `@deepseek-ai/dsh-tool-call-timeout-policy` |
 | `shell-command-guard` | `@deepseek-ai/dsh-shell-command-guard` |
+| `sandbox-trust` | `@deepseek-ai/dsh-sandbox-trust` |
+| `tool-trust` | `@deepseek-ai/dsh-tool-trust` |
 | `spill-local` | `@deepseek-ai/dsh-spill-local` |
 | `spill-policy` | `@deepseek-ai/dsh-spill-policy` |
 | `session-checkpoint-policy` | `@deepseek-ai/dsh-session-checkpoint-policy` |

@@ -7,15 +7,16 @@
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { SESSION_FORMAT_VERSION, Session, SessionId } from '@deepseek-ai/dsh-session'
 import SandboxPolicyService, { SANDBOX_MODES, setSandboxMode } from '@deepseek-ai/dsh-sandbox-policy'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import SystemPrompt, { renderContextSnapshot, renderPrompt } from '@deepseek-ai/dsh-system-prompt'
+import { liveConfig } from '../../../settings/settings/tests/live-config.ts'
 
-async function mounted(config: { mode?: 'read-only' | 'workspace-write' | 'danger-full-access'; workspaceRoot?: string } = {}) {
+async function mounted(config: { mode?: 'read-only' | 'workspace-write' | 'danger-full-access'; workspaceRoot?: string; extraWritableRoots?: string[] } = {}) {
   const ctx = new Context()
   await ctx.plugin(SessionProjectionRegistry)
   await ctx.plugin(SandboxPolicyService, config)
@@ -49,6 +50,18 @@ describe('SandboxPolicyService', () => {
     expect(ctx.sandboxPolicy.workspaceRoot).toBe(resolve(process.cwd()))
   })
 
+  it('opts out of the generated settings page and releases it on disposal', async () => {
+    const ctx = new Context()
+    const configure = vi.fn((_options: unknown) => () => {})
+    ctx.provide('settings', { configure } as never)
+    ctx.provide('sessionProjections', { register: () => () => {} } as never)
+    await ctx.plugin(SandboxPolicyService)
+    await ctx.fiber.await()
+    expect(configure).toHaveBeenCalledOnce()
+    expect(configure.mock.calls[0]![0]).toEqual({ auto: false })
+    await ctx.fiber.dispose()
+  })
+
   it('preserves an absolute execution-world root without host path normalization', async () => {
     const ctx = await mounted({ mode: 'workspace-write', workspaceRoot: '/ws/../ws/./sub' })
     expect(ctx.sandboxPolicy.defaultMode).toBe('workspace-write')
@@ -73,6 +86,36 @@ describe('SandboxPolicyService', () => {
       mode: 'workspace-write',
       workspaceRoot: '/fallback',
     })
+  })
+
+  it('carries the configured extra writable roots under workspace-write', async () => {
+    const ctx = await mounted({ mode: 'workspace-write', workspaceRoot: '/fallback', extraWritableRoots: ['/cache', '/scratch'] })
+    expect(ctx.sandboxPolicy.resolve()).toEqual({
+      mode: 'workspace-write',
+      workspaceRoot: '/fallback',
+      extraWritableRoots: ['/cache', '/scratch'],
+    })
+    expect(ctx.sandboxPolicy.extraWritableRoots()).toEqual(['/cache', '/scratch'])
+  })
+
+  it('omits the extra writable roots outside workspace-write and when none are configured', async () => {
+    const readonly = await mounted({ mode: 'read-only', extraWritableRoots: ['/cache'] })
+    expect(readonly.sandboxPolicy.resolve()).toEqual({ mode: 'read-only', workspaceRoot: resolve(process.cwd()) })
+
+    const empty = await mounted({ mode: 'workspace-write', workspaceRoot: '/fallback' })
+    expect(empty.sandboxPolicy.resolve()).toEqual({ mode: 'workspace-write', workspaceRoot: '/fallback' })
+    expect(empty.sandboxPolicy.extraWritableRoots()).toEqual([])
+  })
+
+  it('adopts an extra writable root change while running', async () => {
+    const ctx = new Context()
+    await ctx.plugin(SessionProjectionRegistry)
+    const live = await liveConfig(ctx, SandboxPolicyService, { mode: 'workspace-write', workspaceRoot: '/fallback' })
+    expect(ctx.sandboxPolicy.resolve().extraWritableRoots).toBeUndefined()
+
+    await live.update({ extraWritableRoots: ['/cache'] })
+
+    expect(ctx.sandboxPolicy.resolve().extraWritableRoots).toEqual(['/cache'])
   })
 
   it('resolves each session mode and cwd together without changing the fallback', async () => {

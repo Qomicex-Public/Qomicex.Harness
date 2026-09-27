@@ -23,6 +23,7 @@ This table connects model-visible tool names to the plugin package and service s
 | `@deepseek-ai/dsh-plan-mode` | `exit_plan_mode` | `ctx.tools`, `ctx.systemPrompt`, `ctx.userQuestions (execution time, opportunistic)` | `tool/call`, `plan/mode inactive on an approved review`, `tool/result` | - | exit_plan_mode stays in the model-facing schema while planning is inactive so transitions add no tool-catalog churn on top of the plan-policy change. Its execute path rejects calls outside plan mode; in plan mode it presents the plan over the user-questions seam (approve / keep planning with feedback), and approval logs plan mode inactive at the step boundary. |
 | `@deepseek-ai/dsh-tool-bash` | `bash` | `ctx.tools`, `ctx.shell`, `ctx.systemPrompt`, `ctx.shellEnv`, `ctx.jobs for run_in_background and the job-backed foreground path` | `tool/call`, `tool/result` | - | The bash tool is the model-facing consumer of the bash executor seam. With a job registry composed every call registers with the generic `ctx.jobs` runtime as it starts, collected/stopped through the `job_*` tools from `@deepseek-ai/dsh-tool-jobs`; without one, or with `enableRunInBackground: false`, the tool registers a foreground-only schema without the `run_in_background` parameter. |
 | `@deepseek-ai/dsh-tool-present` | `present` | `ctx.tools`, `ctx.fs`, `ctx.sessionProjections` | `tool/call`, `deliverables/presented after a successful final result`, `tool/result` | - | Deliveries belong to the calling Session; Web ui-deliverables supplies source-file opening and cards. |
+| `@deepseek-ai/dsh-tool-trust` | `sandbox_trust` | `ctx.tools`, `ctx.approval, ctx.settings, and ctx.sandboxTrust or ctx.sandboxPolicy — all read through ctx.get` | `tool/call`, `tool/result`, `the sandbox-trust or sandbox-policy settings namespace after approval` | - | Approval-gated trust growth: the agent asks, the user decides, and an approved entry lands in the same document the Security Review settings page edits. Removal stays a user action on that page. |
 | `@deepseek-ai/dsh-tool-pwsh` | `pwsh` | `ctx.tools`, `ctx.shell`, `ctx.systemPrompt`, `ctx.shellEnv`, `ctx.jobs for run_in_background and the job-backed foreground path` | `tool/call`, `tool/result` | - | The pwsh tool is the PowerShell-dialect consumer of the bash executor seam for Windows compositions (a PowerShell executor such as `@deepseek-ai/dsh-pwsh-local` backs `ctx.shell`); it mirrors the bash tool call-for-call minus sandbox controls — `run_in_background` runs register with the generic `ctx.jobs` runtime and are collected/stopped through the `job_*` tools, and the managed `DSH_*` environment comes from `@deepseek-ai/dsh-shell-env`. Each call runs in a fresh process (no persistent PTY session), with native `C:\...` paths and `$env:NAME` variables. |
 | `@deepseek-ai/dsh-tool-cordis` | `cordis_inspect_list`, `cordis_inspect_query` | `ctx.tools`, `ctx.cordisInspect` | `tool/call`, `tool/result` | - | Creator mode provides two read-only runtime inspection tools. The Cordis host runner supplies the inspection registry; Client queries require a connected page. Author persistent changes as bundles and install them with plugin_manager. |
 | `@deepseek-ai/dsh-tool-bash-persistent` | `bash` | `ctx.tools`, `ctx.terminals`, `an owning Agent at execution time` | `tool/call`, `PTY shell state`, `tool/result` | - | One owner-isolated persistent bash tool; deployment composition supplies the PTY backend and may override the model-facing environment description. |
@@ -680,6 +681,47 @@ Declare existing files as final deliverables for the user. Use it when the user 
 Source: [`packages/deliverables/tool-present/src/index.ts`](../packages/deliverables/tool-present/src/index.ts)
 
 Deliveries belong to the calling Session; Web ui-deliverables supplies source-file opening and cards.
+
+<a id="deepseek-aidsh-tool-trust"></a>
+
+## `@deepseek-ai/dsh-tool-trust`
+
+### `sandbox_trust`
+
+Ask the user to add a command or directory to this deployment's sandbox trust list. A trusted command runs with the user's full host identity, which tools that read host credentials need (for example gh or cargo); a trusted directory becomes writable outside the session workspace. Every addition asks the user first, and the user can remove entries later in Settings → Security review.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "description": "What to trust: a command program name, or a directory path.",
+      "enum": [
+        "command",
+        "path"
+      ]
+    },
+    "value": {
+      "type": "string",
+      "description": "For a command: a single program name such as `cargo`, `gh`, or `cargo.exe` — no arguments and no chained commands; add each program separately. For a path: an absolute directory path."
+    },
+    "reason": {
+      "type": "string",
+      "description": "One sentence for the user explaining why this entry needs trust; it appears in the approval prompt."
+    }
+  },
+  "required": [
+    "kind",
+    "value",
+    "reason"
+  ]
+}
+```
+
+Source: [`packages/sandbox/tool-trust/src/index.ts`](../packages/sandbox/tool-trust/src/index.ts)
+
+Approval-gated trust growth: the agent asks, the user decides, and an approved entry lands in the same document the Security Review settings page edits. Removal stays a user action on that page.
 
 <a id="deepseek-aidsh-tool-pwsh"></a>
 

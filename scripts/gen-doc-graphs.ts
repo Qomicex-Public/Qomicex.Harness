@@ -671,6 +671,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'The one home for the deployment default mode + workspace root; only the sandboxed executor and provider read the service (the tool layers use the pure `sandbox/mode` fold it also exports). Both enforcing families read it so bash and fs cannot confine to different roots.',
   },
   {
+    key: 'sandboxTrust',
+    pkg: 'sandbox-trust',
+    title: 'Command trust',
+    mode: 'core',
+    implementations: [],
+    consumers: ['bash-sandbox', 'pwsh-sandbox'],
+    note: 'The trusted-command list; the sandboxed bash and pwsh executors read it before confining so a named command runs with host identity while the session stays confined.',
+  },
+  {
     key: 'approval',
     pkg: 'user-approval',
     title: 'Approval seam',

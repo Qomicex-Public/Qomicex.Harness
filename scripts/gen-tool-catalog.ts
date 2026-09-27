@@ -47,6 +47,7 @@ import * as ToolPwshPersistent from '@deepseek-ai/dsh-tool-pwsh-persistent'
 import CordisHostRunner from '@deepseek-ai/dsh-cordis-host-runner'
 import * as ToolCordis from '@deepseek-ai/dsh-tool-cordis'
 import * as ToolPresent from '@deepseek-ai/dsh-tool-present'
+import * as ToolTrust from '@deepseek-ai/dsh-tool-trust'
 import * as ToolFs from '@deepseek-ai/dsh-tool-fs'
 import * as ToolFsSearch from '@deepseek-ai/dsh-tool-fs-search'
 import * as ToolStrReplaceEditor from '@deepseek-ai/dsh-tool-str-replace-editor'
@@ -312,6 +313,17 @@ const TOOL_PACKAGES: ToolPackage[] = [
       await ctx.plugin(ToolPresent)
     },
     note: 'Deliveries belong to the calling Session; Web ui-deliverables supplies source-file opening and cards.',
+  },
+  {
+    pkg: '@deepseek-ai/dsh-tool-trust',
+    dir: 'tool-trust',
+    source: 'packages/sandbox/tool-trust/src/index.ts',
+    requires: ['ctx.tools', 'ctx.approval, ctx.settings, and ctx.sandboxTrust or ctx.sandboxPolicy — all read through ctx.get'],
+    writes: ['tool/call', 'tool/result', 'the sandbox-trust or sandbox-policy settings namespace after approval'],
+    async mount(ctx) {
+      await ctx.plugin(ToolTrust)
+    },
+    note: 'Approval-gated trust growth: the agent asks, the user decides, and an approved entry lands in the same document the Security Review settings page edits. Removal stays a user action on that page.',
   },
   {
     pkg: '@deepseek-ai/dsh-tool-pwsh',

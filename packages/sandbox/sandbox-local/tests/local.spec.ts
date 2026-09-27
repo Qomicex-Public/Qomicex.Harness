@@ -109,6 +109,39 @@ describe('profile dialects', () => {
     expect(seatbeltProfileArgs(WW)).toEqual(['-p', `${SEATBELT_RO_PROFILE} ${allow}`])
   })
 
+  it('bwrap workspace-write: rebinds each existing extra writable root', () => {
+    const root = mkdtempSync(join(tmpdir(), 'dsh-bwrap-extra-'))
+    tempDirs.push(root)
+    const canonical = realpathSync.native(root)
+    expect(bwrapProfileArgs({ ...WW, extraWritableRoots: [root] })).toEqual([
+      '--ro-bind', '/', '/', '--dev', '/dev', '--unshare-pid', '--proc', '/proc', '--die-with-parent',
+      '--tmpfs', '/tmp', '--bind', '/ws', '/ws', '--bind', canonical, canonical,
+    ])
+  })
+
+  it('landlock workspace-write: grants each existing extra writable root', () => {
+    const root = mkdtempSync(join(tmpdir(), 'dsh-landlock-extra-'))
+    tempDirs.push(root)
+    expect(landlockProfileArgs({ ...WW, extraWritableRoots: [root] }))
+      .toEqual(['--ro', '/', '--rw', '/dev/null', '--rw', '/tmp', '--rw', '/ws', '--rw', realpathSync.native(root)])
+  })
+
+  it('drops an extra writable root that does not exist on the host', () => {
+    expect(bwrapProfileArgs({ ...WW, extraWritableRoots: [join(tmpdir(), 'dsh-absent-extra-root')] })).toEqual([
+      '--ro-bind', '/', '/', '--dev', '/dev', '--unshare-pid', '--proc', '/proc', '--die-with-parent',
+      '--tmpfs', '/tmp', '--bind', '/ws', '/ws',
+    ])
+    expect(landlockProfileArgs({ ...WW, extraWritableRoots: [join(tmpdir(), 'dsh-absent-extra-root')] }))
+      .toEqual(['--ro', '/', '--rw', '/dev/null', '--rw', '/tmp', '--rw', '/ws'])
+  })
+
+  it('ignores extra writable roots under read-only', () => {
+    const root = mkdtempSync(join(tmpdir(), 'dsh-ro-extra-'))
+    tempDirs.push(root)
+    expect(bwrapProfileArgs({ ...RO, extraWritableRoots: [root] })).toEqual(bwrapProfileArgs(RO))
+    expect(landlockProfileArgs({ ...RO, extraWritableRoots: [root] })).toEqual(landlockProfileArgs(RO))
+  })
+
   it('seatbelt workspace-write dedups a workspace root that already IS the temp dir', () => {
     const profile = seatbeltProfileArgs({ mode: 'workspace-write', workspaceRoot: tmpdir() })[1] as string
     const grant = `(subpath "${realpathSync(tmpdir())}")`
@@ -488,5 +521,18 @@ describe('the windows-acl probe (runner invocation contract)', () => {
     })
     const confined = await sandbox.confine(['true'], RO)
     expect(confined.argv.slice(0, 2)).toEqual([process.execPath, builtEntry])
+  })
+
+  it('passes each existing extra writable root to the runner as --grant and drops a missing one', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'dsh-acl-extra-root-'))
+    tempDirs.push(root)
+    const { sandbox } = await setup({}, { chain: ['windows-acl', 'bwrap'], probeWindowsAcl: () => true })
+    const { argv } = await sandbox.confine(['true'], {
+      mode: 'workspace-write',
+      workspaceRoot: '/ws',
+      extraWritableRoots: [root, join(tmpdir(), 'dsh-acl-absent-root')],
+    })
+    expect(argv.filter(token => token === '--grant')).toHaveLength(1)
+    expect(argv[argv.indexOf('--grant') + 1]).toBe(realpathSync.native(root))
   })
 })

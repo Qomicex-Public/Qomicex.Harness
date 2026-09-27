@@ -39,7 +39,7 @@ import type { ConfinedArgv, ConfinedSandboxMode, RunnerFailureRule, SandboxEnfor
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import { AclWriteGrant, assertTempRootOutsideWorkspace, tempWriteSid, workspaceWriteSid } from '@deepseek-ai/dsh-sandbox-windows-acl'
 import { assertNever } from '@deepseek-ai/dsh-util-values'
-import { bwrapProfileArgs, landlockProfileArgs, seatbeltProfileArgs } from './profiles.ts'
+import { bwrapProfileArgs, extraWritableRoots, landlockProfileArgs, seatbeltProfileArgs } from './profiles.ts'
 
 /** Plugin config. All optional — `static Config` supplies the defaults. */
 export interface Config {
@@ -274,6 +274,8 @@ export class LocalSandboxProvider extends SandboxProvider {
    */
   private readonly workspaceGrants = new Map<string, AclWriteGrant>()
   private readonly tempCapabilities = new Map<string, AclTempCapability>()
+  /** Extra writable roots this provider already warned are absent on the host. */
+  private readonly warnedExtraRoots = new Set<string>()
 
   constructor(ctx: Context, config: Config) {
     super(ctx)
@@ -319,6 +321,7 @@ export class LocalSandboxProvider extends SandboxProvider {
   async confine(argv: readonly string[], policy: SandboxPolicy, signal?: AbortSignal): Promise<ConfinedArgv> {
     signal?.throwIfAborted()
     policy = { ...policy, workspaceRoot: canonicalPath(policy.workspaceRoot) }
+    this.warnMissingExtraRoots(policy)
     if (this.runnerCommand !== undefined) {
       return Promise.resolve<ConfinedArgv>({
         argv: [...this.runnerCommand, ...bwrapProfileArgs(policy), '--', ...argv],
@@ -362,15 +365,17 @@ export class LocalSandboxProvider extends SandboxProvider {
    */
   private windowsAclRunnerArgv(policy: SandboxPolicy): string[] {
     const sessionId = policy.sessionId
+    const grants = extraWritableRoots(policy)
     if (sessionId === undefined || policy.mode === 'read-only') {
       return [
         ...this.windowsAclRunnerInvocation(),
         '--workspace', policy.workspaceRoot,
         '--temp', tmpdir(),
         '--mode', policy.mode,
+        ...grants.flatMap(root => ['--grant', root]),
       ]
     }
-    const temp = this.materializeAclGrant(sessionId, policy.workspaceRoot)
+    const temp = this.materializeAclGrant(sessionId, policy.workspaceRoot, grants)
     return [
       ...this.windowsAclRunnerInvocation(),
       '--workspace', policy.workspaceRoot,
@@ -378,6 +383,7 @@ export class LocalSandboxProvider extends SandboxProvider {
       '--mode', policy.mode,
       '--write-sid', workspaceWriteSid(policy.workspaceRoot),
       '--temp-write-sid', temp.writeSid,
+      ...grants.flatMap(root => ['--grant', root]),
     ]
   }
 
@@ -394,7 +400,7 @@ export class LocalSandboxProvider extends SandboxProvider {
    * @param workspaceRoot - the resolved policy root.
    * @returns the pair's private temp directory and write capability.
    */
-  private materializeAclGrant(sessionId: SessionId, workspaceRoot: string): AclTempCapability {
+  private materializeAclGrant(sessionId: SessionId, workspaceRoot: string, extraRoots: readonly string[]): AclTempCapability {
     assertTempRootOutsideWorkspace(workspaceRoot, tmpdir())
     const writeSid = workspaceWriteSid(workspaceRoot)
     if (!this.workspaceGrants.has(workspaceRoot)) {
@@ -414,6 +420,13 @@ export class LocalSandboxProvider extends SandboxProvider {
       }
       this.workspaceGrants.set(workspaceRoot, grant)
     }
+    // The extra roots ride the workspace capability, so one capability SID
+    // covers them and the runner's existing `--write-sid` enforces them. The
+    // grant is idempotent per path, so a root added after this workspace's
+    // first provision is granted on the next call without re-materializing the
+    // workspace ACE. The cast records that the block above just provisioned it.
+    const workspaceGrant = this.workspaceGrants.get(workspaceRoot) as AclWriteGrant
+    for (const root of extraRoots) workspaceGrant.add(root, true)
     const key = JSON.stringify([String(sessionId), workspaceRoot])
     const existing = this.tempCapabilities.get(key)
     if (existing !== undefined) return existing
@@ -485,6 +498,24 @@ export class LocalSandboxProvider extends SandboxProvider {
   private removeTempDir(dir: string): void {
     const remove = this.internals.rmTempDir ?? ((path: string) => { rmSync(path, { recursive: true, force: true }) })
     remove(dir)
+  }
+
+  /**
+   * Warn once per extra writable root the policy lists but the host does not
+   * have: {@link extraWritableRoots} drops it, so a deleted or mistyped path
+   * must not read as if it had been granted.
+   * @param policy - the resolved per-call policy.
+   */
+  private warnMissingExtraRoots(policy: SandboxPolicy): void {
+    if (policy.mode !== 'workspace-write') return
+    const granted = new Set(extraWritableRoots(policy))
+    for (const root of policy.extraWritableRoots ?? []) {
+      const canonical = canonicalPath(root)
+      if (!granted.has(canonical) && !this.warnedExtraRoots.has(canonical)) {
+        this.warnedExtraRoots.add(canonical)
+        this.ctx.logger.warn(`sandbox-local: extra writable root does not exist and is not granted: ${root}`)
+      }
+    }
   }
 
   /**

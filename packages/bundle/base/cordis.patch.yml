@@ -414,6 +414,19 @@
     - id: shell-command-guard
       name: '@deepseek-ai/dsh-shell-command-guard'
 
+    # Command trust: the named commands allowed to run with host identity
+    # (danger-full-access), bypassing the file sandbox's write confinement. Its
+    # trusted-command list is the Security Review settings page over the
+    # `sandbox-trust` settings namespace.
+    - id: sandbox-trust
+      name: '@deepseek-ai/dsh-sandbox-trust'
+
+    # Approval-gated trust growth: the agent asks through the `sandbox_trust`
+    # tool, the user approves, and the entry is written to the sandbox-trust or
+    # sandbox-policy settings namespace. Removal stays on the Security Review page.
+    - id: tool-trust
+      name: '@deepseek-ai/dsh-tool-trust'
+
     - id: spill-local
       name: '@deepseek-ai/dsh-spill-local'
 

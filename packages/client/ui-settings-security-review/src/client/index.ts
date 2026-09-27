@@ -16,12 +16,15 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import { SecurityReviewSection } from './SecurityReviewSection.tsx'
 import type { SecurityReviewInjected } from './SecurityReviewSection.tsx'
+import { trustSaveOps, pathsSaveOps } from './model.ts'
 import { en, zh, type SecurityReviewLocaleKey } from './locales.ts'
 
 export type {
+  SandboxPathsFace,
+  SandboxTrustFace,
   SecurityReviewFace, SecurityReviewInjected, SecurityReviewSectionProps, SecurityReviewSnapshot,
 } from './SecurityReviewSection.tsx'
-export type { KeywordEntry, PatternEntry, ReviewAction, SecurityReviewPathOp, SecurityReviewValue } from './model.ts'
+export type { KeywordEntry, PatternEntry, ReviewAction, SandboxPathsValue, SandboxTrustValue, SecurityReviewPathOp, SecurityReviewValue } from './model.ts'
 export type { SecurityReviewLocaleKey } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
@@ -36,6 +39,12 @@ const NS = 'settings.security-review'
 
 /** Profile entry the Host guard plugin registers its Config on. */
 const GUARD_NAMESPACE = 'shell-command-guard'
+
+/** Profile entry the Host trusted-command plugin registers its Config on. */
+const TRUST_NAMESPACE = 'sandbox-trust'
+
+/** Profile entry the Host sandbox-policy plugin registers its Config on. */
+const POLICY_NAMESPACE = 'sandbox-policy'
 
 /**
  * Required services: the slot registry, the locale runtime, and the shared
@@ -52,12 +61,24 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-settings-security-review: dictionaries')
   const t = ctx.locale.bind(NS)
   const form = ctx.configForms.get(GUARD_NAMESPACE)
+  const trustForm = ctx.configForms.get(TRUST_NAMESPACE)
+  const policyForm = ctx.configForms.get(POLICY_NAMESPACE)
 
   const injected = (): SecurityReviewInjected => ({
     settings: {
       snapshot: () => form.getSnapshot(),
       subscribe: listener => form.subscribe(listener),
       mutate: async (ops) => { await form.mutate(ops) },
+    },
+    trust: {
+      snapshot: () => trustForm.getSnapshot(),
+      subscribe: listener => trustForm.subscribe(listener),
+      save: async (commands) => { await trustForm.mutate(trustSaveOps(commands)) },
+    },
+    paths: {
+      snapshot: () => policyForm.getSnapshot(),
+      subscribe: listener => policyForm.subscribe(listener),
+      save: async (paths) => { await policyForm.mutate(pathsSaveOps(paths)) },
     },
   })
 

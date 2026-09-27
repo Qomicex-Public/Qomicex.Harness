@@ -373,6 +373,8 @@
     { "path": "./packages/sandbox/sandbox" },
     { "path": "./packages/sandbox/sandbox-local" },
     { "path": "./packages/sandbox/sandbox-policy" },
+    { "path": "./packages/sandbox/sandbox-trust" },
+    { "path": "./packages/sandbox/tool-trust" },
     { "path": "./packages/sandbox/sandbox-windows-acl" },
     { "path": "./packages/shell/bash-sandbox" },
     { "path": "./packages/shell/tool-bash" },

@@ -1,0 +1,58 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/sandbox/tool-trust/README.md
+/:
+  en: 042b7f7bcaeb979a
+  zh: 3c29cd2bd2919b1b
+/deepseek-ai-dsh-tool-trust:
+  en: e5a6515610bc601f
+  zh: baab8ab4d787c6f6
+/deepseek-ai-dsh-tool-trust/summary:
+  en: bab8c55cec4b6dc4
+  zh: c6887ca42bb44c19
+/deepseek-ai-dsh-tool-trust/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 82bbd1ae631975a1
+/deepseek-ai-dsh-tool-trust/use-this-package:
+  en: 984115c5f1bf41c0
+  zh: 6df7211be06f1224
+/deepseek-ai-dsh-tool-trust/use-this-package/when-to-choose-it:
+  en: 0fb73e0e8f83d913
+  zh: 774482712b628b35
+/deepseek-ai-dsh-tool-trust/use-this-package/what-the-agent-may-add:
+  en: ecf5af20e72dd296
+  zh: 24e4da333ab2cd62
+/deepseek-ai-dsh-tool-trust/use-this-package/failures-and-recovery:
+  en: b4b03768161aa957
+  zh: 0d184424f3565225
+/deepseek-ai-dsh-tool-trust/understand-the-implementation:
+  en: 48124fe8b645cd27
+  zh: d353eea96fe7dc98
+/deepseek-ai-dsh-tool-trust/understand-the-implementation/source-map:
+  en: 10dad2e52219bbee
+  zh: aa42662538b67f54
+/deepseek-ai-dsh-tool-trust/further-exploration:
+  en: 4f8056f6f7e8d5d7
+  zh: c041ec2626a0155a
+/deepseek-ai-dsh-tool-trust/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-tool-trust/model-experience/sandbox-trust:
+  en: 4c5c527b0bb7fb27
+  zh: 4c5c527b0bb7fb27
+/deepseek-ai-dsh-tool-trust/model-experience/sandbox-trust/what-the-model-sees:
+  en: b545442931c1ab92
+  zh: ed940a7aff730d0c
+/deepseek-ai-dsh-tool-trust/model-experience/sandbox-trust/token-effect:
+  en: da6193cc58930c53
+  zh: 1eb335c7174db5a6
+/deepseek-ai-dsh-tool-trust/model-experience/sandbox-trust/kv-cache-effect:
+  en: baf331dfaf9ad7c7
+  zh: 6e8fcf10d2a51a8c
+/deepseek-ai-dsh-tool-trust/known-limitations-and-deferred-work:
+  en: 61ac225423b2e569
+  zh: 947693839308f069
+/deepseek-ai-dsh-tool-trust/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 8ec3e73528ddb1a6

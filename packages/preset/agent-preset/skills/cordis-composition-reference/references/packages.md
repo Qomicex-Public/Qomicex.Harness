@@ -357,6 +357,8 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-sandbox-local` | yes | Local process-sandbox backends for the DeepSeek Harness sandbox seam: bwrap, the npm-distributed landlock-run launcher, macOS Seatbelt, or the Windows ACL restricted-token runner — functionally probed, fail-closed |
 | `@deepseek-ai/dsh-sandbox-policy` | yes | Per-call sandbox policy resolver and current model context: deployment fallbacks plus each session's mode and workspace root, shared by every enforcing capability family |
+| `@deepseek-ai/dsh-sandbox-trust` | yes | Trusted-command list that lets named shell commands run with host identity (danger-full-access), bypassing the file sandbox's write confinement; edited through the Security Review settings page |
+| `@deepseek-ai/dsh-tool-trust` | no | Approval-gated sandbox trust growth: lets the agent ask the user to add a command or directory to the sandbox trust list |
 
 ## schedule
 

@@ -50,6 +50,13 @@ export interface SandboxExecutionPolicy {
    * for agentless calls, which fall back to per-call backend state.
    */
   sessionId?: SessionId
+  /**
+   * Extra absolute roots `workspace-write` may also write under, beyond the
+   * workspace and the platform temp areas. Deployment-owned and
+   * session-independent; absent or empty grants nothing more, and the roots are
+   * ignored under `read-only` and `danger-full-access`.
+   */
+  extraWritableRoots?: readonly string[]
 }
 
 /**

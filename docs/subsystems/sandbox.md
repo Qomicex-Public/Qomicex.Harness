@@ -61,6 +61,13 @@ interface SandboxExecutionPolicy {
    * for agentless calls, which fall back to per-call backend state.
    */
   sessionId?: SessionId
+  /**
+   * Extra absolute roots `workspace-write` may also write under, beyond the
+   * workspace and the platform temp areas. Deployment-owned and
+   * session-independent; absent or empty grants nothing more, and the roots are
+   * ignored under `read-only` and `danger-full-access`.
+   */
+  extraWritableRoots?: readonly string[]
 }
 ```
 
@@ -208,6 +215,12 @@ The sandbox-policy service (`ctx.sandboxPolicy`). Owns the deployment default mo
 resolve(request: SandboxPolicyRequest = {}): SandboxExecutionPolicy
 
 /**
+ * The deployment's extra writable roots, read fresh from the live Config.
+ * @returns every configured absolute root; empty by default.
+ */
+extraWritableRoots(): readonly string[]
+
+/**
  * Read the session override without applying the deployment default.
  * @param session - session whose log supplies the override.
  * @returns the last logged mode, or `undefined` without one.
@@ -218,4 +231,29 @@ overrideOf(session: Session): SandboxMode | undefined
 Types: [Session](session.md)
 
 Source: [`packages/sandbox/sandbox-policy/src/index.ts`](../../packages/sandbox/sandbox-policy/src/index.ts)
+
+<a id="ctxsandboxtrust--sandboxtrustservice"></a>
+
+### `ctx.sandboxTrust` — `SandboxTrustService`
+
+Owns the trusted-command list and answers whether one shell command runs unconfined. The value is read fresh on every call, so a committed settings change takes effect on the next command without remounting the plugin.
+
+```ts cordis-catalog
+/**
+ * Whether any simple command in the source names a trusted program, judged
+ * against the live list.
+ * @param commandSource - the exact shell source that will be executed.
+ * @returns true when every non-empty command token equals a trusted entry; false
+ *   when the list is empty, which is the default.
+ */
+isTrustedCommand(commandSource: string): boolean
+
+/**
+ * The live trusted command names, in stored order.
+ * @returns every currently trusted command name; empty by default.
+ */
+trustedCommands(): readonly string[]
+```
+
+Source: [`packages/sandbox/sandbox-trust/src/index.ts`](../../packages/sandbox/sandbox-trust/src/index.ts)
 <!-- END GENERATED cordis-surface -->

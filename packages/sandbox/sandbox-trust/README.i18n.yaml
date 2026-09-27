@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/sandbox/sandbox-trust/README.md
+/:
+  en: 8a8ef0a7f700c370
+  zh: c0a000ce752c5187
+/deepseek-ai-dsh-sandbox-trust:
+  en: eab744db07c25c40
+  zh: 1e71f1f6ec935ce0
+/deepseek-ai-dsh-sandbox-trust/summary:
+  en: 482c704859b318a4
+  zh: 992285c1b5e80dee
+/deepseek-ai-dsh-sandbox-trust/table-of-contents:
+  en: 80b31a934611cb4a
+  zh: 6195f049e8537637
+/deepseek-ai-dsh-sandbox-trust/use-this-package:
+  en: aded363a717280a9
+  zh: ed7a66e797eb2981
+/deepseek-ai-dsh-sandbox-trust/use-this-package/when-to-choose-it:
+  en: 3519626727d1dd4b
+  zh: d1ebd1e4faf3fdd6
+/deepseek-ai-dsh-sandbox-trust/use-this-package/minimal-configuration:
+  en: 7bf500d748045d05
+  zh: 98164584c7795d09
+/deepseek-ai-dsh-sandbox-trust/use-this-package/failures-and-recovery:
+  en: f0793710f9e3fde7
+  zh: 74146ba63071494d
+/deepseek-ai-dsh-sandbox-trust/understand-the-implementation:
+  en: ec69bc3ef96400f5
+  zh: be1954f71dfdb47f
+/deepseek-ai-dsh-sandbox-trust/understand-the-implementation/source-map:
+  en: 11ab2060399846b9
+  zh: e6fdab8e404d7311
+/deepseek-ai-dsh-sandbox-trust/further-exploration:
+  en: 1694a8d7ff592385
+  zh: a14619079f5a4759
+/deepseek-ai-dsh-sandbox-trust/known-limitations-and-deferred-work:
+  en: 101b8daffea437b2
+  zh: 782a773ee01dede6
+/deepseek-ai-dsh-sandbox-trust/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 8ec3e73528ddb1a6

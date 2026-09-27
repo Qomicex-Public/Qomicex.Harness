@@ -22,12 +22,14 @@
 
 import { isAbsolute } from 'node:path'
 import { Context, Service } from '@deepseek-ai/cordis'
+import type { Volatile } from '@deepseek-ai/cordis'
 import { z as zod } from 'zod'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { SandboxExecutionPolicy, SandboxMode } from '@deepseek-ai/dsh-sandbox'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-projection'
+import type {} from '@deepseek-ai/dsh-settings'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 
 export { SANDBOX_MODES, setSandboxMode } from './session-mode.ts'
@@ -76,6 +78,14 @@ export interface Config {
    * `process.cwd()`). Normal agent calls use their session cwd instead.
    */
   workspaceRoot?: string
+  /**
+   * Extra absolute roots `workspace-write` may also write under, beyond the
+   * workspace and the platform temp areas (default: none). Session-independent
+   * and edited live on the Security Review settings page or through the
+   * `sandbox_trust` tool. Optional only so a composition may omit it when it
+   * declares the Config by hand; the schema always supplies the reference.
+   */
+  extraWritableRoots?: Volatile<string[]>
 }
 
 /** Inputs that select the sandbox policy for one capability call. */
@@ -109,11 +119,12 @@ declare module '@deepseek-ai/dsh-session-projection/types' {
  */
 export class SandboxPolicyService extends Service {
   // Inline schema call: the config catalog walks `static Config` statically.
-  static Config: z<Config> = z.object({
+  static Config = z.object({
     mode: z.union(['read-only', 'workspace-write', 'danger-full-access'] as const).default('read-only'),
     // No schema default: process.cwd() is resolved in the constructor so the
     // stored root is always absolute regardless of how it was supplied.
     workspaceRoot: z.string(),
+    extraWritableRoots: z.array(z.string()).default([]).volatile(),
   })
 
   static inject = ['sessionProjections']
@@ -122,13 +133,24 @@ export class SandboxPolicyService extends Service {
   readonly defaultMode: SandboxMode
   /** The absolute `workspace-write` fallback root for calls without a session cwd. */
   readonly workspaceRoot: string
+  /** Live extra writable roots; the Config schema always supplies the reference. */
+  private readonly extraRoots: Volatile<string[]>
   constructor(ctx: Context, config: Config) {
     super(ctx, 'sandboxPolicy')
+    // The Security Review page owns the presentation of the extra writable
+    // roots, so this entry opts out of the generated page; the service is
+    // optional and its absence changes nothing.
+    ctx.inject(['settings'], (child) => { child.effect(() => child.settings.configure({ auto: false }, ctx.fiber)) })
     // schemastery (static Config) already filled `mode`; the cast records that
     // runtime fact. `workspaceRoot` has NO schema default, so its fallback to
     // the process cwd is real branching, resolved absolute either way.
     this.defaultMode = config.mode as SandboxMode
     this.workspaceRoot = resolveWorkspaceRoot(config.workspaceRoot ?? process.cwd())
+    /* v8 ignore next 4 -- the Config schema defaults extraWritableRoots; a resolved Config missing it is a misconfiguration. */
+    if (config.extraWritableRoots === undefined) {
+      throw new Error('sandbox-policy: extraWritableRoots is missing from the resolved Config')
+    }
+    this.extraRoots = config.extraWritableRoots
 
     ctx.sessionProjections.register({
       key: 'sandboxMode',
@@ -163,11 +185,22 @@ export class SandboxPolicyService extends Service {
    */
   resolve(request: SandboxPolicyRequest = {}): SandboxExecutionPolicy {
     const { session } = request
+    const mode = request.mode ?? (session === undefined ? undefined : this.overrideOf(session)) ?? this.defaultMode
+    const extraWritableRoots = mode === 'workspace-write' ? this.extraRoots.get() : []
     return {
-      mode: request.mode ?? (session === undefined ? undefined : this.overrideOf(session)) ?? this.defaultMode,
+      mode,
       workspaceRoot: resolveWorkspaceRoot(session?.header.cwd ?? this.workspaceRoot),
       ...session === undefined ? {} : { sessionId: session.id },
+      ...extraWritableRoots.length > 0 ? { extraWritableRoots } : {},
     }
+  }
+
+  /**
+   * The deployment's extra writable roots, read fresh from the live Config.
+   * @returns every configured absolute root; empty by default.
+   */
+  extraWritableRoots(): readonly string[] {
+    return this.extraRoots.get()
   }
 
   /**

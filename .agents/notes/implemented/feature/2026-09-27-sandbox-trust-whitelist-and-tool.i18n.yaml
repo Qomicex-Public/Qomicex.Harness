@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-27-sandbox-trust-whitelist-and-tool.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-27-sandbox-trust-whitelist-and-tool.md
+/agent-note-sandbox-trust-trusted-commands-extra-writable-roots-and-the-approval-gated-sandbox-trust-tool:
+  en: cac4e3f440ab4167
+  zh: aea668c7cab263ef
+/agent-note-sandbox-trust-trusted-commands-extra-writable-roots-and-the-approval-gated-sandbox-trust-tool/problem:
+  en: be827f1699919cea
+  zh: 269441a08469cff8
+/agent-note-sandbox-trust-trusted-commands-extra-writable-roots-and-the-approval-gated-sandbox-trust-tool/decision:
+  en: 73fd89e897587ce0
+  zh: 5fd20484ff75b3c7
+/agent-note-sandbox-trust-trusted-commands-extra-writable-roots-and-the-approval-gated-sandbox-trust-tool/verification:
+  en: 976c64932fdda458
+  zh: 04d42da75d7b2093
+/agent-note-sandbox-trust-trusted-commands-extra-writable-roots-and-the-approval-gated-sandbox-trust-tool/alternatives-considered:
+  en: f2a40e1c0220855b
+  zh: 20539c3b1c773a27
+/agent-note-sandbox-trust-trusted-commands-extra-writable-roots-and-the-approval-gated-sandbox-trust-tool/consequences:
+  en: 06aa15e2c7b80258
+  zh: 2120a16b7fcd26f0

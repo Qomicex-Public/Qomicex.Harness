@@ -1877,10 +1877,35 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the fully resolved per-call mode and absolute workspace root.',
       },
       {
+        signature: 'extraWritableRoots(): readonly string[]',
+        description: 'The deployment\'s extra writable roots, read fresh from the live Config.',
+        parameters: [],
+        returns: 'every configured absolute root; empty by default.',
+      },
+      {
         signature: 'overrideOf(session: Session): SandboxMode | undefined',
         description: 'Read the session override without applying the deployment default.',
         parameters: [{ name: 'session', description: 'session whose log supplies the override.' }],
         returns: 'the last logged mode, or `undefined` without one.',
+      },
+    ],
+  },
+  {
+    key: 'sandboxTrust',
+    summary: 'Owns the trusted-command list and answers whether one shell command runs unconfined.',
+    description: 'Owns the trusted-command list and answers whether one shell command runs unconfined. The value is read fresh on every call, so a committed settings change takes effect on the next command without remounting the plugin.',
+    methods: [
+      {
+        signature: 'isTrustedCommand(commandSource: string): boolean',
+        description: 'Whether any simple command in the source names a trusted program, judged against the live list.',
+        parameters: [{ name: 'commandSource', description: 'the exact shell source that will be executed.' }],
+        returns: 'true when every non-empty command token equals a trusted entry; false when the list is empty, which is the default.',
+      },
+      {
+        signature: 'trustedCommands(): readonly string[]',
+        description: 'The live trusted command names, in stored order.',
+        parameters: [],
+        returns: 'every currently trusted command name; empty by default.',
       },
     ],
   },
@@ -6318,7 +6343,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SandboxExecutionPolicy',
-    declaration: 'export interface SandboxExecutionPolicy {\n    mode: SandboxMode;\n    workspaceRoot: string;\n    sessionId?: SessionId;\n}',
+    declaration: 'export interface SandboxExecutionPolicy {\n    mode: SandboxMode;\n    workspaceRoot: string;\n    sessionId?: SessionId;\n    extraWritableRoots?: readonly string[];\n}',
   },
   {
     name: 'SandboxMode',

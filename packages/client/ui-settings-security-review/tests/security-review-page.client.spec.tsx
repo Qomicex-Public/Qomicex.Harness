@@ -16,10 +16,12 @@ import { apply, inject } from '../src/client/index.ts'
 import { apply as hostApply } from '../src/index.ts'
 import { SecurityReviewForm, SecurityReviewSection } from '../src/client/SecurityReviewSection.tsx'
 import type {
+  SandboxPathsFace,
+  SandboxTrustFace,
   SecurityReviewFace, SecurityReviewInjected, SecurityReviewSectionProps, SecurityReviewSnapshot,
 } from '../src/client/SecurityReviewSection.tsx'
 import { firstInvalidPattern, readValue, resetOps, saveOps } from '../src/client/model.ts'
-import type { SecurityReviewPathOp, SecurityReviewValue } from '../src/client/model.ts'
+import type { SandboxPathsValue, SandboxTrustValue, SecurityReviewPathOp, SecurityReviewValue } from '../src/client/model.ts'
 
 afterEach(cleanup)
 
@@ -77,6 +79,38 @@ function makeFace(
   }
 }
 
+/**
+ * Build a trusted-command face over a live snapshot: `save` replaces the list
+ * and notifies subscribers, so the block re-renders like it would in the browser.
+ * @param value - the initial resolved trust section.
+ * @param options - snapshot status and writability.
+ * @returns the face and the command lists written.
+ */
+function makeTrustFace(
+  value: SandboxTrustValue,
+  options: { status?: 'loading' | 'ready' | 'unavailable'; writable?: boolean } = {},
+): { face: SandboxTrustFace; calls: string[][] } {
+  let current: SecurityReviewSnapshot = { status: options.status ?? 'ready', value, writable: options.writable ?? true }
+  const listeners = new Set<() => void>()
+  const calls: string[][] = []
+  const save = async (commands: readonly string[]): Promise<void> => {
+    calls.push([...commands])
+    current = { ...current, value: { trustedCommands: [...commands] } }
+    for (const listener of listeners) listener()
+  }
+  return {
+    calls,
+    face: {
+      snapshot: () => current,
+      subscribe: (listener) => {
+        listeners.add(listener)
+        return () => { listeners.delete(listener) }
+      },
+      save,
+    },
+  }
+}
+
 /** Fold one mutate call's set operations into a plain view for assertions. */
 function written(ops: readonly SecurityReviewPathOp[]): Record<string, unknown> {
   const result: Record<string, unknown> = {}
@@ -84,6 +118,38 @@ function written(ops: readonly SecurityReviewPathOp[]): Record<string, unknown> 
     if (op.op === 'set') result[op.path.join('.')] = op.value
   }
   return result
+}
+
+/**
+ * Build an extra-writable-roots face over a live snapshot: `save` replaces the
+ * list and notifies subscribers, so the block re-renders like it would in the browser.
+ * @param value - the initial resolved paths section.
+ * @param options - snapshot status and writability.
+ * @returns the face and the path lists written.
+ */
+function makePathsFace(
+  value: SandboxPathsValue,
+  options: { status?: 'loading' | 'ready' | 'unavailable'; writable?: boolean } = {},
+): { face: SandboxPathsFace; calls: string[][] } {
+  let current: SecurityReviewSnapshot = { status: options.status ?? 'ready', value, writable: options.writable ?? true }
+  const listeners = new Set<() => void>()
+  const calls: string[][] = []
+  const save = async (paths: readonly string[]): Promise<void> => {
+    calls.push([...paths])
+    current = { ...current, value: { extraWritableRoots: [...paths] } }
+    for (const listener of listeners) listener()
+  }
+  return {
+    calls,
+    face: {
+      snapshot: () => current,
+      subscribe: (listener) => {
+        listeners.add(listener)
+        return () => { listeners.delete(listener) }
+      },
+      save,
+    },
+  }
 }
 
 /** Flush the pending mutation promise chain started by a click. */
@@ -122,16 +188,23 @@ describe('pure value operations', () => {
 const sectionProps = (settings: SecurityReviewInjected['settings']): SecurityReviewSectionProps =>
   ({ close: () => {}, t, settings } as unknown as SecurityReviewSectionProps)
 
+/** Section props with the trust and paths faces the page renders on top of the guard face. */
+const pageProps = (
+  settings: SecurityReviewInjected['settings'],
+  trust: SecurityReviewInjected['trust'] = makeTrustFace({ trustedCommands: [] }).face,
+  paths: SecurityReviewInjected['paths'] = makePathsFace({ extraWritableRoots: [] }).face,
+): SecurityReviewSectionProps => ({ ...sectionProps(settings), trust, paths })
+
 describe('section states', () => {
   it('reports a namespace the Host does not serve', () => {
     const { face } = makeFace(section(), { status: 'unavailable' })
-    render(<SecurityReviewSection {...sectionProps(face)} />)
+    render(<SecurityReviewSection {...pageProps(face)} />)
     expect(screen.getByText('unavailable')).toBeTruthy()
   })
 
   it('renders the form when a settings face is present', () => {
     const { face } = makeFace(section())
-    render(<SecurityReviewSection {...sectionProps(face)} />)
+    render(<SecurityReviewSection {...pageProps(face)} />)
     expect(screen.getByText('save')).toBeTruthy()
   })
 
@@ -333,6 +406,95 @@ describe('form behavior', () => {
     for (const button of screen.getAllByText(/save|reset|add|remove/)) {
       expect((button as HTMLButtonElement).disabled).toBe(true)
     }
+  })
+})
+
+describe('trusted commands', () => {
+  it('renders nothing when the trust namespace is not served', () => {
+    const { face } = makeFace(section())
+    render(<SecurityReviewSection {...pageProps(face, makeTrustFace({ trustedCommands: [] }, { status: 'unavailable' }).face)} />)
+    expect(screen.queryByText('trustedTitle')).toBeNull()
+  })
+
+  it('lists a trusted command and shows the empty note when there is none', () => {
+    const { face } = makeFace(section())
+    const { container } = render(<SecurityReviewSection {...pageProps(face, makeTrustFace({ trustedCommands: ['cargo'] }).face) } />)
+    expect(screen.getByText('trustedTitle')).toBeTruthy()
+    expect((container.querySelector('#security-review-trust-0') as HTMLInputElement).value).toBe('cargo')
+  })
+
+  it('shows the empty state', () => {
+    const { face } = makeFace(section())
+    render(<SecurityReviewSection {...pageProps(face, makeTrustFace({ trustedCommands: [] }).face)} />)
+    expect(screen.getByText('trustedEmpty')).toBeTruthy()
+  })
+
+  it('adds, edits, and removes a trusted command', async () => {
+    const { face } = makeFace(section())
+    const trust = makeTrustFace({ trustedCommands: ['cargo'] })
+    const { container } = render(<SecurityReviewSection {...pageProps(face, trust.face)} />)
+
+    fireEvent.change(container.querySelector('#security-review-trust-0') as HTMLInputElement, { target: { value: 'gh' } })
+    fireEvent.blur(container.querySelector('#security-review-trust-0') as HTMLInputElement)
+    await flush()
+    expect(trust.calls.at(-1)).toEqual(['gh'])
+
+    // The Add buttons render per block: keywords, rules, allow paths, trusted
+    // commands, extra directories — the trusted-command one is second from the
+    // end. The extra-directory list is empty, so the last Remove button is the
+    // trusted-command row's.
+    fireEvent.click(screen.getAllByText('add').at(-2)!)
+    await flush()
+    expect(trust.calls.at(-1)).toEqual(['gh', ''])
+
+    fireEvent.click(screen.getAllByText('remove').at(-1)!)
+    await flush()
+    expect(trust.calls.at(-1)).toEqual(['gh'])
+  })
+
+  it('disables the trusted controls when the document is not writable', () => {
+    const { face } = makeFace(section())
+    const trust = makeTrustFace({ trustedCommands: ['cargo'] }, { writable: false })
+    render(<SecurityReviewSection {...pageProps(face, trust.face)} />)
+    expect((screen.getAllByText('add').at(-2) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getAllByText('remove').at(-1) as HTMLButtonElement).disabled).toBe(true)
+  })
+})
+
+describe('extra writable directories', () => {
+  it('renders nothing when the paths namespace is not served', () => {
+    const { face } = makeFace(section())
+    render(<SecurityReviewSection {...pageProps(face, undefined, makePathsFace({ extraWritableRoots: [] }, { status: 'unavailable' }).face)} />)
+    expect(screen.queryByText('pathsTitle')).toBeNull()
+  })
+
+  it('lists a directory and shows the empty note when there is none', () => {
+    const { face } = makeFace(section())
+    const { container } = render(<SecurityReviewSection {...pageProps(face, undefined, makePathsFace({ extraWritableRoots: ['C:\\Build'] }).face)} />)
+    expect(screen.getByText('pathsTitle')).toBeTruthy()
+    expect((container.querySelector('#security-review-paths-0') as HTMLInputElement).value).toBe('C:\\Build')
+  })
+
+  it('adds, edits, and removes a directory', async () => {
+    const { face } = makeFace(section())
+    const paths = makePathsFace({ extraWritableRoots: ['C:\\Build'] })
+    const { container } = render(<SecurityReviewSection {...pageProps(face, undefined, paths.face)} />)
+
+    fireEvent.change(container.querySelector('#security-review-paths-0') as HTMLInputElement, { target: { value: 'D:\\Build' } })
+    fireEvent.blur(container.querySelector('#security-review-paths-0') as HTMLInputElement)
+    await flush()
+    expect(paths.calls.at(-1)).toEqual(['D:\\Build'])
+
+    fireEvent.click(screen.getAllByText('add').at(-1)!)
+    await flush()
+    expect(paths.calls.at(-1)).toEqual(['D:\\Build', ''])
+  })
+
+  it('disables the directory controls when the document is not writable', () => {
+    const { face } = makeFace(section())
+    const paths = makePathsFace({ extraWritableRoots: ['C:\\Build'] }, { writable: false })
+    render(<SecurityReviewSection {...pageProps(face, undefined, paths.face)} />)
+    expect((screen.getAllByText('add').at(-1) as HTMLButtonElement).disabled).toBe(true)
   })
 })
 

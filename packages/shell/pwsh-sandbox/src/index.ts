@@ -25,6 +25,7 @@ import type {
   SandboxPolicy,
 } from '@deepseek-ai/dsh-sandbox'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
+import type {} from '@deepseek-ai/dsh-sandbox-trust'
 import { PwshLocalExecutor } from '@deepseek-ai/dsh-pwsh-local'
 import type { Config as LocalConfig } from '@deepseek-ai/dsh-pwsh-local'
 import { classifyDenial, classifyRunnerFailure, isRunnerSpawnFailure, matchesSignature } from './helpers.ts'
@@ -93,9 +94,27 @@ export class SandboxPwshExecutor extends PwshLocalExecutor {
     return { ...super.resolve(request), sandboxPolicy: request.sandboxPolicy ?? this.ctx.sandboxPolicy.resolve() }
   }
 
+  /**
+   * The mode this execution runs under. A command whose every program is on
+   * the trusted-command list runs with host identity whatever the resolved
+   * policy says, so a tool that needs real machine credentials (gh, cargo)
+   * works while the session stays confined; an unmounted sandbox-trust service
+   * trusts nothing.
+   * @param spec - resolved spec whose command text is judged.
+   * @param policy - the resolved file-effect policy.
+   * @returns `danger-full-access` when the command is trusted or already
+   *   unconfined; the policy's confined mode otherwise.
+   */
+  private effectiveMode(spec: ShellExecSpec, policy: SandboxExecutionPolicy): SandboxMode {
+    if (policy.mode === 'danger-full-access') return 'danger-full-access'
+    return this.ctx.get('sandboxTrust')?.isTrustedCommand(spec.command) ?? false
+      ? 'danger-full-access'
+      : policy.mode
+  }
+
   override async execute(spec: ShellExecSpec): Promise<ShellExecution> {
     const policy = spec.sandboxPolicy as SandboxExecutionPolicy
-    const { mode } = policy
+    const mode = this.effectiveMode(spec, policy)
     if (mode === 'danger-full-access') {
       return SandboxPwshExecutor.decorateResult(
         await super.execute(spec),

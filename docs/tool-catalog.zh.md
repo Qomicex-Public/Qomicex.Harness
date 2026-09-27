@@ -27,6 +27,7 @@
 | `@deepseek-ai/dsh-plan-mode` | `exit_plan_mode` | `ctx.tools`、`ctx.systemPrompt`、`ctx.userQuestions (execution time, opportunistic)` | `tool/call`、`plan/mode inactive on an approved review`、`tool/result` | - | 规划未激活时，exit_plan_mode 仍保留在面向模型的 schema 中，这样状态转换不会在规划策略变更之外额外造成工具目录变动。其执行路径会拒绝规划模式之外的调用；在规划模式下，它通过用户交互 seam 提交计划（批准／根据反馈继续规划），批准后会在步骤边界记录规划模式已停用。 |
 | `@deepseek-ai/dsh-tool-bash` | `bash` | `ctx.tools`、`ctx.shell`、`ctx.systemPrompt`、`ctx.shellEnv`、`ctx.jobs for run_in_background and the job-backed foreground path` | `tool/call`、`tool/result` | - | bash 工具是 bash 执行器 seam 面向模型的消费方。组合中有 job 注册表时，每次调用一启动就注册到通用 `ctx.jobs` 运行时，并通过 `job_*` 工具（来自 `@deepseek-ai/dsh-tool-jobs`）收集／停止；没有注册表或 `enableRunInBackground: false` 时，工具注册不带 `run_in_background` 参数的纯前台 schema。 |
 | `@deepseek-ai/dsh-tool-present` | `present` | `ctx.tools`, `ctx.fs`, `ctx.sessionProjections` | `tool/call`, `deliverables/presented 在成功的最终结果之后`, `tool/result` | - | 交付归调用方 Session 所有；Web ui-deliverables 提供源文件打开与卡片。 |
+| `@deepseek-ai/dsh-tool-trust` | `sandbox_trust` | `ctx.tools`、`ctx.approval、ctx.settings、ctx.sandboxTrust 或 ctx.sandboxPolicy —— 均经 ctx.get 读取` | `tool/call`、`tool/result`、`批准后写入 sandbox-trust 或 sandbox-policy 设置命名空间` | - | 审批门控的信任增长：agent 申请、用户决定，获批条目落入安全审查设置页编辑的同一份文档；删除仍是该页上的用户操作。 |
 | `@deepseek-ai/dsh-tool-pwsh` | `pwsh` | `ctx.tools`、`ctx.shell`、`ctx.systemPrompt`、`ctx.shellEnv`、`ctx.jobs for run_in_background and the job-backed foreground path` | `tool/call`、`tool/result` | - | pwsh 工具是 Windows 组合中 bash 执行器 seam 的 PowerShell 方言消费方（由 `@deepseek-ai/dsh-pwsh-local` 等 PowerShell 执行器为 `ctx.shell` 提供后端）；除沙箱接口外，它逐项对应 bash 工具调用。使用 `run_in_background` 的运行会注册到通用 `ctx.jobs` 运行时，并通过 `job_*` 工具收集／停止；托管的 `DSH_*` 环境来自 `@deepseek-ai/dsh-shell-env`。每次调用都在新进程中运行，不使用持久 PTY 会话。路径采用原生 `C:\...` 形式，变量采用 `$env:NAME`。 |
 | `@deepseek-ai/dsh-tool-cordis` | `cordis_inspect_list`, `cordis_inspect_query` | `ctx.tools`, `ctx.cordisInspect` | `tool/call`, `tool/result` | - | 创造模式提供两个只读运行时检查工具。Cordis host runner 提供检查注册表；Client 查询需要已连接页面。持久化变更编写为组合包，再通过 plugin_manager 安装。 |
 | `@deepseek-ai/dsh-tool-bash-persistent` | `bash` | `ctx.tools`、`ctx.terminals`、`an owning Agent at execution time` | `tool/call`、`PTY shell state`、`tool/result` | - | 一个按所有者隔离的持久 bash 工具；部署组合提供 PTY 后端，并可覆盖面向模型的环境描述。 |
@@ -684,6 +685,47 @@ bash 工具是 bash 执行器 seam 面向模型的消费方。组合中有 job �
 来源： [`packages/deliverables/tool-present/src/index.ts`](../packages/deliverables/tool-present/src/index.ts)
 
 交付归调用方 Session 所有；Web ui-deliverables 提供源文件打开与卡片。
+
+<a id="deepseek-aidsh-tool-trust"></a>
+
+## `@deepseek-ai/dsh-tool-trust`
+
+### `sandbox_trust`
+
+向用户申请把一条命令或目录加入本部署的沙箱信任列表。受信任命令以用户完整主机身份运行，读取主机凭据的工具（例如 gh 或 cargo）需要它；受信任目录在会话工作区之外也可写入。每次添加都会先询问用户，用户之后可在 设置 → 安全审查 中删除条目。
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "description": "What to trust: a command program name, or a directory path.",
+      "enum": [
+        "command",
+        "path"
+      ]
+    },
+    "value": {
+      "type": "string",
+      "description": "For a command: a single program name such as `cargo`, `gh`, or `cargo.exe` — no arguments and no chained commands; add each program separately. For a path: an absolute directory path."
+    },
+    "reason": {
+      "type": "string",
+      "description": "One sentence for the user explaining why this entry needs trust; it appears in the approval prompt."
+    }
+  },
+  "required": [
+    "kind",
+    "value",
+    "reason"
+  ]
+}
+```
+
+Source: [`packages/sandbox/tool-trust/src/index.ts`](../packages/sandbox/tool-trust/src/index.ts)
+
+审批门控的信任增长：agent 申请、用户决定，获批条目落入了安全审查设置页编辑的同一份文档。删除仍是该页上的用户操作。
 
 <a id="deepseek-aidsh-tool-pwsh"></a>
 

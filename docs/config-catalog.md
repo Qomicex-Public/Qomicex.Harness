@@ -415,7 +415,7 @@ export interface Config {
 
 - `inject`: `subprocess` · `sandbox` · `sandboxPolicy`
 - `refs`: [`LocalConfig`](#deepseek-aidsh-bash-local)
-- `source`: [`packages/shell/bash-sandbox/src/index.ts:36`](../packages/shell/bash-sandbox/src/index.ts)
+- `source`: [`packages/shell/bash-sandbox/src/index.ts:37`](../packages/shell/bash-sandbox/src/index.ts)
 
 ```ts config-catalog
 /**
@@ -2723,7 +2723,7 @@ export interface Config {
 
 - `inject`: `subprocess` · `sandbox` · `sandboxPolicy`
 - `refs`: [`LocalConfig`](#deepseek-aidsh-pwsh-local)
-- `source`: [`packages/shell/pwsh-sandbox/src/index.ts:40`](../packages/shell/pwsh-sandbox/src/index.ts)
+- `source`: [`packages/shell/pwsh-sandbox/src/index.ts:41`](../packages/shell/pwsh-sandbox/src/index.ts)
 
 ```ts config-catalog
 /**
@@ -2814,8 +2814,8 @@ export interface Config {
 ## `@deepseek-ai/dsh-sandbox-policy`
 
 - `inject`: `sessionProjections`
-- `refs`: [`SandboxMode`](subsystems/sandbox.md)
-- `source`: [`packages/sandbox/sandbox-policy/src/index.ts:71`](../packages/sandbox/sandbox-policy/src/index.ts)
+- `refs`: [`SandboxMode`](subsystems/sandbox.md) · `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/sandbox/sandbox-policy/src/index.ts:73`](../packages/sandbox/sandbox-policy/src/index.ts)
 
 ```ts config-catalog
 /**
@@ -2833,9 +2833,43 @@ export interface Config {
    * `process.cwd()`). Normal agent calls use their session cwd instead.
    */
   workspaceRoot?: string
+  /**
+   * Extra absolute roots `workspace-write` may also write under, beyond the
+   * workspace and the platform temp areas (default: none). Session-independent
+   * and edited live on the Security Review settings page or through the
+   * `sandbox_trust` tool. Optional only so a composition may omit it when it
+   * declares the Config by hand; the schema always supplies the reference.
+   */
+  extraWritableRoots?: Volatile<string[]>
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-sandbox-policy -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-sandbox-trust -->
+<a id="deepseek-aidsh-sandbox-trust"></a>
+
+## `@deepseek-ai/dsh-sandbox-trust`
+
+- `refs`: `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/sandbox/sandbox-trust/src/index.ts:41`](../packages/sandbox/sandbox-trust/src/index.ts)
+
+```ts config-catalog
+/**
+ * Live plugin configuration. Every field is a stable reference whose snapshot
+ * carries the schema default until the user overrides it, and the settings form
+ * edits these fields without remounting the plugin.
+ */
+export interface Config {
+  /**
+   * Command names allowed to run with host identity. Each entry is matched
+   * against a shell command's leading command token (case-insensitively, with
+   * an optional Windows executable suffix); empty by default so behavior is
+   * unchanged until the user adds a name.
+   */
+  trustedCommands: Volatile<string[]>
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-sandbox-trust -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-schedule -->
 <a id="deepseek-aidsh-schedule"></a>
@@ -4836,6 +4870,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-tool-project-docs` | `tools` | [`packages/junsi/project-docs/src/index.ts`](../packages/junsi/project-docs/src/index.ts) |
 | `@deepseek-ai/dsh-tool-subagent-control` | `tools` · `subagents` | [`packages/subagent/tool-subagent-control/src/index.ts`](../packages/subagent/tool-subagent-control/src/index.ts) |
 | `@deepseek-ai/dsh-tool-tool-search` | `tools` | [`packages/junsi/tool-search/src/index.ts`](../packages/junsi/tool-search/src/index.ts) |
+| `@deepseek-ai/dsh-tool-trust` | `tools` | [`packages/sandbox/tool-trust/src/index.ts`](../packages/sandbox/tool-trust/src/index.ts) |
 | `@deepseek-ai/dsh-tool-wsl-pentest` | `tools` | [`packages/security/wsl-pentest/src/index.ts`](../packages/security/wsl-pentest/src/index.ts) |
 | `@deepseek-ai/dsh-ui-brand-qomicex` | — | [`packages/client/ui-brand-qomicex/src/index.ts`](../packages/client/ui-brand-qomicex/src/index.ts) |
 | `@deepseek-ai/dsh-user-questions` | — | [`packages/interaction/user-questions/src/index.ts`](../packages/interaction/user-questions/src/index.ts) |

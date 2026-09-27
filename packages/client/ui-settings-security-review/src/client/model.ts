@@ -110,3 +110,53 @@ export function saveOps(value: SecurityReviewValue): SecurityReviewPathOp[] {
 export function resetOps(): SecurityReviewPathOp[] {
   return FIELDS.map(field => ({ op: 'unset', path: [field] }))
 }
+
+/** Resolved `sandbox-trust` settings section. */
+export interface SandboxTrustValue {
+  /** Command names allowed to run with host identity under the file sandbox. */
+  trustedCommands: string[]
+}
+
+/**
+ * Copy the resolved trust section so edits cannot mutate the cached snapshot.
+ * @param value - the resolved settings section.
+ * @returns a detached copy of the section.
+ */
+export function readTrustValue(value: unknown): SandboxTrustValue {
+  return structuredClone(value as SandboxTrustValue)
+}
+
+/**
+ * Point-addressed writes that replace the trusted-command list, so a save is
+ * one atomic namespace mutation on the `sandbox-trust` entry.
+ * @param commands - the trusted command names to persist.
+ * @returns the ordered path-addressed operation.
+ */
+export function trustSaveOps(commands: readonly string[]): SecurityReviewPathOp[] {
+  return [{ op: 'set', path: ['trustedCommands'], value: [...commands] }]
+}
+
+/** Resolved `sandbox-policy` settings section. */
+export interface SandboxPathsValue {
+  /** Absolute directories writable outside the session workspace. */
+  extraWritableRoots: string[]
+}
+
+/**
+ * Copy the resolved paths section so edits cannot mutate the cached snapshot.
+ * @param value - the resolved settings section.
+ * @returns a detached copy of the section.
+ */
+export function readPathsValue(value: unknown): SandboxPathsValue {
+  return structuredClone(value as SandboxPathsValue)
+}
+
+/**
+ * Point-addressed writes that replace the extra writable roots, so a save is
+ * one atomic namespace mutation on the `sandbox-policy` entry.
+ * @param paths - the absolute directories to persist.
+ * @returns the ordered path-addressed operation.
+ */
+export function pathsSaveOps(paths: readonly string[]): SecurityReviewPathOp[] {
+  return [{ op: 'set', path: ['extraWritableRoots'], value: [...paths] }]
+}

@@ -13,7 +13,7 @@ import { Button, IconChevronDownOutlineRegular, Input, Menu, Switch } from '@dee
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SecurityReviewLocaleKey } from './locales.ts'
 import {
-  firstInvalidPattern, readValue, resetOps, saveOps,
+  firstInvalidPattern, readPathsValue, readTrustValue, readValue, resetOps, saveOps,
   type KeywordEntry, type PatternEntry, type ReviewAction, type SecurityReviewPathOp, type SecurityReviewValue,
 } from './model.ts'
 import css from './SecurityReviewSection.module.css'
@@ -38,10 +38,34 @@ export interface SecurityReviewFace {
   readonly mutate: (ops: readonly SecurityReviewPathOp[]) => Promise<void>
 }
 
+/** The trusted-command face for the `sandbox-trust` namespace. */
+export interface SandboxTrustFace {
+  /** Current snapshot of the trusted-command settings section. */
+  readonly snapshot: () => SecurityReviewSnapshot
+  /** Subscribe to section changes. */
+  readonly subscribe: (listener: () => void) => () => void
+  /** Apply path-addressed writes that replace the trusted-command list. */
+  readonly save: (commands: readonly string[]) => Promise<void>
+}
+
+/** The extra-writable-roots face for the `sandbox-policy` namespace. */
+export interface SandboxPathsFace {
+  /** Current snapshot of the extra writable roots settings section. */
+  readonly snapshot: () => SecurityReviewSnapshot
+  /** Subscribe to section changes. */
+  readonly subscribe: (listener: () => void) => () => void
+  /** Apply path-addressed writes that replace the extra writable roots. */
+  readonly save: (paths: readonly string[]) => Promise<void>
+}
+
 /** Registration-side face used by the page. */
 export interface SecurityReviewInjected {
   /** The settings face over the guard's profile entry. */
   readonly settings: SecurityReviewFace
+  /** The trusted-command face over the `sandbox-trust` profile entry. */
+  readonly trust: SandboxTrustFace
+  /** The extra-writable-roots face over the `sandbox-policy` profile entry. */
+  readonly paths: SandboxPathsFace
 }
 
 /** Full component props assembled by the Settings slot renderer. */
@@ -76,8 +100,14 @@ interface RuleRowValue {
  * @returns the page element tree.
  */
 export function SecurityReviewSection(props: SecurityReviewSectionProps): ReactNode {
-  const { settings, t } = props
-  return <SecurityReviewForm settings={settings} t={t} />
+  const { settings, trust, paths, t } = props
+  return (
+    <>
+      <SecurityReviewForm settings={settings} t={t} />
+      <TrustedCommands trust={trust} t={t} />
+      <ExtraWritableDirs paths={paths} t={t} />
+    </>
+  )
 }
 
 /**
@@ -403,5 +433,105 @@ function TextCell(props: {
           />
         )}
     </div>
+  )
+}
+
+/**
+ * Render the trusted-command list over the `sandbox-trust` namespace. It keeps
+ * its own snapshot, so an unserved namespace leaves the rest of the page intact;
+ * every edit is one atomic namespace mutation.
+ * @param props - the trust face and the page's translate seat.
+ * @returns the block element, or `null` before the namespace stands.
+ */
+function TrustedCommands(props: {
+  readonly trust: SandboxTrustFace
+  readonly t: (key: SecurityReviewLocaleKey) => string
+}): ReactNode {
+  const { trust, t } = props
+  const [snapshot, setSnapshot] = useState<SecurityReviewSnapshot>(() => trust.snapshot())
+  useEffect(() => {
+    setSnapshot(trust.snapshot())
+    return trust.subscribe(() => { setSnapshot(trust.snapshot()) })
+  }, [trust])
+  if (snapshot.status !== 'ready') return null
+
+  const commands = readTrustValue(snapshot.value).trustedCommands
+  const disabled = !snapshot.writable
+  const commit = (next: readonly string[]): void => { void trust.save(next) }
+
+  return (
+    <section className={css.block}>
+      <h3 className={css.blockTitle}>{t('trustedTitle')}</h3>
+      <p className={css.hint}>{t('trustedHint')}</p>
+      <p className={css.error}>{t('trustedWarning')}</p>
+      {commands.length === 0 && <p className={css.muted}>{t('trustedEmpty')}</p>}
+      <ul className={css.paths}>
+        {commands.map((command, index) => (
+          <li key={`${String(index)}:${command}`} className={css.pathRow}>
+            <TextCell
+              id={`security-review-trust-${String(index)}`}
+              label={t('columnCommand')}
+              value={command}
+              disabled={disabled}
+              onCommit={(next) => { commit(commands.map((current, i) => (i === index ? next : current))) }}
+            />
+            <Button disabled={disabled} onClick={() => { commit(commands.filter((_current, i) => i !== index)) }}>
+              {t('remove')}
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <Button disabled={disabled} onClick={() => { commit([...commands, '']) }}>{t('add')}</Button>
+    </section>
+  )
+}
+
+/**
+ * Render the extra writable roots over the `sandbox-policy` namespace. It keeps
+ * its own snapshot, so an unserved namespace leaves the rest of the page intact;
+ * every edit is one atomic namespace mutation.
+ * @param props - the paths face and the page's translate seat.
+ * @returns the block element, or `null` before the namespace stands.
+ */
+function ExtraWritableDirs(props: {
+  readonly paths: SandboxPathsFace
+  readonly t: (key: SecurityReviewLocaleKey) => string
+}): ReactNode {
+  const { paths, t } = props
+  const [snapshot, setSnapshot] = useState<SecurityReviewSnapshot>(() => paths.snapshot())
+  useEffect(() => {
+    setSnapshot(paths.snapshot())
+    return paths.subscribe(() => { setSnapshot(paths.snapshot()) })
+  }, [paths])
+  if (snapshot.status !== 'ready') return null
+
+  const roots = readPathsValue(snapshot.value).extraWritableRoots
+  const disabled = !snapshot.writable
+  const commit = (next: readonly string[]): void => { void paths.save(next) }
+
+  return (
+    <section className={css.block}>
+      <h3 className={css.blockTitle}>{t('pathsTitle')}</h3>
+      <p className={css.hint}>{t('pathsHint')}</p>
+      <p className={css.error}>{t('pathsWarning')}</p>
+      {roots.length === 0 && <p className={css.muted}>{t('pathsEmpty')}</p>}
+      <ul className={css.paths}>
+        {roots.map((root, index) => (
+          <li key={`${String(index)}:${root}`} className={css.pathRow}>
+            <TextCell
+              id={`security-review-paths-${String(index)}`}
+              label={t('columnDirectory')}
+              value={root}
+              disabled={disabled}
+              onCommit={(next) => { commit(roots.map((current, i) => (i === index ? next : current))) }}
+            />
+            <Button disabled={disabled} onClick={() => { commit(roots.filter((_current, i) => i !== index)) }}>
+              {t('remove')}
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <Button disabled={disabled} onClick={() => { commit([...roots, '']) }}>{t('add')}</Button>
+    </section>
   )
 }

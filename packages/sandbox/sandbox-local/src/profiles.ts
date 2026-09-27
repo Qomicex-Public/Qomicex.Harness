@@ -4,9 +4,24 @@
  * @module @deepseek-ai/dsh-sandbox-local/profiles
  */
 
+import { existsSync } from 'node:fs'
 import { grantArgs as landlockGrantArgs } from '@deepseek-ai/node-addon-system/landlock-run'
-import { writableRoots } from '@deepseek-ai/dsh-sandbox'
+import { canonicalPath, writableRoots } from '@deepseek-ai/dsh-sandbox'
 import type { SandboxPolicy } from '@deepseek-ai/dsh-sandbox'
+
+/**
+ * The policy's extra writable roots as canonical, existing directories — the
+ * deployment-owned supplement to the workspace and platform temp areas. A root
+ * that does not exist on the host is dropped here, because a missing path would
+ * otherwise fail the runner or the ACL grant outright; the provider warns about
+ * every dropped root so a typo is never a silent no-op.
+ * @param policy - file-effect policy carrying the extra roots.
+ * @returns the canonical roots that exist; empty outside `workspace-write`.
+ */
+export function extraWritableRoots(policy: SandboxPolicy): string[] {
+  if (policy.mode !== 'workspace-write') return []
+  return (policy.extraWritableRoots ?? []).map(canonicalPath).filter(root => existsSync(root))
+}
 
 /**
  * Build the bwrap profile arguments for one file-effect policy.
@@ -18,6 +33,7 @@ export function bwrapProfileArgs(policy: SandboxPolicy): string[] {
   if (policy.mode === 'workspace-write') {
     args.push('--tmpfs', '/tmp')
     args.push('--bind', policy.workspaceRoot, policy.workspaceRoot)
+    for (const root of extraWritableRoots(policy)) args.push('--bind', root, root)
   }
   return args
 }
@@ -31,6 +47,7 @@ export function landlockProfileArgs(policy: SandboxPolicy): string[] {
   const readWrite = ['/dev/null']
   if (policy.mode === 'workspace-write') {
     readWrite.push('/tmp', policy.workspaceRoot)
+    readWrite.push(...extraWritableRoots(policy))
   }
   return landlockGrantArgs({ readOnly: ['/'], readWrite })
 }
