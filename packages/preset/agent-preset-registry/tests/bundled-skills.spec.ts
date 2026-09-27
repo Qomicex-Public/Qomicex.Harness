@@ -44,15 +44,13 @@ async function bundledSkillsRoot(preset: string, rootPattern = /presets[\\/]skil
   const row = presetRow?.config?.plugins
     ?.find(candidate => candidate.name === '@deepseek-ai/dsh-skill-filesystem')
   expect(row, `${preset} mounts skill-filesystem`).toBeDefined()
-  const dirs = row?.config?.customSkillDirs
-  expect(Array.isArray(dirs), `${preset} configures customSkillDirs`).toBe(true)
+  const config = row?.config as { bundledSkillDir?: unknown } | undefined
+  expect(typeof config?.bundledSkillDir, `${preset} configures bundledSkillDir`).toBe('object')
   const baseUrl = pathToFileURL(patchPath).href
-  const resolved = interpolate({ baseUrl }, dirs) as unknown[]
-  const root = resolved.find(
-    candidate => typeof candidate === 'string' && rootPattern.test(candidate),
-  )
-  expect(typeof root, `${preset} resolves a bundled root from baseUrl`).toBe('string')
-  return root as string
+  const resolved = interpolate({ baseUrl }, config!.bundledSkillDir) as string
+  expect(typeof resolved, `${preset} resolves a bundled root from baseUrl`).toBe('string')
+  expect(rootPattern.test(resolved)).toBe(true)
+  return resolved
 }
 
 /**
@@ -83,6 +81,22 @@ it('resolves and discovers the pentest preset bundled skills', async () => {
   expect(root.replace(/[\\/]+$/, '')).toBe(join(PATCHES, 'skills', 'pentest'))
   const names = await discoveredSkills(root)
   expect(names).toContain('penetration-testing')
+})
+
+it('mounts the pentest bundled root as trusted-host so a packaged ASAR root reads directly', async () => {
+  // The packaged app resolves the preset inside its ASAR archive; the workspace
+  // filesystem service cannot stat a root there, and a custom root's failure
+  // is swallowed as an absent path. A trusted-host bundled root reads directly,
+  // so the regression is the root's kind, not only its resolved location.
+  const patch = await readFile(join(PATCHES, 'pentest.patch.yml'), 'utf8')
+  const row = (load(patch, { schema: entryListSchema }) as {
+    insert?: { config?: { plugins?: { name?: string; config?: Record<string, unknown> }[] } }[]
+  }[])
+    .flatMap(entry => entry.insert ?? [])
+    .find(entry => entry.config?.plugins !== undefined)
+    ?.config?.plugins
+    ?.find(candidate => candidate.name === '@deepseek-ai/dsh-skill-filesystem')
+  expect(Object.keys(row!.config as Record<string, unknown>)).toContain('bundledSkillDir')
 })
 
 it('keeps the cordis preset bundled skills resolving (the wiring this mirrors)', async () => {

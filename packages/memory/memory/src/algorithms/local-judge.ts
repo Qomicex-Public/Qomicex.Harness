@@ -282,10 +282,24 @@ const MAX_JUDGE_TOKENS = 120
  * rather than retried per message, so a misconfigured path costs one attempt
  * instead of one per statement.
  */
+/** The queue's tail observer: an operation's outcome is its caller's business. */
+const settled = (): void => {}
+
 export class LlamaCppJudge implements LocalJudge {
   private readonly options: LocalJudgeOptions
   private loaded: LoadedJudgeModel | undefined
   private unavailable = false
+  /**
+   * Serializes every model operation.
+   *
+   * `node-llama-cpp` throws `DisposedError` from a decode that is still draining
+   * after its context was disposed, and that rejection lands on an internal
+   * promise nobody awaits, so it escapes the per-call catch as an unhandled
+   * rejection — which the host turns fatal. A release therefore waits for the
+   * in-flight judgment to finish, and a judgment waits for a release in
+   * progress, so the model is never touched from two places at once.
+   */
+  private queue: Promise<void> = Promise.resolve()
 
   /** @param options - Model path, offload, and the loader seam. */
   constructor(options: LocalJudgeOptions) {
@@ -298,23 +312,30 @@ export class LlamaCppJudge implements LocalJudge {
    * @returns The verdict, or `undefined` to fall back to the rule path.
    */
   async judge(input: JudgmentInput): Promise<JudgmentResult | undefined> {
-    if (this.unavailable) return undefined
-    try {
-      const model = await this.ensureLoaded()
-      if (model === undefined) return undefined
-      const answer = await model.complete(buildJudgePrompt(input.current))
-      return parseJudgeVerdict(answer)
-    } catch {
-      // Containment over diagnosis: a model that throws once is treated as
-      // unavailable rather than retried, and the rule path decides instead.
-      this.unavailable = true
-      await this.dispose()
-      return undefined
-    }
+    return this.enqueue(async (): Promise<JudgmentResult | undefined> => {
+      if (this.unavailable) return undefined
+      try {
+        const model = await this.ensureLoaded()
+        if (model === undefined) return undefined
+        const answer = await model.complete(buildJudgePrompt(input.current))
+        return parseJudgeVerdict(answer)
+      } catch {
+        // Containment over diagnosis: a model that throws once is treated as
+        // unavailable rather than retried, and the rule path decides instead.
+        await this.releaseModel()
+        return undefined
+      }
+    })
   }
 
-  /** Release the model. */
+  /** Release the model, after any in-flight judgment has finished. */
   async dispose(): Promise<void> {
+    await this.enqueue(() => this.releaseModel())
+  }
+
+  /** Release the loaded model. Callers hold the queue, so nothing runs concurrently. */
+  private async releaseModel(): Promise<void> {
+    this.unavailable = true
     const model = this.loaded
     this.loaded = undefined
     if (model === undefined) return
@@ -324,6 +345,13 @@ export class LlamaCppJudge implements LocalJudge {
       // Disposal is best-effort: a model that failed to load may also fail to
       // release, and nothing downstream depends on it.
     }
+  }
+
+  /** Run one model operation after the previous operation settles. */
+  private enqueue<T>(operation: () => Promise<T>): Promise<T> {
+    const next = this.queue.then(operation, operation)
+    this.queue = next.then(settled, settled)
+    return next
   }
 
   /** Load the model once, marking the judge unavailable if that fails. */

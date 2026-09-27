@@ -241,6 +241,54 @@ describe('LlamaCppJudge', () => {
     expect(await judge.judge(input)).toBeUndefined()
     expect(counted.loads()).toBe(1)
   })
+
+  it('releases the model only after the in-flight judgment finishes', async () => {
+    // The crash this guards: node-llama-cpp keeps draining a decode after its
+    // context is disposed, and that DisposedError lands on an internal promise
+    // nobody awaits — an unhandled rejection, which the host turns fatal. Seen
+    // when switching sessions disposes the judge while a new message is judging.
+    let inFlight = 0
+    let disposedWhileInFlight = false
+    const gate = Promise.withResolvers<undefined>()
+    const judge = new LlamaCppJudge({
+      modelPath: 'model.gguf',
+      loader: () => Promise.resolve({
+        async complete() {
+          inFlight += 1
+          await gate.promise
+          inFlight -= 1
+          return '<start_function_call>call:judge_statement{shouldRemember:false,rationale:<escape>x<escape>}<end_function_call>'
+        },
+        async dispose() {
+          if (inFlight > 0) disposedWhileInFlight = true
+        },
+      } satisfies LoadedJudgeModel),
+    })
+    const judging = judge.judge(input)
+    await new Promise<void>((resolve) => { setTimeout(resolve, 0) })
+    expect(inFlight).toBe(1)
+    const disposing = judge.dispose()
+    gate.resolve(undefined)
+    await Promise.all([judging, disposing])
+    expect(disposedWhileInFlight).toBe(false)
+  })
+
+  it('short-circuits a judgment started after disposal instead of touching the released model', async () => {
+    let completes = 0
+    const judge = new LlamaCppJudge({
+      modelPath: 'model.gguf',
+      loader: () => Promise.resolve({
+        async complete() {
+          completes += 1
+          return '<start_function_call>call:judge_statement{shouldRemember:false,rationale:<escape>x<escape>}<end_function_call>'
+        },
+        async dispose() {},
+      } satisfies LoadedJudgeModel),
+    })
+    await judge.dispose()
+    expect(await judge.judge(input)).toBeUndefined()
+    expect(completes).toBe(0)
+  })
 })
 
 describe('the local judge inside the observer', () => {
