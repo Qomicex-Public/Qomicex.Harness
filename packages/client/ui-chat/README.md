@@ -17,6 +17,7 @@ File-mention providers receive the viewed Session ID with the closing-turn owner
 - [Reference previews](#reference-previews)
 - [Hidden Chat rows](#system-prompt-row)
 - [Command and failure rows](#command-and-failure-rows)
+- [User message actions](#user-message-actions)
 - [Turn token usage](#turn-token-usage)
 - [Completed-turn footer](#completed-turn-footer)
 - [Turn Process Folding](#turn-process-folding)
@@ -48,6 +49,13 @@ When an Assistant attempt retires without a visible message, Chat hides its alre
 ## Command and failure rows
 
 Generic command rows retain the ordinary command glyph in every lifecycle state; failure remains explicit through the row state and summary. Every terminal Turn failure renders its inline red-dot row; a quota failure's row states the neutral `message.failure.quota` copy instead of the provider message. The transient notice for a newly appended `QUOTA` or `ACCOUNT_QUOTA` comes from this package's frame-wide entry in `shell.overlay`, which outlives the Chat panel: it offers the one live notice to the `shell.quota-notice` chain and falls back to its own warning Toast, while an entry that claims the code replaces that fallback. Only Sessions this Client has bound and materialized publish; quota failures in Sessions it never opened do not. A newer notice replaces the current one unless a claiming entry retains it with `keepOpen()`: that call returns a release the caller owns and must run on unmount, any live hold keeps the claiming entry mounted and drops later notices, and releasing resumes later notices without replaying the dropped ones. The fallback Toast has no deferral of its own: while the Desktop account's opaque native Platform page covers the document, it still runs underneath and its display timer may elapse unseen, dismissing the notice itself, so only the persistent failure row remains. A release drops only its own hold, so one that runs after a dismissal or a newer hold leaves that newer hold intact. Dismissal and sign-out clear every hold, and dropped notices are not queued while their persistent failure rows still render. History replacement and pagination never publish a notice. Intermediate retries do not create a terminal row; output-token limits use the amber warning dot.
+
+<a id="user-message-actions"></a>
+## User message actions
+
+Each durable user message exposes copy, retract, and edit in its action row beside the message clock. Copy writes the joined message text to the clipboard. Retract rolls the viewed Session back to the state before that message: the client forks the exact event prefix preceding the message, opens the child Session, archives the source with its work stopped, and then erases the source when the Host allows it; a source the Host still holds stays archived and recoverable. Edit performs the same rollback and then refills the message text into the child Session's composer and focuses it, leaving the resend to the user. Neither action is offered on admitted steering messages.
+
+A fork failure leaves the current view unchanged.
 
 -----
 

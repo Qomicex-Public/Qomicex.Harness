@@ -8,6 +8,8 @@
     - tab "轨迹"
 - text: 只回复 MESSAGES_WEB_READY，不调用工具。 {{clock}}
 - button "复制"
+- button "撤回"
+- button "编辑"
 - status: 已完成工作
 - button "用时 {{duration}}" [disabled]
 - paragraph: MESSAGES_WEB_READY

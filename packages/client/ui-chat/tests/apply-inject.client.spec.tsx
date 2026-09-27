@@ -78,12 +78,18 @@ async function bench(initialSettings?: ChatSettings, withBrowserRegistry = true,
   )
   runtime.remote.provideNamespaces({ session: { openWorkspacePath } })
   const openSession = vi.fn<(id: SessionId) => void>()
+  const archiveSession = vi.fn<(_sessionId: SessionId, _options?: { stopActivity?: boolean }) => Promise<void>>(
+    () => Promise.resolve(),
+  )
+  const deleteSession = vi.fn<(_sessionId: SessionId) => Promise<void>>(() => Promise.resolve())
   runtime.ctx.provide('uiWorkspace', {
     openWorkspace: vi.fn(async (_workspaceId: WorkspaceId, beforeOpen: (id: SessionId) => void) => {
       beforeOpen(ROOT)
       openSession(ROOT)
     }),
     openSession,
+    archiveSession,
+    deleteSession,
   } as never)
   const session = sessionFakeFor()
   await runtime.sessions.add({
@@ -125,6 +131,7 @@ async function bench(initialSettings?: ChatSettings, withBrowserRegistry = true,
     },
     runtime, chat, chatSettings, browserAvailable,
     layout, openWorkspacePath, sidebarRight, sidebarRightTabs, session, chatViewApi, rootReference, openSession,
+    archiveSession, deleteSession,
   }
 }
 
@@ -182,6 +189,58 @@ describe('Chat inject API', () => {
     injected.forkAt(18)
     await vi.waitFor(() => {
       expect(fork).toHaveBeenCalledWith({ sessionId: ROOT, atSeq: 18, increaseTitle: true })
+    })
+    await b.runtime.dispose()
+  })
+
+  it('retracts a sent message through the preceding prefix and retires the source', async () => {
+    const b = await bench()
+    const { injected } = b.chatViewApi(b.rootReference)
+    injected.retractAt(17)
+    await vi.waitFor(() => {
+      expect(b.runtime.sessions.calls).toContainEqual({
+        method: 'fork', args: [{ sessionId: ROOT, atSeq: 16, increaseTitle: true }],
+      })
+    })
+    expect(b.openSession).toHaveBeenCalledWith(ROOT)
+    await vi.waitFor(() => {
+      expect(b.archiveSession).toHaveBeenCalledWith(ROOT, { stopActivity: true })
+    })
+    expect(b.deleteSession).toHaveBeenCalledWith(ROOT)
+    await b.runtime.dispose()
+  })
+
+  it('keeps the retracted source archived when the Host refuses the erase', async () => {
+    const b = await bench()
+    b.deleteSession.mockRejectedValueOnce(new Error('session is live'))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const { injected } = b.chatViewApi(b.rootReference)
+      injected.retractAt(17)
+      await vi.waitFor(() => {
+        expect(b.deleteSession).toHaveBeenCalledWith(ROOT)
+      })
+      expect(b.archiveSession).toHaveBeenCalledWith(ROOT, { stopActivity: true })
+      expect(warn).toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+      await b.runtime.dispose()
+    }
+  })
+
+  it('edits a sent message through a retract that refills the child composer', async () => {
+    const b = await bench()
+    const { injected } = b.chatViewApi(b.rootReference)
+    injected.editAt(18, 'refilled text')
+    await vi.waitFor(() => {
+      expect(b.runtime.sessions.calls).toContainEqual({
+        method: 'fork', args: [{ sessionId: ROOT, atSeq: 17, increaseTitle: true }],
+      })
+    })
+    expect(b.openSession).toHaveBeenCalledWith(ROOT)
+    const input = b.runtime.ctx.conversation.input.for(b.runtime.sessions.scope(ROOT)!)
+    await vi.waitFor(() => {
+      expect(input.state.getSnapshot().draft).toBe('refilled text')
     })
     await b.runtime.dispose()
   })

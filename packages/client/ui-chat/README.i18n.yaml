@@ -12,8 +12,8 @@
   en: fba5b2fb8080e2dd
   zh: 32c337123b7dfbcb
 /deepseek-ai-dsh-client-ui-chat/table-of-contents:
-  en: 41cd21266011d571
-  zh: 3172d1a2acbb27b7
+  en: 68d802261b35fdab
+  zh: 52187b703ef82bec
 /deepseek-ai-dsh-client-ui-chat/reference-previews:
   en: 3fda3d75483ce7c1
   zh: 4d96ba654f70c021
@@ -21,8 +21,11 @@
   en: 5706ae03ceacf251
   zh: 2e59d0815351349f
 /deepseek-ai-dsh-client-ui-chat/command-and-failure-rows:
-  en: 2157fcd6b0d100b5
-  zh: 9e865ac3953ebe30
+  en: b799a78305936e32
+  zh: 81b77f8f1ac57b1f
+/deepseek-ai-dsh-client-ui-chat/user-message-actions:
+  en: 36dfc6d2a87079f9
+  zh: acb6a34cbdaad37b
 /deepseek-ai-dsh-client-ui-chat/turn-token-usage:
   en: 29346bd0f9a5ff51
   zh: 54dbed55f67aeecd
