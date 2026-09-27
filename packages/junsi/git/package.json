@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-git",
   "description": "Model-facing git passthrough tool: runs git as an array of args in the session workspace cwd with full host identity, so GitHub HTTP/SSH credentials (credential helper, ssh-agent) work without the restricted sandbox",
-  "version": "0.1.7-rc.2",
+  "version": "0.1.7-rc.2.2",
   "publishConfig": {
     "access": "public"
   },

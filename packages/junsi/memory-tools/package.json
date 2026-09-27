@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-memory",
   "description": "Model-facing project-scoped memory tools (store-decision/save-progress/prepare-handoff/restore-handoff/list-decisions/memory-doctor/save-preference) that maintain a .memory/ directory under the session workspace",
-  "version": "0.1.7-rc.2",
+  "version": "0.1.7-rc.2.2",
   "publishConfig": {
     "access": "public"
   },

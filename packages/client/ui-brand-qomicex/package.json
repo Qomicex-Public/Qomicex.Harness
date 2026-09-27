@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-ui-brand-qomicex",
   "description": "Qomicex Harness brand occupants for the Web client's sidebar and hero slots",
-  "version": "0.1.7-rc.2",
+  "version": "0.1.7-rc.2.2",
   "publishConfig": {
     "access": "public"
   },
