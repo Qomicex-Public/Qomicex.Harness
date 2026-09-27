@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-20-glass-passthrough-and-settings-controls.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-20-glass-passthrough-and-settings-controls.md
-2026-09-20-glass-passthrough-and-settings-controls.md: 94e3bf68b15c96de0007ddfa337cb819b7d15a07
-2026-09-20-glass-passthrough-and-settings-controls.zh.md: da9412f65dd7883523100182d2f2441bf767f255
+/agent-note-glass-passthrough-through-the-sidebar-column-and-shared-settings-controls:
+  en: 773de0d3fd1e11cd
+  zh: e7614b36d798a2d7
+/agent-note-glass-passthrough-through-the-sidebar-column-and-shared-settings-controls/problem:
+  en: f611004369eb4428
+  zh: e90714fa2d396f41
+/agent-note-glass-passthrough-through-the-sidebar-column-and-shared-settings-controls/decision:
+  en: f4c98d21b9944a41
+  zh: a9c02be6268328aa
+/agent-note-glass-passthrough-through-the-sidebar-column-and-shared-settings-controls/alternatives-considered:
+  en: affcba7733644ea2
+  zh: d87ef34f442c0487
+/agent-note-glass-passthrough-through-the-sidebar-column-and-shared-settings-controls/consequences:
+  en: f9cb4c06e773286d
+  zh: 0f1efccb99cdd410
+/agent-note-glass-passthrough-through-the-sidebar-column-and-shared-settings-controls/measurement:
+  en: aa66265baf0a891c
+  zh: 1a4e9b395db502f6

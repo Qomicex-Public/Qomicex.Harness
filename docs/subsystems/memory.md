@@ -51,6 +51,19 @@ Read-only apart from `forget`, which routes through the same governance and life
 @Remote async forget(request: MemoryForgetRequest): Promise<MemoryForgetValue>
 
 /**
+ * Merge the duplicate memories the store has already accumulated.
+ *
+ * The hot pack and the write path both deduplicate now, so no new duplicates
+ * appear; this is the repair for the ones stored before that. It is a click
+ * rather than an automatic pass because it deletes rows, and a deletion the
+ * user did not ask for is not one the system should perform on its own
+ * reading of "duplicate".
+ * @returns How many copies were merged and how many facts they covered.
+ * @throws RemoteError `memory/unavailable` when the plugin is not mounted.
+ */
+@Remote async dedupeMemories(): Promise<MemoryDedupeValue>
+
+/**
  * Download the local judge model into the configured path.
  *
  * The one remote thing in the memory system, which is why it lives behind a

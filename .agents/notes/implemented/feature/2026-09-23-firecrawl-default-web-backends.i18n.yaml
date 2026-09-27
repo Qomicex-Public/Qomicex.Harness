@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-23-firecrawl-default-web-backends.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-23-firecrawl-default-web-backends.md
-2026-09-23-firecrawl-default-web-backends.md: 4c304d84714dfe095e8b32e838ef662839841d44
-2026-09-23-firecrawl-default-web-backends.zh.md: b79e1758f38be732927c16fa7bc00da8a512cfc8
+/agent-note-firecrawl-as-the-default-web-backend-with-selectable-backends:
+  en: 3b236a89677a50aa
+  zh: 32439df9082d909e
+/agent-note-firecrawl-as-the-default-web-backend-with-selectable-backends/problem:
+  en: addf2d8a88b0d903
+  zh: 48d02b352f8ead1b
+/agent-note-firecrawl-as-the-default-web-backend-with-selectable-backends/decision:
+  en: 89eba16ad8da29f4
+  zh: 30e22b5637a99c48
+/agent-note-firecrawl-as-the-default-web-backend-with-selectable-backends/alternatives-considered:
+  en: 3413476238acda95
+  zh: a48d3fc97c23acfb
+/agent-note-firecrawl-as-the-default-web-backend-with-selectable-backends/consequences:
+  en: 334ae9f269efe5db
+  zh: 6a8d69ac866105bd
+/agent-note-firecrawl-as-the-default-web-backend-with-selectable-backends/verification:
+  en: c651e7e6ee870cc3
+  zh: 1ea745d29528b4aa

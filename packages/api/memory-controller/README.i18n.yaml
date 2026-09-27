@@ -1,6 +1,61 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/api/memory-controller/README.md
-README.md: 4539f2ec853f19cd627324241025a7f04c9d6a70
-README.zh.md: d2e5ac6dad88622280e907925454cca84e52a38d
+/:
+  en: 3dcbe81eb0a9c1e0
+  zh: 08e39e40b960f49e
+/deepseek-ai-dsh-api-memory-controller:
+  en: a602a005187ee365
+  zh: 4de87e755ef06d74
+/deepseek-ai-dsh-api-memory-controller/summary:
+  en: c1198c22b28a159e
+  zh: 381700bcd10c7867
+/deepseek-ai-dsh-api-memory-controller/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: ffab54373e9e61f0
+/deepseek-ai-dsh-api-memory-controller/use-this-package:
+  en: 9504248af13bae6e
+  zh: 519a63098333cc2f
+/deepseek-ai-dsh-api-memory-controller/use-this-package/reading-the-graph:
+  en: 7eb88087cdb1a152
+  zh: 315f453937ec3b2c
+/deepseek-ai-dsh-api-memory-controller/use-this-package/reading-status-and-forgetting:
+  en: c3b2228d881a52a6
+  zh: 85602977fece028a
+/deepseek-ai-dsh-api-memory-controller/use-this-package/the-judge-model:
+  en: aa924ed7347c1cd1
+  zh: 343d74f7a67761ec
+/deepseek-ai-dsh-api-memory-controller/use-this-package/patterns:
+  en: 6d28620b584e5693
+  zh: 85763519e812b50c
+/deepseek-ai-dsh-api-memory-controller/understand-the-implementation:
+  en: c3608d96c5387842
+  zh: 1752631e01338cb5
+/deepseek-ai-dsh-api-memory-controller/understand-the-implementation/reading-through-the-plugin-s-service-surface:
+  en: 4d76dc7b0d03bcb1
+  zh: f16af5b4f795b12d
+/deepseek-ai-dsh-api-memory-controller/understand-the-implementation/edge-construction:
+  en: 31d66ab92953fe04
+  zh: e807febf023c17de
+/deepseek-ai-dsh-api-memory-controller/understand-the-implementation/wire-shape:
+  en: 781e561987a00054
+  zh: 7f0377592b849e21
+/deepseek-ai-dsh-api-memory-controller/understand-the-implementation/source-map:
+  en: e46b11c066523396
+  zh: 51020082cc7fb5bd
+/deepseek-ai-dsh-api-memory-controller/further-exploration:
+  en: 574295f95149d382
+  zh: a23dc6f6c3ea36f8
+/deepseek-ai-dsh-api-memory-controller/model-experience:
+  en: 5ec1f5ccb957f208
+  zh: 5ec1f5ccb957f208
+/deepseek-ai-dsh-api-memory-controller/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: ca75c51c89c2c9b0
+/deepseek-ai-dsh-api-memory-controller/known-limitations-and-deferred-work:
+  en: 2b852a29faabbd97
+  zh: e2fab97f7d555ed6
+/deepseek-ai-dsh-api-memory-controller/known-limitations-and-deferred-work/dev-note:
+  en: 2a428a1e38affccd
+  zh: 9c74786ec09ef664

@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-25-models-page-chip-catalog-panel.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-25-models-page-chip-catalog-panel.md
-2026-09-25-models-page-chip-catalog-panel.md: ae68d80df0a4bf85d6e54972c589d2f917ad90bb
-2026-09-25-models-page-chip-catalog-panel.zh.md: 37bfacab4694a90974ef33ffdf0455edcf5cfb22
+/agent-note-the-models-page-edits-models-as-tiles-above-one-settings-panel:
+  en: 50d61c547eb729c4
+  zh: d1dcfdf20194279e
+/agent-note-the-models-page-edits-models-as-tiles-above-one-settings-panel/problem:
+  en: d49b00ef08c06c2b
+  zh: f050e7e767aa9858
+/agent-note-the-models-page-edits-models-as-tiles-above-one-settings-panel/decision:
+  en: 7c3368094637298a
+  zh: a81ed6bdf1e2811e
+/agent-note-the-models-page-edits-models-as-tiles-above-one-settings-panel/consequences:
+  en: 83f548c114079c53
+  zh: 01b007fe04d625ff
+/agent-note-the-models-page-edits-models-as-tiles-above-one-settings-panel/alternatives-considered:
+  en: 3c98acaf590da692
+  zh: 3e814ab21a392db2
+/agent-note-the-models-page-edits-models-as-tiles-above-one-settings-panel/verification:
+  en: ec69a66d5b62a967
+  zh: 228150205393c769

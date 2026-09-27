@@ -1,6 +1,73 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write apps/desktop/README.md
-README.md: 91d79530d9ed3d52bb94e1209a241d5f4bc30c1d
-README.zh.md: 326285b6aa47ddc9606c1e1cc89ff039a8f5e2d7
+/qomicex-harness-desktop:
+  en: cc8a9e999dafd764
+  zh: 3e251be8b64882f9
+/qomicex-harness-desktop/closing-the-window-and-quitting:
+  en: fb852f3bd70d8602
+  zh: 42bf5e88e80ce89d
+/qomicex-harness-desktop/key-technical-decisions:
+  en: d0f3902c39d6a414
+  zh: 48c747e2854907d7
+/qomicex-harness-desktop/key-technical-decisions/bundled-workspace-dependencies:
+  en: 31cbb7452be8e1ad
+  zh: 502ec556e2ec301e
+/qomicex-harness-desktop/installation-ownership:
+  en: 18bbfeabc9067e17
+  zh: 2255e84e0ef3f981
+/qomicex-harness-desktop/installation-ownership/runtime-and-plugin-activation:
+  en: b8c51a2afa658561
+  zh: 9fb9820a9626f11b
+/qomicex-harness-desktop/develop:
+  en: 9b9b362a9865e763
+  zh: c748901168e2db8c
+/qomicex-harness-desktop/develop/startup-onboarding:
+  en: c879b8f6c8203771
+  zh: 5fb863d4906f4a67
+/qomicex-harness-desktop/develop/welcome-window-appearance:
+  en: d27b8df20fb7f8f4
+  zh: 042dc97976aef979
+/qomicex-harness-desktop/package:
+  en: 4cd8a8da6977928d
+  zh: 9f624855a2edac37
+/qomicex-harness-desktop/package/release-versions:
+  en: f461b255133384cc
+  zh: 2b9db718f22fdd04
+/qomicex-harness-desktop/package/github-release-pipeline:
+  en: 40e79290b4626ebd
+  zh: 3bc0a4eebb060e51
+/qomicex-harness-desktop/package/runtime-file-selection:
+  en: d42a87bc9801ed2e
+  zh: fd2c775ad23fa2f0
+/qomicex-harness-desktop/package/upload-updates:
+  en: c64d7fe2fe2534b7
+  zh: 2188e1ae99ab4b33
+/qomicex-harness-desktop/package/unsigned-windows-test-installer:
+  en: f422c49da4d2bedf
+  zh: f7a16b1ede793b7b
+/qomicex-harness-desktop/package/windows-installer-interface:
+  en: d177c821b26fd46c
+  zh: 6ea2dbe6bb808c34
+/qomicex-harness-desktop/package/windows-ev-signing:
+  en: 8efe3498dbe8686d
+  zh: a88c16f20a9430f3
+/qomicex-harness-desktop/updates:
+  en: d0df867b69cbffa4
+  zh: eeb47b79b86fe5ee
+/qomicex-harness-desktop/updates/mandatory-update-policy:
+  en: 2f789a4949fafb12
+  zh: d8b28c01cfee11b7
+/qomicex-harness-desktop/updates/local-updater-qualification:
+  en: bc50fd8a4d96c227
+  zh: fb0a6ce80c31cda6
+/qomicex-harness-desktop/low-level-development-overrides:
+  en: 0b225f914142ef0b
+  zh: 9ffd07768d37824e
+/qomicex-harness-desktop/known-limitations:
+  en: 5b77213c86bbcfb6
+  zh: b34bf21773bb852b
+/qomicex-harness-desktop/dev-note:
+  en: 8e26b460ba31f21b
+  zh: fbcd0307b3867125

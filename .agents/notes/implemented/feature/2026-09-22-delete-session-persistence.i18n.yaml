@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-22-delete-session-persistence.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-22-delete-session-persistence.md
-2026-09-22-delete-session-persistence.md: 107b579c3b0d1121b461a2a1bab19faec015e346
-2026-09-22-delete-session-persistence.zh.md: 23a1d99a31916bedb6db732fe0e99b75be20d275
+/agent-note-permanently-deleting-a-stored-session-across-the-persistence-seam:
+  en: b5700a57d624877c
+  zh: 932e4d9b12ee8a61
+/agent-note-permanently-deleting-a-stored-session-across-the-persistence-seam/problem:
+  en: a1b98b0dd0fd76b1
+  zh: c90a88f1824dc886
+/agent-note-permanently-deleting-a-stored-session-across-the-persistence-seam/decision:
+  en: e30aadcf081a6579
+  zh: e5015886941379f2
+/agent-note-permanently-deleting-a-stored-session-across-the-persistence-seam/verification:
+  en: 9f974e5d2cfde029
+  zh: c5bbc2cd2ab3862e
+/agent-note-permanently-deleting-a-stored-session-across-the-persistence-seam/alternatives-considered:
+  en: 7a17cb3511025d7c
+  zh: 6b6eb94b7919e315
+/agent-note-permanently-deleting-a-stored-session-across-the-persistence-seam/consequences:
+  en: 1a70ce5ac138c9e5
+  zh: 2d4d999e1e8b3b0e

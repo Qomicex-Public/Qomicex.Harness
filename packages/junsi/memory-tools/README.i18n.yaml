@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/junsi/memory-tools/README.md
-README.md: 53d26927a2a4b0e501e1dc2f2834129519e16e54
-README.zh.md: daf26687e76cd594677430ace7f6c09f6d535fd1
+/:
+  en: 3f358f8dc813dfcc
+  zh: 67f522d520696086
+/deepseek-ai-dsh-tool-memory:
+  en: e68027b9194dfff6
+  zh: 8efe3081709ac705
+/deepseek-ai-dsh-tool-memory/summary:
+  en: cbac6fcab9fb2553
+  zh: 20d8016a405e1269
+/deepseek-ai-dsh-tool-memory/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-tool-memory/use-this-package:
+  en: 7add64ab27aaac2a
+  zh: 21fb5b782e5fd8dd
+/deepseek-ai-dsh-tool-memory/use-this-package/the-seven-tools:
+  en: 01d621c017415a75
+  zh: ee8786b2d55c5d9c
+/deepseek-ai-dsh-tool-memory/use-this-package/minimal-configuration:
+  en: 9f294b3b43363c1d
+  zh: 0affe8a21cb38cd4
+/deepseek-ai-dsh-tool-memory/use-this-package/what-can-go-wrong:
+  en: a0ca80a7694713d4
+  zh: 91d9346566df754e
+/deepseek-ai-dsh-tool-memory/understand-the-implementation:
+  en: 32a36a3fe388e2c1
+  zh: f4bd2866fff6fa8d
+/deepseek-ai-dsh-tool-memory/understand-the-implementation/design-philosophy:
+  en: 8ab07a3d2a7b91d9
+  zh: 5c2ad01083421fa9
+/deepseek-ai-dsh-tool-memory/understand-the-implementation/source-map:
+  en: 2723660937c01336
+  zh: f8127ad0b6939328
+/deepseek-ai-dsh-tool-memory/understand-the-implementation/naming-and-limits:
+  en: 8b328e5fd9e34c10
+  zh: 924f93341e3cd3fb
+/deepseek-ai-dsh-tool-memory/further-exploration:
+  en: 0688d2ba39b1f4e4
+  zh: b75b61dd31ed8831
+/deepseek-ai-dsh-tool-memory/model-experience:
+  en: 4b20dcd06d4db0f1
+  zh: b170f66e1e9714d7
+/deepseek-ai-dsh-tool-memory/model-experience/kv-cache-effect:
+  en: 3fe5c9b057987d30
+  zh: d983413588be2b30
+/deepseek-ai-dsh-tool-memory/known-limitations-and-deferred-work:
+  en: d31aabe5d88150de
+  zh: 5c3cff6a14433676
+/deepseek-ai-dsh-tool-memory/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

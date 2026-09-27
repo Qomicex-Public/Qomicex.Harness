@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-junsi-routing",
   "description": "JunSi preset routing: a systemPrompt section that tells the model which registered sub-skill to load for a given kind of request, and the completion-checklist constraints",
-  "version": "0.1.7-rc.1",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },

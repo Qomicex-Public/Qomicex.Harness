@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/junsi/project-docs/README.md
-README.md: 0615e1e42ddc6f5ee4251629f1eab5a612c32fa9
-README.zh.md: 959227be9132cd9370d6e8568a7ed0c3fc664f9d
+/:
+  en: 532492cbb7fb799a
+  zh: 881b4d32f87a1585
+/deepseek-ai-dsh-tool-project-docs:
+  en: e102279c32aabd7c
+  zh: f5c5444ee56f4dea
+/deepseek-ai-dsh-tool-project-docs/summary:
+  en: 2e2463d40c02dafc
+  zh: d2462f4b0b2b2de8
+/deepseek-ai-dsh-tool-project-docs/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-tool-project-docs/use-this-package:
+  en: 13325d6be01f2253
+  zh: a9b83b7cd5f30ffa
+/deepseek-ai-dsh-tool-project-docs/use-this-package/the-twenty-tools:
+  en: 212cf7980d502a74
+  zh: 9ecccd725715ca7e
+/deepseek-ai-dsh-tool-project-docs/use-this-package/minimal-configuration:
+  en: 2bf68ffb3b8a2ac9
+  zh: 2d30c53479c03e4d
+/deepseek-ai-dsh-tool-project-docs/use-this-package/what-can-go-wrong:
+  en: a0e4a3cb172e697f
+  zh: 138c1be423746973
+/deepseek-ai-dsh-tool-project-docs/understand-the-implementation:
+  en: 32a36a3fe388e2c1
+  zh: f4bd2866fff6fa8d
+/deepseek-ai-dsh-tool-project-docs/understand-the-implementation/design-philosophy:
+  en: 92d725d446296049
+  zh: 6ae4f60d00cfd91f
+/deepseek-ai-dsh-tool-project-docs/understand-the-implementation/source-map:
+  en: b19d6989467593ec
+  zh: cf1f98d200728ec5
+/deepseek-ai-dsh-tool-project-docs/understand-the-implementation/naming-and-limits:
+  en: 5fefd713bcf311f6
+  zh: 44e17cddcce0d20d
+/deepseek-ai-dsh-tool-project-docs/further-exploration:
+  en: 0688d2ba39b1f4e4
+  zh: b75b61dd31ed8831
+/deepseek-ai-dsh-tool-project-docs/model-experience:
+  en: c3709438af104c45
+  zh: cec8bf7863b17a9b
+/deepseek-ai-dsh-tool-project-docs/model-experience/kv-cache-effect:
+  en: 3fe5c9b057987d30
+  zh: d983413588be2b30
+/deepseek-ai-dsh-tool-project-docs/known-limitations-and-deferred-work:
+  en: b1ce6e2626e9e413
+  zh: f098e4907e433648
+/deepseek-ai-dsh-tool-project-docs/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

@@ -1,6 +1,64 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-settings-security-review/README.md
-README.md: 753d260d14af5f0d0f264709f8a8b1daa629bfa1
-README.zh.md: 0ba149eae1d4660ce410b172d3e0cbddb40c4eac
+/:
+  en: e11198e632a6acca
+  zh: 07f445e5bbeca0ec
+/deepseek-ai-dsh-client-ui-settings-security-review:
+  en: 31dced49cbd54a84
+  zh: 593c70ddfb4fe6e5
+/deepseek-ai-dsh-client-ui-settings-security-review/summary:
+  en: 9eae1ca28b0d9851
+  zh: dc3c03f7e4ce113f
+/deepseek-ai-dsh-client-ui-settings-security-review/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 82bbd1ae631975a1
+/deepseek-ai-dsh-client-ui-settings-security-review/use-this-package:
+  en: 8655617ff2c3ecbe
+  zh: 29ccab7e41b28593
+/deepseek-ai-dsh-client-ui-settings-security-review/use-this-package/the-master-switch:
+  en: b8105a40444da56c
+  zh: dd26f29df0ac7f66
+/deepseek-ai-dsh-client-ui-settings-security-review/use-this-package/the-built-in-rules:
+  en: 30502ac185017dd8
+  zh: 1d8421e36c87778e
+/deepseek-ai-dsh-client-ui-settings-security-review/use-this-package/the-keyword-and-regular-expression-checks:
+  en: 7be9953fa20da957
+  zh: 5ae048b94de4ee86
+/deepseek-ai-dsh-client-ui-settings-security-review/use-this-package/the-check-script-and-the-allow-paths:
+  en: 697a8902981cfa62
+  zh: 02ea9d5e7a737ef5
+/deepseek-ai-dsh-client-ui-settings-security-review/use-this-package/saving-and-resetting:
+  en: f987b97df8f4724e
+  zh: fc6cbe9c71f02322
+/deepseek-ai-dsh-client-ui-settings-security-review/understand-the-implementation:
+  en: 6b5cb0a902d3afb5
+  zh: 9937919ad419e196
+/deepseek-ai-dsh-client-ui-settings-security-review/understand-the-implementation/registration-and-data-sources:
+  en: f834e4a106cc809b
+  zh: 5bd8c41b8d789197
+/deepseek-ai-dsh-client-ui-settings-security-review/understand-the-implementation/live-data:
+  en: a638ed0b1ed29842
+  zh: 9047e568e7f6099d
+/deepseek-ai-dsh-client-ui-settings-security-review/understand-the-implementation/pattern-validation:
+  en: e139eedd17e3350d
+  zh: af6ff2755025517b
+/deepseek-ai-dsh-client-ui-settings-security-review/understand-the-implementation/source-map:
+  en: eaaf8f2d9307a42d
+  zh: 21200e90bff11e4d
+/deepseek-ai-dsh-client-ui-settings-security-review/further-exploration:
+  en: 910079a9faee91a1
+  zh: f4d1335f96166b6e
+/deepseek-ai-dsh-client-ui-settings-security-review/model-experience:
+  en: 5dff548b233dd888
+  zh: c5567028f902491b
+/deepseek-ai-dsh-client-ui-settings-security-review/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: 50e3897523c331ca
+/deepseek-ai-dsh-client-ui-settings-security-review/known-limitations-and-deferred-work:
+  en: 12bdf0d63d4e6887
+  zh: 72055727fcd0862e
+/deepseek-ai-dsh-client-ui-settings-security-review/known-limitations-and-deferred-work/dev-note:
+  en: 80f05c59f0c10c30
+  zh: 295ac04a3b9511df

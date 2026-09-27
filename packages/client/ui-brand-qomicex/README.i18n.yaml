@@ -1,6 +1,43 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-brand-qomicex/README.md
-README.md: 6291022fa17eca5795576751018d1b5a4d25c4a8
-README.zh.md: bf72eb98720436d2de50f1405fdc29744983b6aa
+/:
+  en: 2cdb3943dc6af097
+  zh: 6b92e943bc117588
+/deepseek-ai-dsh-ui-brand-qomicex:
+  en: 389984057bfef059
+  zh: e6ed92bd35a307e8
+/deepseek-ai-dsh-ui-brand-qomicex/summary:
+  en: 99d51aa555638de4
+  zh: c729893864acf024
+/deepseek-ai-dsh-ui-brand-qomicex/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-ui-brand-qomicex/use-this-package:
+  en: 2e0e946e02b063b5
+  zh: 043ffa4998b7c9f1
+/deepseek-ai-dsh-ui-brand-qomicex/use-this-package/occupied-slots:
+  en: 2b816315e3493d4c
+  zh: 524ce5fcb28f26c9
+/deepseek-ai-dsh-ui-brand-qomicex/use-this-package/replacing-the-brand-again:
+  en: 284dc6f88767c05e
+  zh: 3e8f62f2c39a25a7
+/deepseek-ai-dsh-ui-brand-qomicex/understand-the-implementation:
+  en: d9d911d8c944696f
+  zh: 3846304f1011a50a
+/deepseek-ai-dsh-ui-brand-qomicex/further-exploration:
+  en: 0a1f2c0cbc806ade
+  zh: 784103b1acdddb4d
+/deepseek-ai-dsh-ui-brand-qomicex/model-experience:
+  en: 618008c7641070e7
+  zh: 17d43347a93c5281
+/deepseek-ai-dsh-ui-brand-qomicex/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: 564170e4c5d85c71
+/deepseek-ai-dsh-ui-brand-qomicex/known-limitations-and-deferred-work:
+  en: 362ccc1e9930e3ca
+  zh: 8160ab117c52d388
+/deepseek-ai-dsh-ui-brand-qomicex/known-limitations-and-deferred-work/dev-note:
+  en: a0146a15eb987af1
+  zh: 46b29f58a68426a8

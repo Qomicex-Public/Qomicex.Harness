@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/junsi/README.md
-README.md: 233e2df66f2d4b976fdcad73940cb6555488bd28
-README.zh.md: 20c271bf2d832271e81505af68d63f5765d66b87
+/:
+  en: 7de04c5e42e357ad
+  zh: 67a19cecf6fdd1d6
+/junsi-junsi-development-mode-family:
+  en: a23723a9812fb281
+  zh: 6f48f5228c34929e
+/junsi-junsi-development-mode-family/summary:
+  en: 7e4f7ad1db23875f
+  zh: f85ba086020764e4
+/junsi-junsi-development-mode-family/table-of-contents:
+  en: 20b57e98faba99e4
+  zh: 636e4b5b59c26325
+/junsi-junsi-development-mode-family/packages:
+  en: 35eb8aa7630eb62c
+  zh: 629026812d1a23f6
+/junsi-junsi-development-mode-family/related-documentation:
+  en: 7cb2378bbbbff045
+  zh: a00699b2300e0720

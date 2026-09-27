@@ -1,6 +1,58 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-personalization/README.md
-README.md: a648a6202206d474514cf1c4f476df6bca672eef
-README.zh.md: a920258d5ea871d5225af526e4f5364ca3bcc8e9
+/:
+  en: 51ce4db026a3b8a7
+  zh: 05c1556b883e3803
+/deepseek-ai-dsh-client-ui-personalization:
+  en: 07c65d970dcebbd4
+  zh: d6a5e327503ef279
+/deepseek-ai-dsh-client-ui-personalization/summary:
+  en: b99ddfc392e1d8a1
+  zh: 4447ef6555ec238f
+/deepseek-ai-dsh-client-ui-personalization/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 82bbd1ae631975a1
+/deepseek-ai-dsh-client-ui-personalization/use-this-package:
+  en: f0e9449db52ecb63
+  zh: d7bf9a35b92dd25c
+/deepseek-ai-dsh-client-ui-personalization/use-this-package/the-background:
+  en: e9a819d3be28f59a
+  zh: c48ae65dfd71c543
+/deepseek-ai-dsh-client-ui-personalization/use-this-package/the-theme-colour:
+  en: 00a1766c8c1c827c
+  zh: 3a8257da7cfe0325
+/deepseek-ai-dsh-client-ui-personalization/use-this-package/glass-the-corner-decoration-and-saving:
+  en: 7d44fe64c1170021
+  zh: e26996087dbb4dc2
+/deepseek-ai-dsh-client-ui-personalization/understand-the-implementation:
+  en: f1ba496e622d06bf
+  zh: 120e54225dedc126
+/deepseek-ai-dsh-client-ui-personalization/understand-the-implementation/two-halves-and-one-namespace:
+  en: 8843404ddda5ba77
+  zh: 54e25f6d405fa19c
+/deepseek-ai-dsh-client-ui-personalization/understand-the-implementation/effects:
+  en: 4ab725231e11d960
+  zh: fa367fc9d28239d5
+/deepseek-ai-dsh-client-ui-personalization/understand-the-implementation/the-brand-scale:
+  en: 39cde4b556a2c6c1
+  zh: 2a1117bf8977a2b4
+/deepseek-ai-dsh-client-ui-personalization/understand-the-implementation/source-map:
+  en: b517dc64a6255674
+  zh: 43a554a55d643669
+/deepseek-ai-dsh-client-ui-personalization/further-exploration:
+  en: 7c4d1bb6b0b81f62
+  zh: fd6eda7f70aa6edd
+/deepseek-ai-dsh-client-ui-personalization/model-experience:
+  en: b0fabcd90a5b0e7d
+  zh: 8a03131c8a81b67f
+/deepseek-ai-dsh-client-ui-personalization/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: 50e3897523c331ca
+/deepseek-ai-dsh-client-ui-personalization/known-limitations-and-deferred-work:
+  en: 69805713b1714a17
+  zh: e95a78e033a1eb42
+/deepseek-ai-dsh-client-ui-personalization/known-limitations-and-deferred-work/dev-note:
+  en: f49dcbb2b6f3fa97
+  zh: 89b70b0d128902ae

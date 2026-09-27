@@ -1,6 +1,16 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for computer-use.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/computer-use.md
-computer-use.md: 8549f42b648f4f9ddb0d8ef11253d7ce2b882504
-computer-use.zh.md: eadca3d8e6312b60f4cece18290b407228f3532f
+/computer-use:
+  en: f216bcec22b775b6
+  zh: 3f673bdbef20146e
+/computer-use/choose-a-provider:
+  en: 829a17af0dad9770
+  zh: f1172452be0be8e8
+/computer-use/lifetime-and-desktop-sharing:
+  en: 08ff155ad3d75953
+  zh: 48821856b6dff051
+/computer-use/results-and-platform-requirements:
+  en: 9211e67d14dc1ac5
+  zh: dc8e4da898a417d4

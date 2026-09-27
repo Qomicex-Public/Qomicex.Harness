@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-tool-search",
   "description": "Model-facing tool-search tool: fuzzy keyword search over a tool index so the model can find the right tool when unsure",
-  "version": "0.1.7-rc.1",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },

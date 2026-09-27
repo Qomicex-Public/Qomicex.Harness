@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   pnpm run verify-translation-pairing --write <file>
-2026-09-25-custom-provider-reasoning-efforts.md: 03e67c44956838d75972014af738537dea7b0dad
-2026-09-25-custom-provider-reasoning-efforts.zh.md: f3342d284c1b483e2c626ff6f4a05bb9f577184a
+# Bilingual-pair consistency record for 2026-09-25-custom-provider-reasoning-efforts.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-25-custom-provider-reasoning-efforts.md
+/agent-note-custom-providers-edit-reasoning-effort-per-model:
+  en: b4317a62e0833711
+  zh: 8ebefe3efe199a05
+/agent-note-custom-providers-edit-reasoning-effort-per-model/problem:
+  en: 8d9ff100e29ad0ba
+  zh: cd9ebd3969eb8100
+/agent-note-custom-providers-edit-reasoning-effort-per-model/decision:
+  en: a76353acd14e1599
+  zh: 2038f7e7f7311148
+/agent-note-custom-providers-edit-reasoning-effort-per-model/consequences:
+  en: 513965c258c6c24d
+  zh: 12da64ff842af1ab
+/agent-note-custom-providers-edit-reasoning-effort-per-model/alternatives-considered:
+  en: 934c6d7cbc06ef55
+  zh: d8bc6f0e2521ed7f
+/agent-note-custom-providers-edit-reasoning-effort-per-model/verification:
+  en: 621e7b74b28265ff
+  zh: bf402ac4592d19e7

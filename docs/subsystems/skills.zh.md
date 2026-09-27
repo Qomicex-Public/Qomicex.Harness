@@ -272,16 +272,18 @@ Layered registry of skill providers, the host+per-scope shape the tools registry
 ```ts cordis-catalog
 /**
  * Register a borrowed same-process provider synchronously during plugin
- * apply, into the calling context's layer: a scoped context (an agent
+ * apply, into the CALLING context's layer: a scoped context (an agent
  * preset's standing mount) registers for that scope alone, an unscoped
  * context registers globally. Duplicate names within one layer and reserved
- * names throw; remote initialization belongs in `list()`. Fiber disposal
- * unregisters the provider and invalidates catalog caches.
+ * names throw; remote initialization belongs in `list()`. The caller's fiber
+ * owns both the layer's visibility and the registration's disposal: fiber
+ * disposal unregisters the provider and invalidates catalog caches.
+ * @param caller - the plugin-applied context whose scope selects the layer.
  * @param create - synchronous factory receiving this registration's lifecycle and invalidation control.
  * @returns the exact Cordis effect disposer that unregisters this provider;
  *   composite effects may yield it directly to preserve teardown ordering.
  */
-registerProvider(create: (control: SkillProviderControl) => SkillProvider): () => void
+registerProvider(caller: Context, create: (control: SkillProviderControl) => SkillProvider): () => void
 
 /**
  * Register a borrowed readonly runtime skill into the calling context's

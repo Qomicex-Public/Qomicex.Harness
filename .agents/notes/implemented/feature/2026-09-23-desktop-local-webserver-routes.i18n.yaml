@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-23-desktop-local-webserver-routes.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-23-desktop-local-webserver-routes.md
-2026-09-23-desktop-local-webserver-routes.md: b4cf280e1bfc98ffb521e3d9a82486c11229e1d1
-2026-09-23-desktop-local-webserver-routes.zh.md: 56196c11de50108b7d8d0dedbb0d652eaaeb9a9d
+/agent-note-desktop-bridge-forwards-host-local-web-routes:
+  en: a813efbe92eaa7bd
+  zh: fa74ff51341e6ec9
+/agent-note-desktop-bridge-forwards-host-local-web-routes/problem:
+  en: 69d7ea7817b33b32
+  zh: 9fc07b12cf6b19eb
+/agent-note-desktop-bridge-forwards-host-local-web-routes/decision:
+  en: 8c98e7c5487f9b41
+  zh: 75a0cc0adfaff000
+/agent-note-desktop-bridge-forwards-host-local-web-routes/consequences:
+  en: 2b943ebce62ee906
+  zh: d77c6323db5b20a7
+/agent-note-desktop-bridge-forwards-host-local-web-routes/alternatives-considered:
+  en: 9ca47d0bb41e53d5
+  zh: 005f867dbb127f97
+/agent-note-desktop-bridge-forwards-host-local-web-routes/verification:
+  en: 5ea2ea6cc2e86665
+  zh: 9979def8e950ec67

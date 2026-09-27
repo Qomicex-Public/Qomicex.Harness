@@ -144,10 +144,6 @@
             config: { fetch: true, searchTimeoutMs: 60000 }
 
 
-          - id: schedule
-            name: '@deepseek-ai/dsh-schedule'
-
-
           - id: memory-tools
             name: '@deepseek-ai/dsh-tool-memory'
           - id: tool-search

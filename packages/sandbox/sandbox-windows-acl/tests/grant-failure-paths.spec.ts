@@ -225,7 +225,7 @@ describe('AclWriteGrant failure paths', () => {
   it('add propagates the access denied failure when the WRITE_OWNER self-grant is also refused', () => {
     const { api, securityCalls } = ownerOnlyApi('always')
     const grant = AclWriteGrant.create('S-1-4-9000-82', api)
-    expect(() => grant.add('C:\\granted')).toThrow(Win32Error)
+    expect(() => { grant.add('C:\\granted') }).toThrow(Win32Error)
     // denied grant → granted DACL-only self-grant → denied retry, which propagates
     expect(securityCalls).toHaveLength(3)
     // The recorded path is revoked by dispose; the merge of an ungranted path is a no-op.
@@ -234,7 +234,7 @@ describe('AclWriteGrant failure paths', () => {
 
   it('add does not self-grant WRITE_OWNER on a non-access-denied grant failure', () => {
     const { api, securityCalls } = ownerOnlyApi({ code: 1307 }) // ERROR_INVALID_OWNER
-    expect(() => AclWriteGrant.create('S-1-4-9000-83', api).add('C:\\granted')).toThrow(/Win32 1307/)
+    expect(() => { AclWriteGrant.create('S-1-4-9000-83', api).add('C:\\granted') }).toThrow(/Win32 1307/)
     expect(securityCalls).toHaveLength(1)
   })
 })

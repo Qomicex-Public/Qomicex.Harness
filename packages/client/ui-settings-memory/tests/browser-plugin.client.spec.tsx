@@ -141,7 +141,7 @@ describe('ui-settings-memory browser plugin', () => {
     b.remote.memory.dedupeMemories.mockResolvedValueOnce({
       ok: true as const,
       value: { ok: true, removed: 15, collapsed: 3, detail: 'merged' },
-    } as never)
+    })
     await expect(injected.dedupeMemories?.()).resolves.toEqual({
       kind: 'ok',
       value: { removed: 15, collapsed: 3 },

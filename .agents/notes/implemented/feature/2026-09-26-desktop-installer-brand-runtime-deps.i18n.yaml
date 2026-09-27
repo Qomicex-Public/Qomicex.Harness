@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-26-desktop-installer-brand-runtime-deps.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-26-desktop-installer-brand-runtime-deps.md
-2026-09-26-desktop-installer-brand-runtime-deps.md: 88abd306f66ccf3246254862511cb9d6b04cf497
-2026-09-26-desktop-installer-brand-runtime-deps.zh.md: 75698ca9b9b5e97ce1ffa05bd8dae86d4e590987
+/agent-note-desktop-installer-branding-directory-flow-and-runtime-dependency-closure:
+  en: cf430556f11c133c
+  zh: ca3d6be3d75d6ea3
+/agent-note-desktop-installer-branding-directory-flow-and-runtime-dependency-closure/problem:
+  en: 6a8983a02997f2ac
+  zh: fed610876db6a57b
+/agent-note-desktop-installer-branding-directory-flow-and-runtime-dependency-closure/decision:
+  en: 5c35e8b3d69796af
+  zh: e03b1ff5fd2bf9d9
+/agent-note-desktop-installer-branding-directory-flow-and-runtime-dependency-closure/consequences:
+  en: 95b5418c9a21614d
+  zh: 129f886faa529aa0
+/agent-note-desktop-installer-branding-directory-flow-and-runtime-dependency-closure/alternatives-considered:
+  en: 9093a965ef0e37f0
+  zh: ee585a1b30c34069
+/agent-note-desktop-installer-branding-directory-flow-and-runtime-dependency-closure/verification:
+  en: 3ca3bf0a60d9c971
+  zh: 3eea898df8c3e7f9

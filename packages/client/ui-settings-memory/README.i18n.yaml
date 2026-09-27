@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-settings-memory/README.md
-README.md: 4d32dcffc47e85d77078c6bf16e437fb90277f2f
-README.zh.md: b86c278e17bf69c7f46ef917359945dac82d5e45
+/:
+  en: 1377ec27b36eebce
+  zh: 79698ae85cfe0f78
+/deepseek-ai-dsh-client-ui-settings-memory:
+  en: eeacf3dbe076491a
+  zh: 82b3c099f6bdc59f
+/deepseek-ai-dsh-client-ui-settings-memory/summary:
+  en: 3ff227e2587aff49
+  zh: 709212b43cdf91d8
+/deepseek-ai-dsh-client-ui-settings-memory/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: ffab54373e9e61f0
+/deepseek-ai-dsh-client-ui-settings-memory/use-this-package:
+  en: ffc48c78b0e90d00
+  zh: 8beb63a2b1399faa
+/deepseek-ai-dsh-client-ui-settings-memory/use-this-package/reading-the-graph:
+  en: ec354851f5df74b0
+  zh: 82414ff217a2f24b
+/deepseek-ai-dsh-client-ui-settings-memory/use-this-package/editing-the-configuration:
+  en: cbe50d3ffbaced98
+  zh: 9f12567e921fae24
+/deepseek-ai-dsh-client-ui-settings-memory/understand-the-implementation:
+  en: ec88952d7316f000
+  zh: a935af37b1a8dd96
+/deepseek-ai-dsh-client-ui-settings-memory/understand-the-implementation/registration-and-data-sources:
+  en: 273a0b77983fc07d
+  zh: 34108293880d9c74
+/deepseek-ai-dsh-client-ui-settings-memory/understand-the-implementation/the-graph-layout:
+  en: 98be704c9ed5f4ef
+  zh: ccb795070499abb6
+/deepseek-ai-dsh-client-ui-settings-memory/understand-the-implementation/the-configuration-form:
+  en: 0c26c54d75085f1c
+  zh: 28d7f75660dea22c
+/deepseek-ai-dsh-client-ui-settings-memory/understand-the-implementation/source-map:
+  en: 003ac1de13e41618
+  zh: 37a652de36155a15
+/deepseek-ai-dsh-client-ui-settings-memory/further-exploration:
+  en: c7f551360beda3c6
+  zh: e83f2955317ce5e3
+/deepseek-ai-dsh-client-ui-settings-memory/model-experience:
+  en: 3120df665299c634
+  zh: 3120df665299c634
+/deepseek-ai-dsh-client-ui-settings-memory/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: ca75c51c89c2c9b0
+/deepseek-ai-dsh-client-ui-settings-memory/known-limitations-and-deferred-work:
+  en: b6d2b5ed88caa3b3
+  zh: c9c4f28ca3547324
+/deepseek-ai-dsh-client-ui-settings-memory/known-limitations-and-deferred-work/dev-note:
+  en: 37efe433583f3cf7
+  zh: 58842e560f58a163
