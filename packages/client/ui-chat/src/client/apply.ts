@@ -52,9 +52,26 @@ const CHAT_NODE_INJECT: ChatNodeInjected = {
   },
 }
 
+/**
+ * Archive the source Session of a retraction and then erase it. The archive is
+ * durable and stops the abandoned Session's work, so a refused erase leaves a
+ * recoverable archived Session instead of a running one.
+ * @param ctx - Client root context.
+ * @param sourceId - Session the retracted message belonged to.
+ */
+function retireRetractedSource(ctx: Context, sourceId: SessionId): void {
+  void ctx.uiWorkspace.archiveSession(sourceId, { stopActivity: true })
+    .then(() => ctx.uiWorkspace.deleteSession(sourceId))
+    .catch((reason: unknown) => {
+      // The Host refuses the erase while the Session stays live in this
+      // process; the archived Session remains deletable afterwards.
+      console.warn('retracted source erase rejected:', reason)
+    })
+}
+
 /** Services required by the Chat target and its presentation registrations. */
 export const inject = [
-  'slots', 'sessions', 'uiWorkspace', 'uiSession', 'uiConversation', 'locale',
+  'slots', 'sessions', 'uiWorkspace', 'uiSession', 'uiConversation', 'conversation', 'locale',
   'configForms', 'remote', 'remote.session', 'sidebarRight',
 ]
 
@@ -216,6 +233,32 @@ export function apply(ctx: Context): void {
           forkAt: (seq) => {
             ctx.sessions.fork({ sessionId, atSeq: seq, increaseTitle: true })
               .then((childId) => { ctx.uiWorkspace.openSession(childId) })
+              .catch(() => {
+                // Fork or child-title failure leaves the source view unchanged.
+              })
+          },
+          retractAt: (seq) => {
+            ctx.sessions.fork({ sessionId, atSeq: seq - 1, increaseTitle: true })
+              .then((childId) => {
+                ctx.uiWorkspace.openSession(childId)
+                retireRetractedSource(ctx, sessionId)
+              })
+              .catch(() => {
+                // Fork or child-title failure leaves the source view unchanged.
+              })
+          },
+          editAt: (seq, text) => {
+            ctx.sessions.fork({ sessionId, atSeq: seq - 1, increaseTitle: true })
+              .then((childId) => {
+                ctx.uiWorkspace.openSession(childId)
+                // openSession retains the child synchronously, so its input
+                // shell already exists; the composer mounts after this task.
+                const scope = ctx.sessions.scope(childId)
+                if (scope === undefined) return
+                const input = ctx.conversation.input.for(scope)
+                input.setDraft(text)
+                requestAnimationFrame(() => { input.focus() })
+              })
               .catch(() => {
                 // Fork or child-title failure leaves the source view unchanged.
               })

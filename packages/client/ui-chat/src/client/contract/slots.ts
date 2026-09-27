@@ -117,6 +117,16 @@ export interface ChatNodeOwnerProps {
   inspectCall: ((callId: ToolCallId) => void) | undefined
   forkAt: (seq: number) => void
   /**
+   * Roll the Session back to the state before the message at this seq: fork the
+   * exact preceding prefix, open the child, and retire the source.
+   */
+  retractAt: (seq: number) => void
+  /**
+   * Retract the message at this seq and refill its text into the child
+   * Session's composer for editing before a resend.
+   */
+  editAt: (seq: number, text: string) => void
+  /**
    * Session-authorized image loader, down-threaded from the Chat view so a
    * chat-node renderer can render the attachment presentation slot directly
    * with only the durable references plus this loader, instead of receiving a
@@ -206,6 +216,16 @@ export interface ChatViewInjected {
     read: () => ChatScrollPosition | null
   }
   forkAt: (seq: number) => void
+  /**
+   * Roll the viewed Session back to the state before the message at this seq:
+   * fork the exact preceding prefix, open the child, and retire the source.
+   */
+  retractAt: (seq: number) => void
+  /**
+   * Retract the message at this seq and refill its text into the child
+   * Session's composer for editing before a resend.
+   */
+  editAt: (seq: number, text: string) => void
   fileMentions: (owner: TurnTailOwnerProps) => MarkdownFileMentions | undefined
 }
 

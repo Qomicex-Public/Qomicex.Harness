@@ -313,9 +313,12 @@ export function PendingSubmissionBubble({ submission, renderMessageImages, t }: 
 
 /** User and admitted-steering keyed Chat renderer. */
 export const UserMessageNodeView = memo(function UserMessageNodeView({
-  node, renderMessageImages, openFile, openSkill, t,
+  node, renderMessageImages, openFile, openSkill, retractAt, editAt, t,
 }: ChatNodeViewProps<'user' | 'steering'>) {
   const data = node.data
+  // Retract and edit rewrite the conversation from this message on, so they
+  // belong to the ordinary user message, never to an admitted steering one.
+  const retractable = node.kind === 'user'
   return (
     <UserStyleBubble
       content={data.content}
@@ -330,6 +333,8 @@ export const UserMessageNodeView = memo(function UserMessageNodeView({
           time={data.time}
           clock="start"
           className={css.actions}
+          {...retractable ? { onRetract: () => { retractAt(node.anchorSeq) } } : {}}
+          {...retractable ? { onEdit: () => { editAt(node.anchorSeq, text) } } : {}}
           t={t}
         />
       )}

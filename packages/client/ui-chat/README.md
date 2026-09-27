@@ -17,6 +17,7 @@ File-mention providers receive the viewed Session ID with the closing-turn owner
 - [Reference previews](#reference-previews)
 - [Hidden Chat rows](#system-prompt-row)
 - [Command and failure rows](#command-and-failure-rows)
+- [User message actions](#user-message-actions)
 - [Turn token usage](#turn-token-usage)
 - [Completed-turn footer](#completed-turn-footer)
 - [Turn Process Folding](#turn-process-folding)
@@ -48,6 +49,13 @@ When an Assistant attempt retires without a visible message, Chat hides its alre
 ## Command and failure rows
 
 Generic command rows retain the ordinary command glyph in every lifecycle state; failure remains explicit through the row state and summary. A terminal Turn failure remains a separate red-dot notice; intermediate model retries do not create that notice, and an output-token limit uses the amber warning dot.
+
+<a id="user-message-actions"></a>
+## User message actions
+
+Each durable user message exposes copy, retract, and edit in its action row beside the message clock. Copy writes the joined message text to the clipboard. Retract rolls the viewed Session back to the state before that message: the client forks the exact event prefix preceding the message, opens the child Session, archives the source with its work stopped, and then erases the source when the Host allows it; a source the Host still holds stays archived and recoverable. Edit performs the same rollback and then refills the message text into the child Session's composer and focuses it, leaving the resend to the user. Neither action is offered on admitted steering messages.
+
+A fork failure leaves the current view unchanged.
 
 -----
 
