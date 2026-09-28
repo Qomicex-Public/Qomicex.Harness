@@ -66,7 +66,7 @@ it.each(['qomicex-app://shell/plugin-manager.html', 'qomicex-app://other/index.h
 
 it('reads the local machine description only from the application main frame', async () => {
   const description = 'platform=darwin; os=15.6; app_arch=arm64; cpu=Apple M4; memory_gib=32.0'
-  vi.stubGlobal('location', new URL('dsh-app://app/index.html'))
+  vi.stubGlobal('location', new URL('qomicex-app://app/index.html'))
   electron.ipcRenderer.invoke.mockResolvedValue(description)
   await import('../src/preload-app.ts')
   const api = electron.contextBridge.exposeInMainWorld.mock.calls.find(([name]) => name === 'dshDesktop')?.[1] as DshDesktopProductApi
