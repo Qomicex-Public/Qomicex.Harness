@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-28-junsi-routing-keyword-injection.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-28-junsi-routing-keyword-injection.md
+/agent-note-junsi-routing-injects-the-matched-sub-skill-body-on-a-keyword-hit:
+  en: fd96defbb924d696
+  zh: 2fcbf768876922ce
+/agent-note-junsi-routing-injects-the-matched-sub-skill-body-on-a-keyword-hit/problem:
+  en: 3471a11962f718b5
+  zh: 7cc99da2d6b40a58
+/agent-note-junsi-routing-injects-the-matched-sub-skill-body-on-a-keyword-hit/decision:
+  en: f0f02d6486399859
+  zh: 431b6b512c863a9e
+/agent-note-junsi-routing-injects-the-matched-sub-skill-body-on-a-keyword-hit/consequences:
+  en: c5feed5f3a330ed9
+  zh: 823578cf73a4bb7e
+/agent-note-junsi-routing-injects-the-matched-sub-skill-body-on-a-keyword-hit/alternatives-considered:
+  en: e6e13bd1ab7b0d7f
+  zh: 06cac4eb04008e1a
+/agent-note-junsi-routing-injects-the-matched-sub-skill-body-on-a-keyword-hit/verification:
+  en: 8b2f03b2540b771f
+  zh: afed6d887c59222b

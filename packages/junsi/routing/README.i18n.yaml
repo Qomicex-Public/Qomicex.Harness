@@ -3,38 +3,41 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/junsi/routing/README.md
 /:
-  en: b2be3b41f17404fa
-  zh: 047769e7e90f63f8
+  en: 24e8c01824d8a7c6
+  zh: b3d3bcdb1597579f
 /deepseek-ai-dsh-junsi-routing:
   en: b8f8ca396a801a98
   zh: dc690b1172abaea1
 /deepseek-ai-dsh-junsi-routing/summary:
-  en: f6a262c51273ce8a
-  zh: 606f8db73637a86b
+  en: c182542f0158d33b
+  zh: 941351c8c2e28cd7
 /deepseek-ai-dsh-junsi-routing/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
 /deepseek-ai-dsh-junsi-routing/use-this-package:
-  en: 203bbc1932a6a5a5
-  zh: a076ccda5f2f1d9f
+  en: 9a4192ccefd30bc1
+  zh: 2e1e5d686f9c0609
+/deepseek-ai-dsh-junsi-routing/use-this-package/keyword-injection:
+  en: 076e3035e50aafbb
+  zh: fe6818c223f08ddf
 /deepseek-ai-dsh-junsi-routing/use-this-package/the-section:
-  en: 7820a35be07cb002
-  zh: 56588f821d95780d
+  en: 519ec3832aa2d6ab
+  zh: e5ca00a727b05e27
 /deepseek-ai-dsh-junsi-routing/use-this-package/minimal-configuration:
   en: d7743a17810fe139
   zh: 2903b7c6e7cd0150
 /deepseek-ai-dsh-junsi-routing/use-this-package/what-can-go-wrong:
-  en: 0b92f456e92b28ac
-  zh: 2851df9ad804bf77
+  en: 9c6c3a5484da92c5
+  zh: 1a897c7d298b53f9
 /deepseek-ai-dsh-junsi-routing/understand-the-implementation:
   en: 16370ef642feec6a
   zh: a546774827234300
 /deepseek-ai-dsh-junsi-routing/understand-the-implementation/design-philosophy:
-  en: 3f36d6880d34d0db
-  zh: fe18f371cb7652b0
+  en: cf698f69f64ef3fd
+  zh: 774ab5d29907f1a1
 /deepseek-ai-dsh-junsi-routing/understand-the-implementation/source-map:
-  en: 626edbecc980d259
-  zh: ff8fd145bea9db46
+  en: 7d1c9b43d560092b
+  zh: 9e7105f749a6e83f
 /deepseek-ai-dsh-junsi-routing/further-exploration:
   en: 5e5bd0318ff4865f
   zh: 0c64582ab735f624
@@ -45,17 +48,17 @@
   en: cf78b9dd5596495f
   zh: bd44560f8c2435e8
 /deepseek-ai-dsh-junsi-routing/model-experience/system-prompt/what-the-model-sees:
-  en: aae18e1e00b58a9a
-  zh: 688912a56dbe3baf
+  en: 98fb1ac391d676bd
+  zh: 3f6c1e67485a8efc
 /deepseek-ai-dsh-junsi-routing/model-experience/system-prompt/what-the-model-sees/the-routing-section:
   en: 04cc38744a81dab3
   zh: 4772a889dd841acb
 /deepseek-ai-dsh-junsi-routing/model-experience/system-prompt/token-effect:
-  en: 39a15959a7b19b78
-  zh: 6b7f68cfcd571a2d
+  en: 524e733e6d961725
+  zh: e24cce0ad30eea10
 /deepseek-ai-dsh-junsi-routing/model-experience/system-prompt/kv-cache-effect:
-  en: d0a12176afa83e25
-  zh: 1401072ff6eb9a54
+  en: 4f496cc66add3017
+  zh: 411505d7f1427812
 /deepseek-ai-dsh-junsi-routing/model-experience/referenced-tools:
   en: 50a2caa2bb16cb2f
   zh: c16813ff9949f545
@@ -72,17 +75,17 @@
   en: 8e1b2953471f22ba
   zh: 765a7c4655654c0a
 /deepseek-ai-dsh-junsi-routing/model-experience/results/what-the-model-sees:
-  en: 171e9f31af0a7e6e
-  zh: aaa1a319c06ea4e5
+  en: 0333bfebe25ec6d5
+  zh: bc6c35e60615f98e
 /deepseek-ai-dsh-junsi-routing/model-experience/results/token-effect:
-  en: 15ebc688b6d78484
-  zh: e04eb56bfe207a32
+  en: 643b253280c5d4bd
+  zh: 9f71209a8f129060
 /deepseek-ai-dsh-junsi-routing/model-experience/results/kv-cache-effect:
   en: 0f30c36c89c3eb64
   zh: 7aae68d598da717f
 /deepseek-ai-dsh-junsi-routing/known-limitations-and-deferred-work:
-  en: e9ac368a2db0e0f3
-  zh: fe132c4dc7aa6882
+  en: 77644f9fb51101c7
+  zh: c1c97b6c5792fe71
 /deepseek-ai-dsh-junsi-routing/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 3bb0c20c93f16f98
