@@ -33,7 +33,7 @@ The listener scans the text of `source.kind === 'user'` messages in the step's c
 
 ### The section
 
-The `junsi-routing` section carries the keyword table, states that a keyword hit injects the sub-skill body, and requires every unmatched request to load its sub-skill through the `skill` tool before any implementation action. It also lays out completion constraints (`store-decision`, `save-progress`, `prepare-handoff`, and document-gate obligations) and closes by naming the seven memory tools.
+The `junsi-routing` section carries the keyword table, states that a keyword hit injects the sub-skill body, requires every unmatched request to load its sub-skill through the `skill` tool before any implementation action, and directs a mis-routed skill — an injected body whose task type does not match — to be replaced through the `skill` tool with a re-announced route. It also lays out completion constraints (`store-decision`, `save-progress`, `prepare-handoff`, and document-gate obligations) and closes by naming the seven memory tools.
 
 ### Minimal configuration
 
@@ -99,19 +99,20 @@ Every request in this plugin's registration scope contains the routing section (
 
 命中下表任一关键词的用户消息，host 会把对应子技能的 SKILL.md 全文以 \`<skill_content>\` 形式注入本回合上下文，随后严格遵循该全文执行，不得跳过直接干。注入缺失或意图复杂未命中时，**你必须先调用 \`skill\` 工具自行加载下表命中的子技能再执行**——任何实现动作都不得早于子技能加载完成：
 
-- 移植/迁移/port/跨语言/跨框架 → \`code-migrater\`
+- 移植/迁移/migrate/port/跨语言/跨框架 → \`code-migrater\`
 - 报错/不对/不工作/返回错误/空列表/崩溃/白屏 → \`diagnose-before-fix\`
 - 顾问/权衡/利弊/方案对比/选哪个/优缺点 → \`advisor\`
 - 记住/记录/记一下/决策/保存进度/换会话/降智 → \`memory-skill\`
 - computer_use/操作电脑/桌面自动化/浏览器自动化 → \`computer-use\`
 - 文档/规范/ADR/架构/设计/API/组件/决策记录 → \`project-docs\`
-- 添加/新增/实现/优化/重构/加个新功能/页面/接口/组件 → \`requirements-driven-dev\`
+- 添加/新增/实现/优化/重构/改进/加个新功能/页面/接口/组件 → \`requirements-driven-dev\`
 - 集群/多agent/并行分工/多模型 → 用 \`subagent\`/\`workflow\` 派发并行执行
 
 动作序列（缺任一即违规）：
 1. **回复第一行必须输出** \`📌 路由宣告: <skill-id>\`（命中哪个宣告哪个；未输出即违规）
 2. 已注入：直接遵循注入的 \`<skill_content>\` 全文；未注入：先调用 \`skill\` 工具加载对应 SKILL.md 全文
-3. 严格按子技能流程执行任务
+3. **发现错路由**（注入或加载的子技能与任务实际类型不符，例如优化代码的请求被注入了文档技能）：立即调用 \`skill\` 工具加载正确的子技能并以它为准，同时按正确 skill-id 重新输出路由宣告；错路由后仍按错误子技能执行即违规
+4. 严格按子技能流程执行任务
 
 完成约束（缺任一不得宣称完成）：
 - 阶段确认/方向确定后 → 调用 \`store-decision\` 记录决策
