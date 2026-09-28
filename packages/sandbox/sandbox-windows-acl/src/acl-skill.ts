@@ -71,6 +71,6 @@ export function registerAclDiagnosisSkill(ctx: Context): void {
         return { ...summary, content: parseSkill(raw, entryPath as string).content }
       },
     }
-    yield ctx.skills.registerProvider(() => provider)
+    yield ctx.skills.registerProvider(ctx, () => provider)
   }, 'Windows ACL diagnosis skill resources')
 }
