@@ -301,7 +301,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-api-workspace-controller`
 
 - `inject`: `typert` · `workspaceRegistry`
-- `source`: [`packages/api/workspace-controller/src/index.ts:35`](../packages/api/workspace-controller/src/index.ts)
+- `source`: [`packages/api/workspace-controller/src/index.ts:33`](../packages/api/workspace-controller/src/index.ts)
 
 ```ts config-catalog
 /** First-use directory policy for the Host account. */
@@ -415,7 +415,7 @@ export interface Config {
 
 - `inject`: `subprocess` · `sandbox` · `sandboxPolicy`
 - `refs`: [`LocalConfig`](#deepseek-aidsh-bash-local)
-- `source`: [`packages/shell/bash-sandbox/src/index.ts:37`](../packages/shell/bash-sandbox/src/index.ts)
+- `source`: [`packages/shell/bash-sandbox/src/index.ts:36`](../packages/shell/bash-sandbox/src/index.ts)
 
 ```ts config-catalog
 /**
@@ -428,95 +428,6 @@ export interface Config {
 export type Config = LocalConfig
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-bash-sandbox -->
-
-<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-browser-use-chrome-devtools-mcp -->
-<a id="deepseek-aidsh-browser-use-chrome-devtools-mcp"></a>
-
-## `@deepseek-ai/dsh-browser-use-chrome-devtools-mcp`
-
-- `inject`: `browserUse` · `agents` · `tools` · `systemPrompt`
-- `refs`: `BrowserMcpConfig` (`@deepseek-ai/dsh-browser-use-runtime/mcp`)
-- `source`: [`packages/browser-use/chrome-devtools-mcp/src/index.ts:14`](../packages/browser-use/chrome-devtools-mcp/src/index.ts)
-
-```ts config-catalog
-/** Fixed Chromium launch or existing-browser attachment settings. */
-export type Config = BrowserMcpConfig
-```
-<!-- END GENERATED config-catalog:@deepseek-ai/dsh-browser-use-chrome-devtools-mcp -->
-
-<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-browser-use-playwright-mcp -->
-<a id="deepseek-aidsh-browser-use-playwright-mcp"></a>
-
-## `@deepseek-ai/dsh-browser-use-playwright-mcp`
-
-- `inject`: `browserUse` · `agents` · `tools` · `systemPrompt`
-- `refs`: `BrowserChannel` (`@deepseek-ai/dsh-browser-use-runtime/mcp`) · `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/browser-use/playwright-mcp/src/settings.ts:30`](../packages/browser-use/playwright-mcp/src/settings.ts)
-
-```ts config-catalog
-/**
- * Live plugin configuration. `browser`, `headless`, and `executablePath` are
- * stable references the settings form edits without remounting the provider;
- * the remaining fields are composition-owned and change by an ordinary reload.
- */
-export interface Config {
-  /** Launch a new isolated browser per Session, or attach to an external one. */
-  mode: 'launch' | 'attach'
-  /** Live reference to the browser binary family. */
-  browser: Volatile<BrowserChannel>
-  /** Live reference to the headless switch. */
-  headless: Volatile<boolean>
-  /** Live reference to the browser executable; omission uses channel discovery. */
-  executablePath: Volatile<string | undefined>
-  /** Debugging endpoint of the external browser, in attachment mode. */
-  endpoint?: string
-  /** Per-call timeout override in milliseconds; omission uses the MCP client default. */
-  toolCallTimeoutMs?: number
-}
-```
-<!-- END GENERATED config-catalog:@deepseek-ai/dsh-browser-use-playwright-mcp -->
-
-<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-browser-use-stagehand-native -->
-<a id="deepseek-aidsh-browser-use-stagehand-native"></a>
-
-## `@deepseek-ai/dsh-browser-use-stagehand-native`
-
-- `inject`: `browserUse` · `agents` · `tools` · `systemPrompt`
-- `refs`: `ModelConfig` (`@browserbasehq/stagehand`)
-- `source`: [`packages/browser-use/stagehand-native/src/index.ts:28`](../packages/browser-use/stagehand-native/src/index.ts)
-
-```ts config-catalog
-/** Profile-owned browser connection and independent Stagehand model credentials. */
-export interface Config {
-  /** Native Stagehand model and credentials; independent of the Session model. */
-  model: StagehandModelConfig
-  /** Launch a fresh browser or attach to the configured existing endpoint. */
-  mode: 'launch' | 'attach'
-  /** CDP HTTP or WebSocket endpoint, required only for attach mode. */
-  cdpEndpoint?: string
-  /** Optional Stagehand extension id for an existing browser. */
-  extensionId?: string
-  /** Installed Chrome/Chromium executable used in launch mode. */
-  executablePath?: string
-  /** Hide an owned browser's window. */
-  headless?: boolean
-  /** Deadline for Chromium startup and Stagehand navigation/action operations. */
-  operationTimeoutMs?: number
-  /** Grace for native SDK cleanup before its connection Worker is terminated. */
-  shutdownGraceMs?: number
-}
-
-/** Profile-owned model settings accepted by the pinned Stagehand SDK. */
-export interface StagehandModelConfig {
-  /** Provider-prefixed model name from Stagehand's supported model catalog. */
-  modelName: ModelConfig['modelName']
-  /** Explicit API key sent to Stagehand's browser extension. */
-  apiKey: string
-  /** Additional headers sent with the extension's model requests. */
-  headers?: Record<string, string>
-}
-```
-<!-- END GENERATED config-catalog:@deepseek-ai/dsh-browser-use-stagehand-native -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-client-connection -->
 <a id="deepseek-aidsh-client-connection"></a>
@@ -581,6 +492,26 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-client-hmr -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-client-product-analytics -->
+<a id="deepseek-aidsh-client-product-analytics"></a>
+
+## `@deepseek-ai/dsh-client-product-analytics`
+
+- `inject`: `deepseekAccount` · `productTelemetry`
+- `refs`: `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/client/product-analytics/src/index.ts:14`](../packages/client/product-analytics/src/index.ts)
+
+```ts config-catalog
+/** Application-owned collection policy; no user settings surface. */
+export interface Config {
+  /** Live application collection policy; ordinary Web does not mount this service. */
+  enabled: Volatile<boolean>
+  /** Running Desktop release, absent when unavailable. */
+  appVersion?: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-client-product-analytics -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-client-shortcuts -->
 <a id="deepseek-aidsh-client-shortcuts"></a>
@@ -810,30 +741,6 @@ export interface ToolResultPruneConfig {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-compaction-tool-result-pruner -->
 
-<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-computer-use-cua-driver-mcp -->
-<a id="deepseek-aidsh-computer-use-cua-driver-mcp"></a>
-
-## `@deepseek-ai/dsh-computer-use-cua-driver-mcp`
-
-- `inject`: `computerUse` · `tools`
-- `refs`: [`McpClient`](../packages/mcp/mcp-client/src/index.ts)
-- `source`: [`packages/computer-use/cua-driver-mcp/src/index.ts:20`](../packages/computer-use/cua-driver-mcp/src/index.ts)
-
-```ts config-catalog
-/** Installed executable and MCP connection overrides. */
-export interface Config {
-  /** Executable path or PATH command; defaults to `cua-driver`. */
-  command: string
-  /** Arguments passed without a shell; defaults to `['mcp']`. */
-  args: string[]
-  /** Per-call timeout in milliseconds; omission uses the MCP client's default. */
-  toolCallTimeoutMs?: number
-  /** Reconnection overrides; defaults to the MCP client's policy. */
-  reconnect: McpClient.ReconnectConfig
-}
-```
-<!-- END GENERATED config-catalog:@deepseek-ai/dsh-computer-use-cua-driver-mcp -->
-
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-cordis-host-runner -->
 <a id="deepseek-aidsh-cordis-host-runner"></a>
 
@@ -957,6 +864,102 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-experimental-api-speech-to-text -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp -->
+<a id="deepseek-aidsh-experimental-browser-use-chrome-devtools-mcp"></a>
+
+## `@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp`
+
+- `inject`: `browserUse` · `agents` · `tools` · `systemPrompt`
+- `refs`: `BrowserMcpConfig` (`@deepseek-ai/dsh-experimental-browser-use-runtime/mcp`)
+- `source`: [`packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts:14`](../packages/experimental/browser-use-chrome-devtools-mcp/src/index.ts)
+
+```ts config-catalog
+/** Fixed Chromium launch or existing-browser attachment settings. */
+export type Config = BrowserMcpConfig
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-experimental-browser-use-playwright-mcp -->
+<a id="deepseek-aidsh-experimental-browser-use-playwright-mcp"></a>
+
+## `@deepseek-ai/dsh-experimental-browser-use-playwright-mcp`
+
+- `inject`: `browserUse` · `agents` · `tools` · `systemPrompt`
+- `refs`: `BrowserMcpConfig` (`@deepseek-ai/dsh-experimental-browser-use-runtime/mcp`)
+- `source`: [`packages/experimental/browser-use-playwright-mcp/src/index.ts:15`](../packages/experimental/browser-use-playwright-mcp/src/index.ts)
+
+```ts config-catalog
+/** Fixed Chromium launch or existing-browser attachment settings. */
+export type Config = BrowserMcpConfig
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-experimental-browser-use-playwright-mcp -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-experimental-browser-use-stagehand-native -->
+<a id="deepseek-aidsh-experimental-browser-use-stagehand-native"></a>
+
+## `@deepseek-ai/dsh-experimental-browser-use-stagehand-native`
+
+- `inject`: `browserUse` · `agents` · `tools` · `systemPrompt`
+- `refs`: `ModelConfig` (`@browserbasehq/stagehand`)
+- `source`: [`packages/experimental/browser-use-stagehand-native/src/index.ts:28`](../packages/experimental/browser-use-stagehand-native/src/index.ts)
+
+```ts config-catalog
+/** Profile-owned browser connection and independent Stagehand model credentials. */
+export interface Config {
+  /** Native Stagehand model and credentials; independent of the Session model. */
+  model: StagehandModelConfig
+  /** Launch a fresh browser or attach to the configured existing endpoint. */
+  mode: 'launch' | 'attach'
+  /** CDP HTTP or WebSocket endpoint, required only for attach mode. */
+  cdpEndpoint?: string
+  /** Optional Stagehand extension id for an existing browser. */
+  extensionId?: string
+  /** Installed Chrome/Chromium executable used in launch mode. */
+  executablePath?: string
+  /** Hide an owned browser's window. */
+  headless?: boolean
+  /** Deadline for Chromium startup and Stagehand navigation/action operations. */
+  operationTimeoutMs?: number
+  /** Grace for native SDK cleanup before its connection Worker is terminated. */
+  shutdownGraceMs?: number
+}
+
+/** Profile-owned model settings accepted by the pinned Stagehand SDK. */
+export interface StagehandModelConfig {
+  /** Provider-prefixed model name from Stagehand's supported model catalog. */
+  modelName: ModelConfig['modelName']
+  /** Explicit API key sent to Stagehand's browser extension. */
+  apiKey: string
+  /** Additional headers sent with the extension's model requests. */
+  headers?: Record<string, string>
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-experimental-browser-use-stagehand-native -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-experimental-computer-use-cua-driver-mcp -->
+<a id="deepseek-aidsh-experimental-computer-use-cua-driver-mcp"></a>
+
+## `@deepseek-ai/dsh-experimental-computer-use-cua-driver-mcp`
+
+- `inject`: `computerUse` · `tools`
+- `refs`: [`McpClient`](../packages/mcp/mcp-client/src/index.ts)
+- `source`: [`packages/experimental/computer-use-cua-driver-mcp/src/index.ts:20`](../packages/experimental/computer-use-cua-driver-mcp/src/index.ts)
+
+```ts config-catalog
+/** Installed executable and MCP connection overrides. */
+export interface Config {
+  /** Executable path or PATH command; defaults to `cua-driver`. */
+  command: string
+  /** Arguments passed without a shell; defaults to `['mcp']`. */
+  args: string[]
+  /** Per-call timeout in milliseconds; omission uses the MCP client's default. */
+  toolCallTimeoutMs?: number
+  /** Reconnection overrides; defaults to the MCP client's policy. */
+  reconnect: McpClient.ReconnectConfig
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-experimental-computer-use-cua-driver-mcp -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-experimental-inspector -->
 <a id="deepseek-aidsh-experimental-inspector"></a>
@@ -1452,7 +1455,8 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-host-product-telemetry-otel`
 
-- `source`: [`packages/host/product-telemetry-otel/src/index.ts:37`](../packages/host/product-telemetry-otel/src/index.ts)
+- `inject`: `otel`
+- `source`: [`packages/host/product-telemetry-otel/src/index.ts:18`](../packages/host/product-telemetry-otel/src/index.ts)
 
 ```ts config-catalog
 /** Collector routing, application identity, and bounded in-memory batch settings. */
@@ -1477,7 +1481,7 @@ export interface Config {
   timeoutMillis: number
   /** Processor deadline for one batch export. */
   exportTimeoutMillis: number
-  /** Outer shutdown wait; pending exports may be lost after this deadline. */
+  /** Drain deadline; expiry cancels pending exports before disposal completes. */
   shutdownTimeoutMillis: number
 }
 ```
@@ -1488,7 +1492,7 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-host-webserver`
 
-- `source`: [`packages/host/webserver/src/index.ts:63`](../packages/host/webserver/src/index.ts)
+- `source`: [`packages/host/webserver/src/index.ts:59`](../packages/host/webserver/src/index.ts)
 
 ```ts config-catalog
 /** Web server listen and response-compression config. */
@@ -1596,7 +1600,7 @@ export interface Config extends ProtocolConfig {
 
 - `inject`: `llm`
 - `refs`: `Api` (`@earendil-works/pi-ai`) · `CacheRetention` (`@earendil-works/pi-ai`) · `Model` (`@earendil-works/pi-ai`) · `ModelThinkingLevel` (`@earendil-works/pi-ai`) · `OpenAICompletionsCompat` (`@earendil-works/pi-ai`) · [`RetryPolicyConfig`](../packages/llm/llm/src/index.ts) · `ThinkingBudgets` (`@earendil-works/pi-ai`) · `Transport` (`@earendil-works/pi-ai`) · `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/llm/llm-pi-ai/src/config.ts:228`](../packages/llm/llm-pi-ai/src/config.ts)
+- `source`: [`packages/llm/llm-pi-ai/src/config.ts:222`](../packages/llm/llm-pi-ai/src/config.ts)
 
 ```ts config-catalog
 /** Plugin configuration: the provider routes this instance owns. */
@@ -1738,13 +1742,6 @@ export interface PiAiModelProfile {
    * declares the offered levels and their wire spellings.
    */
   reasoningEfforts?: false | PiAiReasoningEfforts
-  /**
-   * The offered level a new session preselects. Absent defers to the route's
-   * `reasoning`; a level the model does not offer is dropped at resolution
-   * rather than refused, so tightening `reasoningEfforts` never leaves a
-   * stranded default behind.
-   */
-  defaultReasoningEffort?: ModelThinkingLevel
   /** pi-ai wire-compatibility switches for this model, winning over the route's per field; one its protocol does not declare is refused. */
   compat?: PiAiCompatProfile
 }
@@ -2087,355 +2084,6 @@ export interface ReconnectConfig {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-mcp-client -->
 
-<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-memory -->
-<a id="deepseek-aidsh-memory"></a>
-
-## `@deepseek-ai/dsh-memory`
-
-- `inject`: `storageDomain` · `tools` · `systemPrompt` · `agents`
-- `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/memory/memory/src/config.ts:623`](../packages/memory/memory/src/config.ts)
-
-```ts config-catalog
-/**
- * Plugin configuration.
- *
- * Every leaf is a volatile reference: the loader validates the raw config once
- * and commits later edits into the same references, so {@link resolveConfig}
- * is the only place a snapshot is unwrapped and the plugin reads live values
- * without a remount. Nested groups stay groups; only their leaves are references.
- */
-export interface Config {
-  /** Whether the plugin records at all; off disables capture and recall. */
-  enabled?: Volatile<boolean>
-  /** Write-gate and forgetting thresholds. */
-  thresholds?: VolatileThresholdsConfig
-  /** Capacity limits. */
-  capacity?: VolatileCapacityConfig
-  /** Retrieval knobs. */
-  retrieval?: VolatileRetrievalConfig
-  /** Injection knobs. */
-  injection?: VolatileInjectionConfig
-  /** Authorization-plane knobs. */
-  authorization?: VolatileAuthorizationConfig
-  /** Optional LLM distillation. */
-  llmDistill?: VolatileLlmDistillConfig
-  /** Local judgment layer. */
-  judgment?: VolatileJudgmentConfig
-  /** Retention layer. */
-  retention?: VolatileRetentionConfig
-  /** Pattern-extraction layer. */
-  patternExtraction?: VolatilePatternConfig
-  /** Pattern-application knobs. */
-  patternApplication?: VolatilePatternApplicationConfig
-  /** Curation layer. */
-  curation?: VolatileCurationConfig
-  /** Integration modules. */
-  integrations?: VolatileIntegrationConfig
-}
-
-/** {@link MemoryThresholdsConfig} with every leaf a volatile reference. */
-export interface VolatileThresholdsConfig {
-  /**
-   * Retention score recorded at write time. **Kept although the design
-   * document's config omits it**: the score is still computed and stored for
-   * recall weighting and TTL promotion; it simply no longer blocks a write.
-   */
-  excitability: Volatile<number>
-  /** Forget score above which a memory is demoted. */
-  forgetDemote: Volatile<number>
-  /** Forget score above which a memory is archived. */
-  forgetArchive: Volatile<number>
-  /** Forget score above which a memory is hard-forgotten. */
-  forgetHard: Volatile<number>
-}
-
-/** {@link MemoryCapacityConfig} with every leaf a volatile reference. */
-export interface VolatileCapacityConfig {
-  /** Working-memory slot count. */
-  workingMemorySlots: Volatile<number>
-  /** Staging candidates retained per session. */
-  stagingPoolCapacity: Volatile<number>
-  /** Maximum hits returned by one recall. */
-  recallTopK: Volatile<number>
-  /** Minimum relevance for a hit to survive. */
-  similarityThreshold: Volatile<number>
-  /** Maximum characters of one recall block. */
-  recallBlockMaxChars: Volatile<number>
-}
-
-/** {@link MemoryRetrievalConfig} with every leaf a volatile reference. */
-export interface VolatileRetrievalConfig {
-  /** Whether the vector route participates; reserved until an embedding service exists. */
-  useVector: Volatile<boolean>
-}
-
-/** {@link MemoryInjectionConfig} with every leaf a volatile reference. */
-export interface VolatileInjectionConfig {
-  /** Whether a hot pack is injected at the first step of a turn. */
-  injectHotPack: Volatile<boolean>
-}
-
-/** {@link MemoryAuthorizationConfig} with every leaf a volatile reference. */
-export interface VolatileAuthorizationConfig {
-  /** Whether the six-tuple policy plane gates tool calls. Off by default. */
-  usePolicyPlane: Volatile<boolean>
-  /**
-   * Policy version stamped into audit entries. **Kept although the design
-   * document's config omits it**: it is an audit label, not a preference, and
-   * the audit trail needs a version to stamp.
-   */
-  policyVersion: Volatile<string>
-}
-
-/** {@link MemoryLlmDistillConfig} with every leaf a volatile reference. */
-export interface VolatileLlmDistillConfig {
-  /** Whether consolidation may call the model to distill facts. */
-  enabled: Volatile<boolean>
-  /** Provider route passed to the llm service; empty disables the path even when enabled. */
-  provider: Volatile<string>
-  /** Model id passed to the llm service; empty disables the path even when enabled. */
-  model: Volatile<string>
-}
-
-/** {@link MemoryJudgmentConfig} with every leaf a volatile reference. */
-export interface VolatileJudgmentConfig {
-  /** Rule-engine knobs. */
-  ruleEngine: VolatileRuleEngineConfig
-  /** Local-model knobs. */
-  localLlm: VolatileLocalLlmConfig
-}
-
-/** {@link MemoryRetentionConfig} with every leaf a volatile reference. */
-export interface VolatileRetentionConfig {
-  /** Days a fresh memory is granted before its first TTL evaluation. */
-  initialTTLDays: Volatile<number>
-  /** Reinforcement total at or above which a memory becomes long-term. */
-  promotionThreshold: Volatile<number>
-  /** Sessions before the system starts archiving on expiry. */
-  startupGraceSessions: Volatile<number>
-  /**
-   * Whether an expired memory is archived (`true`) or deleted with a tombstone
-   * (`false`). Archiving is the default because a memory that never resurfaced
-   * is more likely to be under-recalled than worthless.
-   */
-  archiveOnExpiry: Volatile<boolean>
-  /** Whether structural facts are exempt from TTL. */
-  structuralException: Volatile<boolean>
-  /** Similarity at or above which a memory counts as adjacent to the turn. */
-  adjacencyThreshold: Volatile<number>
-  /** Whether the adjacency signal is tracked. */
-  enableAdjacency: Volatile<boolean>
-  /** Whether the mention signal is tracked. */
-  enableMention: Volatile<boolean>
-}
-
-/** {@link MemoryPatternConfig} with every leaf a volatile reference. */
-export interface VolatilePatternConfig {
-  /** Whether the offline extraction pass runs at all. */
-  enabled: Volatile<boolean>
-  /** How often automatic extraction runs. */
-  schedule: Volatile<'daily' | 'weekly' | 'monthly'>
-  /** Whether a human must approve before a pattern becomes active. */
-  requireHumanApproval: Volatile<boolean>
-  /** What counts as a pattern. */
-  thresholds: VolatilePatternThresholdConfig
-  /** When a pattern is retired. */
-  pruning: VolatilePatternPruningConfig
-}
-
-/** {@link MemoryPatternApplicationConfig} with every leaf a volatile reference. */
-export interface VolatilePatternApplicationConfig {
-  /** Whether approved patterns ride in the hot pack. */
-  injectHotPack: Volatile<boolean>
-  /** Whether per-step scene matching injects pattern hints. */
-  sceneMatching: Volatile<boolean>
-  /** Whether application outcomes feed the pattern feedback tallies. */
-  feedbackCollection: Volatile<boolean>
-  /** Byte budget of the hot pack's patterns section. */
-  hotPackPatternsBudget: Volatile<number>
-  /**
-   * Similarity at or above which a query matches a pattern. **Kept although
-   * the design document's config omits it**: the matcher is literal, and a
-   * threshold is the only thing separating a match from a coincidence.
-   */
-  matchThreshold: Volatile<number>
-  /** Similarity at or above which an output counts as following a pattern. */
-  feedbackThreshold: Volatile<number>
-  /** How long after an application its feedback window stays open. */
-  feedbackWindowMs: Volatile<number>
-}
-
-/** {@link MemoryCurationConfig} with every leaf a volatile reference. */
-export interface VolatileCurationConfig {
-  /** Whether the offline curation pass runs at all. */
-  enabled: Volatile<boolean>
-  /** Provider route for the summarizing model; empty uses the rule path. */
-  provider: Volatile<string>
-  /** Model id for the summarizing model; empty uses the rule path. */
-  model: Volatile<string>
-  /** How often automatic curation runs. */
-  schedule: Volatile<'daily' | 'weekly' | 'monthly'>
-  /** How a corpus is split into model-sized batches. */
-  batchPolicy: VolatileBatchPolicyConfig
-  /** When the summary tree grows another layer. */
-  nextLayer: VolatileNextLayerConfig
-  /** Periodic full rebuild of the summary tree. */
-  fullRebuild: VolatileFullRebuildConfig
-  /** Spend limits for one curation run and one month. */
-  budget: VolatileCurationBudgetConfig
-}
-
-/** {@link MemoryIntegrationConfig} with every leaf a volatile reference. */
-export interface VolatileIntegrationConfig {
-  /**
-   * Whether integrations are probed at all. Probing is best-effort and
-   * contained per integration, so it can neither fail the mount nor cost
-   * anything when no integration is present; leaving it off is what makes
-   * `toolkit.enabled: 'auto'` self-contradictory, because `auto` decides by
-   * presence and presence is only learned by probing.
-   */
-  autoDetect: Volatile<boolean>
-  /** The toolkit integration. */
-  toolkit: VolatileToolkitIntegrationConfig
-}
-
-/** {@link MemoryRuleEngineConfig} with every leaf a volatile reference. */
-export interface VolatileRuleEngineConfig {
-  /**
-   * `relaxed` admits any message the noise blacklist lets through; `strict`
-   * admits only the keyword-confirmed rules. The default is relaxed because
-   * requiring a keyword is what starved the store in the first place.
-   */
-  mode: Volatile<RuleEngineMode>
-}
-
-/** {@link MemoryLocalLlmConfig} with every leaf a volatile reference. */
-export interface VolatileLocalLlmConfig {
-  /** Whether the local model judges instead of only the rule fallback. */
-  enabled: Volatile<boolean>
-  /** Whether a missing model may be downloaded on first use. */
-  autoDownload: Volatile<boolean>
-  /**
-   * Path or URI of the GGUF model. **Empty means the default location**, which
-   * {@link resolveConfig} fills in — the design document's configuration lists
-   * no model path at all, so a user is never asked for one; this is the
-   * override for someone who keeps the weights elsewhere.
-   */
-  modelPath: Volatile<string>
-  /** Model version label, recorded so a trainer can tell weights apart. */
-  modelVersion: Volatile<string>
-  /** Prompt version label, recorded alongside each judgment row. */
-  promptVersion: Volatile<string>
-  /**
-   * Layers offloaded to the GPU; `0` runs on CPU. The default offloads every
-   * layer, because a judge that runs per user message on CPU is slow enough to
-   * make the machine unusable — measured 86 s for one answer on CPU against
-   * 3-5 s on a GPU. A machine with no GPU ignores the count and runs on CPU,
-   * so the default needs no detection to stay correct; `0` is how a user forces
-   * CPU on a machine that does have one.
-   */
-  gpuLayers: Volatile<number>
-  /** Context size in tokens. */
-  contextSize: Volatile<number>
-}
-
-/** {@link MemoryPatternThresholdConfig} with every leaf a volatile reference. */
-export interface VolatilePatternThresholdConfig {
-  /** Distinct projects a fact key must span to count as a preference. */
-  preferenceMinProjects: Volatile<number>
-  /** Occurrences an error feature needs to count as a failure pattern. */
-  failureMinOccurrences: Volatile<number>
-  /** Distinct projects an environment constraint must span. */
-  environmentMinProjects: Volatile<number>
-  /** Repeats a tool-call sequence needs to count as a workflow pattern. */
-  workflowMinOccurrences: Volatile<number>
-}
-
-/** {@link MemoryPatternPruningConfig} with every leaf a volatile reference. */
-export interface VolatilePatternPruningConfig {
-  /** Whether negative-feedback patterns are pruned. */
-  enabled: Volatile<boolean>
-  /** Score below which an active pattern may be pruned. */
-  minScore: Volatile<number>
-  /** Days without application after which a pattern may be pruned. */
-  staleDays: Volatile<number>
-}
-
-/** {@link MemoryBatchPolicyConfig} with every leaf a volatile reference. */
-export interface VolatileBatchPolicyConfig {
-  /** Total context window in tokens. */
-  modelContextSize: Volatile<number>
-  /** Tokens reserved for the system prompt. */
-  systemReserve: Volatile<number>
-  /** Tokens held back as safety margin. */
-  safetyMargin: Volatile<number>
-  /** Share of the remaining budget given to input. */
-  inputRatio: Volatile<number>
-  /** Share reserved for output. Recorded so a run can size its batch to fit. */
-  outputRatio: Volatile<number>
-}
-
-/** {@link MemoryNextLayerConfig} with every leaf a volatile reference. */
-export interface VolatileNextLayerConfig {
-  /** Total tokens across a layer at or above which the next layer is due. */
-  minTokensForNextLayer: Volatile<number>
-  /** Summary count at or above which the next layer is due. */
-  minCountForNextLayer: Volatile<number>
-  /** Deepest layer the tree may grow to. */
-  maxLevel: Volatile<number>
-}
-
-/** {@link MemoryFullRebuildConfig} with every leaf a volatile reference. */
-export interface VolatileFullRebuildConfig {
-  /** Whether a full rebuild runs after enough incremental passes. */
-  enabled: Volatile<boolean>
-  /** Incremental passes between full rebuilds. */
-  everyNIncrementalRuns: Volatile<number>
-  /** Upper bound on memories one rebuild may cover. */
-  maxMemoriesPerRebuild: Volatile<number>
-}
-
-/** {@link MemoryCurationBudgetConfig} with every leaf a volatile reference. */
-export interface VolatileCurationBudgetConfig {
-  /** Tokens one run may spend. */
-  maxTokensPerRun: Volatile<number>
-  /** Runs one month may spend. */
-  maxRunsPerMonth: Volatile<number>
-}
-
-/** {@link MemoryToolkitIntegrationConfig} with every leaf a volatile reference. */
-export interface VolatileToolkitIntegrationConfig {
-  /**
-   * `auto` enables it when the toolkit is present, `on` forces it, `off`
-   * disables it. Three states rather than a boolean because "detect it for me"
-   * and "use it even though I know it is not there" are different requests.
-   *
-   * Presence is decided per workspace rather than once per machine — the
-   * `.memory/` directory lives at the root of whichever workspace the session
-   * is running in — so `auto` and `on` load the integration either way and the
-   * difference shows up per scope, where a workspace without a `.memory/`
-   * simply contributes nothing.
-   */
-  enabled: Volatile<'auto' | 'on' | 'off'>
-  /** Whether the toolkit's preferences ride in the hot pack. */
-  readHotPackSection: Volatile<boolean>
-  /** Whether an approved pattern is written back to the toolkit's file. */
-  writeBackOnApproval: Volatile<boolean>
-}
-
-/**
- * How much the rule engine is willing to stage.
- *
- * `relaxed` stages any message the noise blacklist lets through; `strict` stages
- * only the keyword-confirmed rules. The distinction lives here rather than in
- * the detector so the config, the detector, and the settings page all name it
- * once.
- */
-export type RuleEngineMode = 'relaxed' | 'strict'
-```
-<!-- END GENERATED config-catalog:@deepseek-ai/dsh-memory -->
-
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-message-feedback -->
 <a id="deepseek-aidsh-message-feedback"></a>
 
@@ -2519,9 +2167,9 @@ export interface Config {
 export interface Config {
   /**
    * The preset table: name → knob bundle. Defaults to `workspace-write`
-   * (workspace-write + ask), `danger-full-access` (danger-full-access + never),
-   * and `yolo` (danger-full-access + always). The names `custom` and `auto` are
-   * reserved for derived state and the Auto review integration respectively.
+   * (workspace-write + ask) and `danger-full-access` (danger-full-access +
+   * never). The names `custom` and `auto` are reserved for derived state and
+   * the Auto review integration respectively.
    */
   presets: Record<string, PresetSpec>
   /**
@@ -2723,7 +2371,7 @@ export interface Config {
 
 - `inject`: `subprocess` · `sandbox` · `sandboxPolicy`
 - `refs`: [`LocalConfig`](#deepseek-aidsh-pwsh-local)
-- `source`: [`packages/shell/pwsh-sandbox/src/index.ts:41`](../packages/shell/pwsh-sandbox/src/index.ts)
+- `source`: [`packages/shell/pwsh-sandbox/src/index.ts:40`](../packages/shell/pwsh-sandbox/src/index.ts)
 
 ```ts config-catalog
 /**
@@ -2814,8 +2462,8 @@ export interface Config {
 ## `@deepseek-ai/dsh-sandbox-policy`
 
 - `inject`: `sessionProjections`
-- `refs`: [`SandboxMode`](subsystems/sandbox.md) · `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/sandbox/sandbox-policy/src/index.ts:73`](../packages/sandbox/sandbox-policy/src/index.ts)
+- `refs`: [`SandboxMode`](subsystems/sandbox.md)
+- `source`: [`packages/sandbox/sandbox-policy/src/index.ts:71`](../packages/sandbox/sandbox-policy/src/index.ts)
 
 ```ts config-catalog
 /**
@@ -2833,43 +2481,9 @@ export interface Config {
    * `process.cwd()`). Normal agent calls use their session cwd instead.
    */
   workspaceRoot?: string
-  /**
-   * Extra absolute roots `workspace-write` may also write under, beyond the
-   * workspace and the platform temp areas (default: none). Session-independent
-   * and edited live on the Security Review settings page or through the
-   * `sandbox_trust` tool. Optional only so a composition may omit it when it
-   * declares the Config by hand; the schema always supplies the reference.
-   */
-  extraWritableRoots?: Volatile<string[]>
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-sandbox-policy -->
-
-<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-sandbox-trust -->
-<a id="deepseek-aidsh-sandbox-trust"></a>
-
-## `@deepseek-ai/dsh-sandbox-trust`
-
-- `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/sandbox/sandbox-trust/src/index.ts:41`](../packages/sandbox/sandbox-trust/src/index.ts)
-
-```ts config-catalog
-/**
- * Live plugin configuration. Every field is a stable reference whose snapshot
- * carries the schema default until the user overrides it, and the settings form
- * edits these fields without remounting the plugin.
- */
-export interface Config {
-  /**
-   * Command names allowed to run with host identity. Each entry is matched
-   * against a shell command's leading command token (case-insensitively, with
-   * an optional Windows executable suffix); empty by default so behavior is
-   * unchanged until the user adds a name.
-   */
-  trustedCommands: Volatile<string[]>
-}
-```
-<!-- END GENERATED config-catalog:@deepseek-ai/dsh-sandbox-trust -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-schedule -->
 <a id="deepseek-aidsh-schedule"></a>
@@ -2943,19 +2557,20 @@ export interface JsonRpcConfig {
 ## `@deepseek-ai/dsh-session-log-deepseek`
 
 - `inject`: `deepseekLlmApiExtensions` · `sessions`
+- `refs`: `Volatile` (`@deepseek-ai/cordis`)
 - `source`: [`packages/session/session-log-deepseek/src/index.ts:39`](../packages/session/session-log-deepseek/src/index.ts)
 
 ```ts config-catalog
 /** Session-log request contribution configuration. */
 export interface Config {
   /** Contribute `dsh_session_log` to official DeepSeek requests. Defaults to `true`. */
-  enabled?: boolean
+  enabled: Volatile<boolean>
   /**
    * Largest serialized `dsh_session_log` field, in UTF-8 bytes, that one request carries.
    * A request uploads the longest pending event prefix that fits; later requests continue
    * after its acceptance. Defaults to 8 MiB.
    */
-  maxBytes?: number
+  maxBytes: number
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-session-log-deepseek -->
@@ -2985,7 +2600,7 @@ export type SessionLogCompressionLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
 ## `@deepseek-ai/dsh-session-persistence-jsonl`
 
-- `source`: [`packages/session/session-persistence-jsonl/src/index.ts:91`](../packages/session/session-persistence-jsonl/src/index.ts)
+- `source`: [`packages/session/session-persistence-jsonl/src/index.ts:90`](../packages/session/session-persistence-jsonl/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config for the JSONL backend's root and physical encoding. */
@@ -3108,36 +2723,36 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-session-telemetry-otel`
 
-- `inject`: `sessions`
+- `inject`: `sessions` · `otel`
 - `refs`: `BatchLogRecordProcessorOptions` (`@opentelemetry/sdk-logs`) · `OTLPExporterNodeConfigBase` (`@opentelemetry/otlp-exporter-base`)
-- `source`: [`packages/session/session-telemetry-otel/src/index.ts:100`](../packages/session/session-telemetry-otel/src/index.ts)
+- `source`: [`packages/session/session-telemetry-otel/src/index.ts:87`](../packages/session/session-telemetry-otel/src/index.ts)
 
 ```ts config-catalog
 /**
- * Plugin configuration: one sharing policy, two verbatim SDK option objects,
- * and one DSH-owned shutdown bound. Uploading modes validate their endpoint
+ * Plugin configuration: sharing policy, SDK transport options, byte/count queue
+ * settings, and an overall shutdown bound. Uploading modes validate their endpoint
  * and shutdown deadline at plugin load; `DISABLED` reads neither.
  */
 export interface Config {
   /** Defaults to `FEEDBACK_ONLY`: capture session history only when feedback is explicitly submitted. */
   mode?: SessionTelemetryMode
   /**
-   * Passed verbatim to the SDK's OTLP/HTTP log exporter — the complete
-   * `OTLPExporterNodeConfigBase` shape (`headers`, `timeoutMillis`,
-   * `compression`, `keepAlive`, …), owned and documented by the SDK. `url`
-   * is the one field this package requires and validates itself.
+   * Explicit SDK HTTP transport settings, including optional routing headers.
+   * Ambient credentials are not inherited. URL is required while uploading.
    */
   exporter?: OTLPExporterNodeConfigBase & {
     /** Full logs endpoint (e.g. `https://collector.example.com/v1/logs`). Required outside `DISABLED`; validated at load. */
     url?: string
   }
   /**
-   * Passed verbatim to `BatchLogRecordProcessor` (minus the exporter slot,
-   * which this plugin fills); the SDK owns and documents these knobs.
+   * Count, queue, cadence, and per-request watchdog settings for the byte-bounded
+   * processor. A watchdog warning never releases an unsettled transport slot.
    */
   processor?: Omit<BatchLogRecordProcessorOptions, 'exporter'>
   /** Maximum time spent awaiting the SDK provider's complete shutdown path. */
   shutdownTimeoutMillis?: number
+  /** Uncompressed OTLP request byte limit, at most 4,000,000. */
+  maxRequestBytes?: number
 }
 
 /** Session-sharing policy selected by {@link Config.mode}. */
@@ -3198,59 +2813,6 @@ export type Config = SessionTitleLlmConfig
 export type Config = SessionTitleLlmConfig
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-session-title-first-prompt-llm -->
-
-<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-shell-command-guard -->
-<a id="deepseek-aidsh-shell-command-guard"></a>
-
-## `@deepseek-ai/dsh-shell-command-guard`
-
-- `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/guard/shell-command-guard/src/settings.ts:30`](../packages/guard/shell-command-guard/src/settings.ts)
-
-```ts config-catalog
-/**
- * Live plugin configuration. Every field is a stable reference whose snapshot
- * carries the schema default until the user overrides it, and the settings form
- * edits these fields without remounting the plugin. The resolved values have
- * the {@link SecurityReviewSettings} shape.
- */
-export interface Config {
-  /** Master switch; `false` disables all checks including the built-in deny set. */
-  enabled: Volatile<boolean>
-  /** Extra path prefixes exempt from the recursive-force-delete `ask` verdict. */
-  allowPaths: Volatile<string[]>
-  /** Case-insensitive substring checks. */
-  keywords: Volatile<KeywordRule[]>
-  /** Regular-expression checks. */
-  rules: Volatile<PatternRule[]>
-  /** Inline synchronous check script run in a restricted context; empty disables it. */
-  script: Volatile<string>
-}
-
-/** One case-insensitive substring check from the settings document. */
-export interface KeywordRule {
-  /** Substring matched case-insensitively against the whole command text. */
-  text: string
-  /** Action when the substring occurs. */
-  action: ReviewAction
-  /** Model-facing reason; empty falls back to a generated one. */
-  reason: string
-}
-
-/** One regular-expression check from the settings document. */
-export interface PatternRule {
-  /** Expression source, compiled with the `i` flag. */
-  pattern: string
-  /** Action when the expression matches. */
-  action: ReviewAction
-  /** Model-facing reason; empty falls back to a generated one. */
-  reason: string
-}
-
-/** Action a user-authored rule may select. `allow` is deliberately absent: a user rule never disables a check. */
-export type ReviewAction = 'deny' | 'ask'
-```
-<!-- END GENERATED config-catalog:@deepseek-ai/dsh-shell-command-guard -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-shell-env -->
 <a id="deepseek-aidsh-shell-env"></a>
@@ -3823,6 +3385,15 @@ export interface Config {
    * regain the foreground before `inferred_idle` settles; at least one `pollIntervalMs`.
    */
   handoffGraceMs?: number
+  /**
+   * Extra wait beyond `idleSilenceMs` and `handoffGraceMs`, once a prompt marker was seen but
+   * its printable tail has not arrived, before `inferred_idle` settles. The marker is written
+   * by the shell's own prompt function and the tail by the same render, so a missing tail is a
+   * delivery delay on a contended host rather than an absent prompt. Zero keeps the bound at
+   * `idleSilenceMs + handoffGraceMs`; any other value covers at least one `pollIntervalMs`, so a
+   * nonzero tolerance always contains a readiness poll.
+   */
+  promptTailGraceMs?: number
   /** Absolute bound for one send and the complete pwsh startup sequence. */
   timeoutMs?: number
   /** Grace before teardown escalates to `SIGKILL`. */
@@ -4470,7 +4041,7 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-user-approval`
 
-- `source`: [`packages/interaction/user-approval/src/index.ts:140`](../packages/interaction/user-approval/src/index.ts)
+- `source`: [`packages/interaction/user-approval/src/index.ts:135`](../packages/interaction/user-approval/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config. All optional — `static Config` supplies the defaults. */
@@ -4479,8 +4050,7 @@ export interface Config {
    * The deployment's default {@link ApprovalPolicy} for sessions without an
    * `approval/policy` override — `'ask'` delegates to the composed answerers
    * (fail-closed with none); `'never'` auto-rejects every ask without
-   * prompting (the deterministic CI/unattended stance); `'always'` auto-approves
-   * every ask without prompting (the unattended YOLO stance).
+   * prompting (the deterministic CI/unattended stance).
    */
   readonly policy?: ApprovalPolicy
 }
@@ -4494,11 +4064,8 @@ export interface Config {
  * - `'never'` — never prompt anyone: every ask resolves `'rejected'`
  *   deterministically. The strict headless stance (CI, unattended runs) and
  *   the policy whose outcome is knowable without asking.
- * - `'always'` — never prompt anyone: every ask resolves `'allowed-once'`
- *   deterministically. The unattended YOLO stance: auto-approve every action
- *   with no human in the loop.
  */
-export type ApprovalPolicy = 'ask' | 'never' | 'always'
+export type ApprovalPolicy = 'ask' | 'never'
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-user-approval -->
 
@@ -4507,8 +4074,7 @@ export type ApprovalPolicy = 'ask' | 'never' | 'always'
 
 ## `@deepseek-ai/dsh-web`
 
-- `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/web/web/src/index.ts:58`](../packages/web/web/src/index.ts)
+- `source`: [`packages/web/web/src/index.ts:55`](../packages/web/web/src/index.ts)
 
 ```ts config-catalog
 /**
@@ -4518,10 +4084,10 @@ export type ApprovalPolicy = 'ask' | 'never' | 'always'
  * must feed these same fields rather than introduce a hidden priority chain.
  */
 export interface WebRuntimeConfig {
-  /** Live reference to the explicit search provider id. Omitted = auto-select when exactly one usable. */
-  readonly searchProvider: Volatile<string | undefined>
-  /** Live reference to the explicit fetch provider id. Omitted = auto-select when exactly one usable. */
-  readonly fetchProvider: Volatile<string | undefined>
+  /** Explicit search provider id. Omitted = auto-select when exactly one usable. */
+  readonly searchProvider?: string
+  /** Explicit fetch provider id. Omitted = auto-select when exactly one usable. */
+  readonly fetchProvider?: string
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-web -->
@@ -4579,29 +4145,6 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-web-fetch-http -->
 
-<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-web-firecrawl -->
-<a id="deepseek-aidsh-web-firecrawl"></a>
-
-## `@deepseek-ai/dsh-web-firecrawl`
-
-- `inject`: `web`
-- `source`: [`packages/web/web-firecrawl/src/index.ts:38`](../packages/web/web-firecrawl/src/index.ts)
-
-```ts config-catalog
-/** Plugin config (all optional — `apply` fills env-var and constant defaults). */
-export interface Config {
-  /**
-   * Firecrawl API key, optional: search and scrape work without a key on a
-   * rate-limited free tier, and a key raises the limits. Falls back to
-   * `$FIRECRAWL_API_KEY` from the launch environment.
-   */
-  apiKey?: string
-  /** Endpoint base; `/v2/search` and `/v2/scrape` are appended. Defaults to the public API. */
-  baseURL?: string
-}
-```
-<!-- END GENERATED config-catalog:@deepseek-ai/dsh-web-firecrawl -->
-
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-web-search-deepseek -->
 <a id="deepseek-aidsh-web-search-deepseek"></a>
 
@@ -4609,7 +4152,7 @@ export interface Config {
 
 - `inject`: `web`
 - `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/web/web-search-deepseek/src/index.ts:46`](../packages/web/web-search-deepseek/src/index.ts)
+- `source`: [`packages/web/web-search-deepseek/src/index.ts:49`](../packages/web/web-search-deepseek/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config (all optional — `apply` fills env-var and constant defaults). */
@@ -4768,7 +4311,6 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-acp-app` | `cmdlineArgs` | [`packages/bundle/acp-app/src/index.ts`](../packages/bundle/acp-app/src/index.ts) |
 | `@deepseek-ai/dsh-agent` | — | [`packages/core/agent/src/index.ts`](../packages/core/agent/src/index.ts) |
 | `@deepseek-ai/dsh-api-account-controller` | `deepseekAccount` · `agents` | [`packages/api/account-controller/src/index.ts`](../packages/api/account-controller/src/index.ts) |
-| `@deepseek-ai/dsh-api-memory-controller` | — | [`packages/api/memory-controller/src/index.ts`](../packages/api/memory-controller/src/index.ts) |
 | `@deepseek-ai/dsh-api-remotes` | `typertGateway` | [`packages/api/remotes/src/index.ts`](../packages/api/remotes/src/index.ts) |
 | `@deepseek-ai/dsh-authorization` | `credentials` | [`packages/credentials/authorization/src/index.ts`](../packages/credentials/authorization/src/index.ts) |
 | `@deepseek-ai/dsh-browser-use` | — | [`packages/browser-use/browser-use/src/index.ts`](../packages/browser-use/browser-use/src/index.ts) |
@@ -4795,7 +4337,6 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-model-selection` | — | [`packages/client/ui-model-selection/src/index.ts`](../packages/client/ui-model-selection/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-open-in-app` | — | [`packages/client/ui-open-in-app/src/index.ts`](../packages/client/ui-open-in-app/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-permission-presets` | — | [`packages/client/ui-permission-presets/src/index.ts`](../packages/client/ui-permission-presets/src/index.ts) |
-| `@deepseek-ai/dsh-client-ui-personalization` | — | [`packages/client/ui-personalization/src/index.ts`](../packages/client/ui-personalization/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-plan` | — | [`packages/client/ui-plan/src/index.ts`](../packages/client/ui-plan/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-reference` | — | [`packages/client/ui-reference/src/index.ts`](../packages/client/ui-reference/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-renderer` | — | [`packages/client/ui-renderer/src/index.ts`](../packages/client/ui-renderer/src/index.ts) |
@@ -4803,16 +4344,12 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-session` | — | [`packages/client/ui-session/src/index.ts`](../packages/client/ui-session/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings` | — | [`packages/client/ui-settings/src/index.ts`](../packages/client/ui-settings/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-agent-loop` | — | [`packages/client/ui-settings-agent-loop/src/index.ts`](../packages/client/ui-settings-agent-loop/src/index.ts) |
-| `@deepseek-ai/dsh-client-ui-settings-automation` | — | [`packages/client/ui-settings-automation/src/index.ts`](../packages/client/ui-settings-automation/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-general` | — | [`packages/client/ui-settings-general/src/index.ts`](../packages/client/ui-settings-general/src/index.ts) |
-| `@deepseek-ai/dsh-client-ui-settings-memory` | — | [`packages/client/ui-settings-memory/src/index.ts`](../packages/client/ui-settings-memory/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-plugin-inventory` | — | [`packages/client/ui-settings-plugin-inventory/src/index.ts`](../packages/client/ui-settings-plugin-inventory/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-plugins` | — | [`packages/client/ui-settings-plugins/src/index.ts`](../packages/client/ui-settings-plugins/src/index.ts) |
-| `@deepseek-ai/dsh-client-ui-settings-security-review` | — | [`packages/client/ui-settings-security-review/src/index.ts`](../packages/client/ui-settings-security-review/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-settings-session-log` | — | [`packages/client/ui-settings-session-log/src/index.ts`](../packages/client/ui-settings-session-log/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-shell` | — | [`packages/client/ui-settings-shell/src/index.ts`](../packages/client/ui-settings-shell/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-subagent` | — | [`packages/client/ui-settings-subagent/src/index.ts`](../packages/client/ui-settings-subagent/src/index.ts) |
-| `@deepseek-ai/dsh-client-ui-settings-unarchive-sessions` | — | [`packages/client/ui-settings-unarchive-sessions/src/index.ts`](../packages/client/ui-settings-unarchive-sessions/src/index.ts) |
-| `@deepseek-ai/dsh-client-ui-settings-web` | — | [`packages/client/ui-settings-web/src/index.ts`](../packages/client/ui-settings-web/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-web-search` | — | [`packages/client/ui-settings-web-search/src/index.ts`](../packages/client/ui-settings-web-search/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-shortcuts` | — | [`packages/client/ui-shortcuts/src/index.ts`](../packages/client/ui-shortcuts/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-sidebar` | — | [`packages/client/ui-sidebar/src/index.ts`](../packages/client/ui-sidebar/src/index.ts) |
@@ -4833,23 +4370,23 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-commands` | — | [`packages/interaction/commands/src/index.ts`](../packages/interaction/commands/src/index.ts) |
 | `@deepseek-ai/dsh-compaction-image-offload` | `agents` · `sessions` | [`packages/compaction/compaction-image-offload/src/index.ts`](../packages/compaction/compaction-image-offload/src/index.ts) |
 | `@deepseek-ai/dsh-computer-use` | — | [`packages/computer-use/computer-use/src/index.ts`](../packages/computer-use/computer-use/src/index.ts) |
-| `@deepseek-ai/dsh-computer-use-cua-driver-native` | `computerUse` · `tools` · `systemPrompt` | [`packages/computer-use/cua-driver-native/src/index.ts`](../packages/computer-use/cua-driver-native/src/index.ts) |
 | `@deepseek-ai/dsh-config-editor` | `loader` · `profileContext` | [`packages/boot/config-editor/src/index.ts`](../packages/boot/config-editor/src/index.ts) |
 | `@deepseek-ai/dsh-cordis-client-runner` | — | [`packages/extensions/cordis-client-runner/src/index.ts`](../packages/extensions/cordis-client-runner/src/index.ts) |
 | `@deepseek-ai/dsh-deepseek-llm-api-extensions` | — | [`packages/llm/deepseek-llm-api-extensions/src/index.ts`](../packages/llm/deepseek-llm-api-extensions/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-auto-review` | `approval` · `llm` · `permissionPresets` · `sessions` · `tools` | [`packages/experimental/auto-review/src/index.ts`](../packages/experimental/auto-review/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-client-ui-agent-team` | — | [`packages/experimental/client-ui-agent-team/src/index.ts`](../packages/experimental/client-ui-agent-team/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-client-ui-voice-input` | — | [`packages/experimental/client-ui-voice-input/src/index.ts`](../packages/experimental/client-ui-voice-input/src/index.ts) |
+| `@deepseek-ai/dsh-experimental-computer-use-cua-driver-native` | `computerUse` · `tools` · `systemPrompt` | [`packages/experimental/computer-use-cua-driver-native/src/index.ts`](../packages/experimental/computer-use-cua-driver-native/src/index.ts) |
 | `@deepseek-ai/dsh-fs-observation-policy` | — | [`packages/fs/fs-observation-policy/src/index.ts`](../packages/fs/fs-observation-policy/src/index.ts) |
 | `@deepseek-ai/dsh-fs-ssh` | `ssh` · `sandboxPolicy` | [`packages/ssh/fs-ssh/src/index.ts`](../packages/ssh/fs-ssh/src/index.ts) |
 | `@deepseek-ai/dsh-goal-round-driver` | `agents` · `goals` · `sessions` | [`packages/goal/goal-round-driver/src/index.ts`](../packages/goal/goal-round-driver/src/index.ts) |
 | `@deepseek-ai/dsh-host-directory-picker-auto` | `webServer` · `loader` | [`packages/host/directory-picker-auto/src/index.ts`](../packages/host/directory-picker-auto/src/index.ts) |
 | `@deepseek-ai/dsh-host-directory-picker-native` | — | [`packages/host/directory-picker-native/src/index.ts`](../packages/host/directory-picker-native/src/index.ts) |
 | `@deepseek-ai/dsh-host-plugin-inventory` | `loader` | [`packages/host/plugin-inventory/src/index.ts`](../packages/host/plugin-inventory/src/index.ts) |
-| `@deepseek-ai/dsh-junsi-routing` | `systemPrompt` · `skills` | [`packages/junsi/routing/src/index.ts`](../packages/junsi/routing/src/index.ts) |
 | `@deepseek-ai/dsh-llm` | — | [`packages/llm/llm/src/index.ts`](../packages/llm/llm/src/index.ts) |
 | `@deepseek-ai/dsh-lsp` | — | [`packages/lsp/lsp/src/index.ts`](../packages/lsp/lsp/src/index.ts) |
 | `@deepseek-ai/dsh-mcp-resources` | `tools` | [`packages/mcp/mcp-resources/src/index.ts`](../packages/mcp/mcp-resources/src/index.ts) |
+| `@deepseek-ai/dsh-otel` | — | [`packages/telemetry/otel/src/index.ts`](../packages/telemetry/otel/src/index.ts) |
 | `@deepseek-ai/dsh-sandbox-ssh` | `ssh` | [`packages/ssh/sandbox-ssh/src/index.ts`](../packages/ssh/sandbox-ssh/src/index.ts) |
 | `@deepseek-ai/dsh-session` | — | [`packages/core/session/src/index.ts`](../packages/core/session/src/index.ts) |
 | `@deepseek-ai/dsh-session-checkpoint-policy` | `llm` · `sessionPersistence` · `sessions` · `tools` | [`packages/session/session-checkpoint-policy/src/index.ts`](../packages/session/session-checkpoint-policy/src/index.ts) |
@@ -4865,14 +4402,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-tool-ask-user` | `tools` · `userQuestions` | [`packages/interaction/tool-ask-user/src/index.ts`](../packages/interaction/tool-ask-user/src/index.ts) |
 | `@deepseek-ai/dsh-tool-call-timeout-policy` | `tools` | [`packages/guard/timeout-policy/src/index.ts`](../packages/guard/timeout-policy/src/index.ts) |
 | `@deepseek-ai/dsh-tool-cordis` | `tools` · `cordisInspect` | [`packages/extensions/tool-cordis/src/index.ts`](../packages/extensions/tool-cordis/src/index.ts) |
-| `@deepseek-ai/dsh-tool-git` | `tools` | [`packages/junsi/git/src/index.ts`](../packages/junsi/git/src/index.ts) |
-| `@deepseek-ai/dsh-tool-memory` | `tools` | [`packages/junsi/memory-tools/src/index.ts`](../packages/junsi/memory-tools/src/index.ts) |
-| `@deepseek-ai/dsh-tool-project-docs` | `tools` | [`packages/junsi/project-docs/src/index.ts`](../packages/junsi/project-docs/src/index.ts) |
 | `@deepseek-ai/dsh-tool-subagent-control` | `tools` · `subagents` | [`packages/subagent/tool-subagent-control/src/index.ts`](../packages/subagent/tool-subagent-control/src/index.ts) |
-| `@deepseek-ai/dsh-tool-tool-search` | `tools` | [`packages/junsi/tool-search/src/index.ts`](../packages/junsi/tool-search/src/index.ts) |
-| `@deepseek-ai/dsh-tool-trust` | `tools` | [`packages/sandbox/tool-trust/src/index.ts`](../packages/sandbox/tool-trust/src/index.ts) |
-| `@deepseek-ai/dsh-tool-wsl-pentest` | `tools` | [`packages/security/wsl-pentest/src/index.ts`](../packages/security/wsl-pentest/src/index.ts) |
-| `@deepseek-ai/dsh-ui-brand-qomicex` | — | [`packages/client/ui-brand-qomicex/src/index.ts`](../packages/client/ui-brand-qomicex/src/index.ts) |
 | `@deepseek-ai/dsh-user-questions` | — | [`packages/interaction/user-questions/src/index.ts`](../packages/interaction/user-questions/src/index.ts) |
 | `@deepseek-ai/dsh-webhook` | `agents` · `agentDefaultModel` · `agentPresets` · `permissionPresets` · `sessionTitle` · `workspaceRegistry` | [`packages/webhook/webhook/src/index.ts`](../packages/webhook/webhook/src/index.ts) |
 | `@deepseek-ai/dsh-workspace` | `storageDomain` · `sessionPersistence` | [`packages/workspace/workspace/src/index.ts`](../packages/workspace/workspace/src/index.ts) |
@@ -4916,7 +4446,6 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-atomic-write` | — | [`packages/util/atomic-write/src/index.ts`](../packages/util/atomic-write/src/index.ts) |
 | `@deepseek-ai/dsh-base` | — | [`packages/bundle/base/src/index.ts`](../packages/bundle/base/src/index.ts) |
 | `@deepseek-ai/dsh-brand` | — | [`packages/util/brand/src/index.ts`](../packages/util/brand/src/index.ts) |
-| `@deepseek-ai/dsh-browser-use-runtime` | — | [`packages/browser-use/runtime/src/index.ts`](../packages/browser-use/runtime/src/index.ts) |
 | `@deepseek-ai/dsh-chunked-list` | — | [`packages/util/chunked-list/src/index.ts`](../packages/util/chunked-list/src/index.ts) |
 | `@deepseek-ai/dsh-client-store` | — | [`packages/client/store/src/index.ts`](../packages/client/store/src/index.ts) |
 | `@deepseek-ai/dsh-client-test-runtime` | — | [`packages/test-support/client-runtime/src/index.ts`](../packages/test-support/client-runtime/src/index.ts) |
@@ -4927,6 +4456,8 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-cmdline` | — | [`packages/boot/cmdline/src/index.ts`](../packages/boot/cmdline/src/index.ts) |
 | `@deepseek-ai/dsh-deque` | — | [`packages/util/deque/src/index.ts`](../packages/util/deque/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-agent-team-profile` | — | [`packages/experimental/agent-team-profile/src/index.ts`](../packages/experimental/agent-team-profile/src/index.ts) |
+| `@deepseek-ai/dsh-experimental-browser-use-runtime` | — | [`packages/experimental/browser-use-runtime/src/index.ts`](../packages/experimental/browser-use-runtime/src/index.ts) |
+| `@deepseek-ai/dsh-experimental-schedule-bundle` | — | [`packages/experimental/schedule-bundle/src/index.ts`](../packages/experimental/schedule-bundle/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-voice-input-bundle` | — | [`packages/experimental/voice-input-bundle/src/index.ts`](../packages/experimental/voice-input-bundle/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-webworker-packer` | — | [`packages/experimental/webworker-packer/src/index.ts`](../packages/experimental/webworker-packer/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-webworker-runtime` | — | [`packages/experimental/webworker-runtime/src/index.ts`](../packages/experimental/webworker-runtime/src/index.ts) |
@@ -4938,7 +4469,6 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-llm-deepseek` | — | [`packages/llm/llm-deepseek/src/index.ts`](../packages/llm/llm-deepseek/src/index.ts) |
 | `@deepseek-ai/dsh-llm-mock-server` | — | [`packages/test-support/llm-mock-server/src/index.ts`](../packages/test-support/llm-mock-server/src/index.ts) |
 | `@deepseek-ai/dsh-loader-smoke` | — | [`packages/test-support/loader-smoke/src/index.ts`](../packages/test-support/loader-smoke/src/index.ts) |
-| `@deepseek-ai/dsh-memory-benchmark` | — | [`packages/memory/memory-benchmark/src/index.ts`](../packages/memory/memory-benchmark/src/index.ts) |
 | `@deepseek-ai/dsh-native-command` | — | [`packages/util/native-command/src/index.ts`](../packages/util/native-command/src/index.ts) |
 | `@deepseek-ai/dsh-output-retention` | — | [`packages/util/output-retention/src/index.ts`](../packages/util/output-retention/src/index.ts) |
 | `@deepseek-ai/dsh-package-manifest` | — | [`packages/util/package-manifest/src/index.ts`](../packages/util/package-manifest/src/index.ts) |
