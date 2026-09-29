@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-settings-security-review",
   "description": "Security Review Settings page: the shell-command guard's master switch, keyword and regular-expression rules, inline check script, and recursive-delete allow paths",
-  "version": "0.1.7-rc.2.2",
+  "version": "0.2.0-rc.1",
   "publishConfig": {
     "access": "public"
   },

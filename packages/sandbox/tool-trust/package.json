@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-trust",
   "description": "Approval-gated sandbox trust growth: lets the agent ask the user to add a command or directory to the sandbox trust list",
-  "version": "0.1.7-rc.2.2",
+  "version": "0.2.0-rc.1",
   "publishConfig": {
     "access": "public"
   },

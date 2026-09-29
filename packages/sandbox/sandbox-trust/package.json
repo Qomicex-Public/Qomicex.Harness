@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-sandbox-trust",
   "description": "Trusted-command list that lets named shell commands run with host identity (danger-full-access), bypassing the file sandbox's write confinement; edited through the Security Review settings page",
-  "version": "0.1.7-rc.2.2",
+  "version": "0.2.0-rc.1",
   "publishConfig": {
     "access": "public"
   },

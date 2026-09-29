@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-api-memory-controller",
   "description": "Host Remote owner for the memory inspection surface: the memory graph, per-scope counts, and the forget action",
-  "version": "0.1.7-rc.2.2",
+  "version": "0.2.0-rc.1",
   "publishConfig": {
     "access": "public"
   },

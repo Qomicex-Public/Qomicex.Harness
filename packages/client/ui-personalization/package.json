@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-personalization",
   "description": "Personalization plugin: a Host-persisted personalization settings namespace plus the browser page and effects for background, theme-color scale, glass surfaces, and a corner image",
-  "version": "0.1.7-rc.2.2",
+  "version": "0.2.0-rc.1",
   "publishConfig": {
     "access": "public"
   },

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-project-docs",
   "description": "Model-facing project-docs tools (query_docs/create_adr/update_doc/index_docs/organize_docs/revert_docs/tag_docs/list_tags/generate_docs plus code-aware scanners) that read and maintain a docs/junsi-dev-docs/ tree under the session workspace with zero external dependencies",
-  "version": "0.1.7-rc.2.2",
+  "version": "0.2.0-rc.1",
   "publishConfig": {
     "access": "public"
   },
