@@ -2827,6 +2827,19 @@ export interface Config {
   runnerFailureSignatures?: string[]
   /** Positive timeout for each functional probe; zero would mean unbounded to Node. */
   probeTimeoutMs?: number
+  /**
+   * Whether the Windows ACL rung labels granted directories Low and lowers the
+   * confined token to match (default false). True writes the Low label and
+   * lowers the token, so a confined process can only write labeled trees and a
+   * host process at its own integrity level cannot read them without an
+   * escalation; false grants the DACL alone and leaves the token at the host's
+   * integrity level, so a granted workspace carries no standing integrity label
+   * and host build toolchains are unaffected, at the cost of relying on the
+   * restricting-SID intersection alone for the write boundary. Ignored when
+   * {@link runnerCommand} is set, since an operator-supplied runner owns its
+   * own confinement shape and the labeled boundary stays the default there.
+   */
+  applyIntegrityLabel?: boolean
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-sandbox-local -->

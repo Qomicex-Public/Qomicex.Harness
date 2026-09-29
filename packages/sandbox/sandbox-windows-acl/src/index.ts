@@ -99,6 +99,18 @@ export interface AclSandboxOptions {
    * the caller holds the grants for its own lifetime and revokes them.
    */
   manageDacls?: boolean
+  /**
+   * Whether grants label the granted directories Low and the confined token is
+   * lowered to match (default false). True writes the Low label and lowers the
+   * token, so a confined process can only write labeled trees; false grants the
+   * DACL alone and leaves the token at the host's integrity level, so a granted
+   * workspace never carries a standing integrity label and host build
+   * toolchains are unaffected, at the cost of the write boundary resting on the
+   * restricting-SID intersection alone. The label and the lowering are one
+   * matched pair: setting this false on the grant side while the token still
+   * lowers would leave the confined child unable to write its own workspace.
+   */
+  applyIntegrityLabel?: boolean
 }
 
 /** Per-spawn options: the program, its argv/cwd, and the stdio shape. */
@@ -171,6 +183,7 @@ export class AclSandbox {
   readonly mode: 'read-only' | 'workspace-write'
   private readonly tempDirOption: string | null | undefined
   private readonly manageDacls: boolean
+  private readonly applyIntegrityLabel: boolean
   private tempDirResolved: string | null | undefined
   private api: Win32Bindings | undefined
   private token: NativePtr | undefined
@@ -183,6 +196,7 @@ export class AclSandbox {
   constructor(options: AclSandboxOptions) {
     this.mode = options.mode
     this.manageDacls = options.manageDacls ?? true
+    this.applyIntegrityLabel = options.applyIntegrityLabel ?? false
     this.writableDirs = options.writableDirs.map((directory) => {
       const absolute = resolve(directory)
       if (!existsSync(absolute) || !statSync(absolute).isDirectory()) {
@@ -261,9 +275,10 @@ export class AclSandbox {
       // REVOCABLE (dispose() removes it before the private directory is
       // deleted; the ambient temp root is never granted).
       // The Low label SID and the world SID the grants deny and label with.
-      const lowLabelSid = makeWellKnownSid(api, abi.WinLowLabelSid)
+      const lowLabelSid = this.applyIntegrityLabel ? makeWellKnownSid(api, abi.WinLowLabelSid) : null
       const worldSid = makeWellKnownSid(api, abi.WinWorldSid)
-      this.sidAllocations.push(lowLabelSid, worldSid)
+      if (lowLabelSid !== null) this.sidAllocations.push(lowLabelSid)
+      this.sidAllocations.push(worldSid)
 
       if (this.manageDacls) {
         if (this.writeSidPtr !== undefined) {
@@ -287,7 +302,7 @@ export class AclSandbox {
         { world: worldSid },
         this.mode,
       )
-      restrictTokenIntegrity(api, restrictedToken, lowLabelSid)
+      if (lowLabelSid !== null) restrictTokenIntegrity(api, restrictedToken, lowLabelSid)
       this.token = restrictedToken
       // The restricted token's default DACL still names only the user's
       // ambient SIDs — none of the restricting SIDs. Every NEW object the

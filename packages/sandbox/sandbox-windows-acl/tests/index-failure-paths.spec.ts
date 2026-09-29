@@ -364,6 +364,7 @@ describe('AclSandbox init', () => {
       writeSid: 'S-1-4-9000-10',
       tempWriteSid: 'S-1-4-9000-10-1',
       mode: 'workspace-write',
+      applyIntegrityLabel: true,
     })
     // Five SID frees/mutations fail plus the Low label SID the init allocated.
     await expect(sandbox.init()).rejects.toThrow(/6 cleanup operation\(s\) also failed/u)

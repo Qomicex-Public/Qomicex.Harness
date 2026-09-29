@@ -336,6 +336,40 @@ describe.skipIf(!isWin32)('ACL editing', () => {
     }
   })
 
+  it('grantWrite with a null label SID writes the DACL alone and leaves every label on the directory untouched', async () => {
+    const api = await win32()
+    const dir = scratch()
+    const capabilitySid = sidFromString(api, 'S-1-4-4242-7')
+    const world = worldSid(api)
+    try {
+      expect(readLabelAces(api, dir)).toEqual([])
+      grantWrite(api, dir, capabilitySid, null, world)
+      // The capability ACE and the ambient-delete deny land; no label appears.
+      expect(readLabelAces(api, dir)).toEqual([])
+      const direct = readDirectAces(api, dir)
+      expect(direct.some(ace => ace.sid === 'S-1-4-4242-7')).toBe(true)
+      expect(direct.filter(ace => ace.sid === 'S-1-1-0')).toEqual([{ sid: 'S-1-1-0', mask: abi.FILE_DELETE_CHILD }])
+    } finally {
+      if (!isNullPtr(capabilitySid)) api.localFree(capabilitySid)
+      if (!isNullPtr(world)) api.localFree(world)
+    }
+  })
+
+  it('grantWrite with a null label SID re-grants idempotently without ever applying a label', async () => {
+    const api = await win32()
+    const dir = scratch()
+    const capabilitySid = sidFromString(api, 'S-1-4-4242-8')
+    const world = worldSid(api)
+    try {
+      grantWrite(api, dir, capabilitySid, null, world)
+      grantWrite(api, dir, capabilitySid, null, world)
+      expect(readLabelAces(api, dir)).toEqual([])
+    } finally {
+      if (!isNullPtr(capabilitySid)) api.localFree(capabilitySid)
+      if (!isNullPtr(world)) api.localFree(world)
+    }
+  })
+
   it('grantWrite is idempotent: a second grant over the standing exact ACE, deny, and label skips the SetNamedSecurityInfoW apply (no eager full-tree re-propagation)', async () => {
     const api = await win32()
     const dir = scratch()
@@ -391,6 +425,7 @@ describe.skipIf(!isWin32)('ACL editing', () => {
       writeSid: 'S-1-4-9000-3',
       tempWriteSid: 'S-1-4-9000-3-1',
       mode: 'workspace-write',
+      applyIntegrityLabel: true,
     })
     await sandbox.init()
     sandbox.dispose()
@@ -402,6 +437,26 @@ describe.skipIf(!isWin32)('ACL editing', () => {
     const tempAces = readDirectAces(api, tempDir)
     expect(tempAces.some(ace => ace.sid === 'S-1-4-9000-3-1')).toBe(false)
     expect(readLabelAces(api, tempDir)).toEqual([])
+  })
+
+  it('applyIntegrityLabel false: a self-managed grant leaves no label on either root and dispose still revokes the temp ACE', async () => {
+    const api = await win32()
+    const workspaceDir = scratch()
+    const tempDir = scratch()
+    const sandbox = new AclSandbox({
+      writableDirs: [workspaceDir],
+      tempDir,
+      writeSid: 'S-1-4-9000-9',
+      tempWriteSid: 'S-1-4-9000-9-1',
+      mode: 'workspace-write',
+      applyIntegrityLabel: false,
+    })
+    await sandbox.init()
+    sandbox.dispose()
+    expect(readLabelAces(api, workspaceDir)).toEqual([])
+    expect(readLabelAces(api, tempDir)).toEqual([])
+    expect(readDirectAces(api, workspaceDir).some(ace => ace.sid === 'S-1-4-9000-9')).toBe(true)
+    expect(readDirectAces(api, tempDir).some(ace => ace.sid === 'S-1-4-9000-9-1')).toBe(false)
   })
 
   it('rejects an overlapping private temp directory before applying either capability', async () => {

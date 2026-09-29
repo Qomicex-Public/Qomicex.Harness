@@ -45,6 +45,7 @@ kind: "package-reference"
 | `runnerCommand` | `[]` | 自定义 runner argv；会追加 bwrap 兼容的 profile 参数，断言完全强制执行，并跳过内置选择与探测 |
 | `runnerFailureSignatures` | `[]` | 识别自定义 runner 自身失败方言的不区分大小写 stderr 子串；与 `runnerCommand` 搭配必需 |
 | `probeTimeoutMs` | `5,000` | 每次竞争 runner 候选功能探测的超时时间 |
+| `applyIntegrityLabel` | `false` | 仅 Windows ACL 层：给被授权目录打 Low 完整性标签，并把受限 token 降到匹配的完整性。设为 true 即启用该带标签的写边界；默认保持宿主自身完整性级别、只写 DACL，被授权工作区因此不带常驻完整性标签，宿主构建工具链不受影响——此时写边界仅由 restricting-SID 交集承担。设置 `runnerCommand` 时忽略此项 |
 
 生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-sandbox-local)是每个受支持字段及其 JSDoc 的穷尽式真源。
 

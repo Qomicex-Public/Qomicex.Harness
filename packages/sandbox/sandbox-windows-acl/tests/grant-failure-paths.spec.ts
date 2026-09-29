@@ -142,8 +142,28 @@ describe('AclWriteGrant failure paths', () => {
       getLastError: vi.fn(() => 87),
       formatMessageW: vi.fn(() => 0),
     })
-    expect(() => AclWriteGrant.create('S-1-4-42-42', api)).toThrow(/CreateWellKnownSid/)
+    expect(() => AclWriteGrant.create('S-1-4-42-42', api, true)).toThrow(/CreateWellKnownSid/)
     expect(localFree).toHaveBeenCalledTimes(2)
+    expect(localFree).toHaveBeenCalledWith(42n)
+  })
+
+  it('create with no integrity label frees only the capability SID when the world SID cannot be created', () => {
+    const localFree = vi.fn(() => 0n as NativePtr)
+    const api = stubBindings({
+      convertStringSidToSidW: vi.fn((_sid: string, slot: NativePtr) => {
+        koffi.encode(slot, PVOID, 42n)
+        return 1
+      }),
+      // No Low label SID is requested, so the first (and only) well-known
+      // SID — the world SID — fails.
+      createWellKnownSid: vi.fn(() => 0),
+      isValidSid: vi.fn(() => 1),
+      localFree,
+      getLastError: vi.fn(() => 87),
+      formatMessageW: vi.fn(() => 0),
+    })
+    expect(() => AclWriteGrant.create('S-1-4-42-42', api, false)).toThrow(/CreateWellKnownSid/)
+    expect(localFree).toHaveBeenCalledTimes(1)
     expect(localFree).toHaveBeenCalledWith(42n)
   })
 })

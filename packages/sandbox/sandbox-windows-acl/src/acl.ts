@@ -372,35 +372,44 @@ function hasForeignGrant(oldAcl: NativePtr, sidPtr: NativePtr): boolean {
  * @param path - the directory whose DACL and label gain the grant (the workspace or temp root).
  * @param sidPtr - the capability SID the ACE names.
  * @param lowLabelSidPtr - the Low integrity SID the mandatory label names.
+ * @param lowLabelSidPtr - the Low integrity SID the mandatory label names, or
+ *   `null` to write the DACL alone and leave every label on the directory
+ *   untouched. A `null` label pairs with a token that was never lowered to Low,
+ *   so the confined child keeps the host's own integrity level instead of
+ *   needing a Low-labeled tree to write into.
  * @param worldSidPtr - the Everyone SID the ambient-delete deny names.
  */
 export function grantWrite(
   api: Win32Bindings,
   path: string,
   sidPtr: NativePtr,
-  lowLabelSidPtr: NativePtr,
+  lowLabelSidPtr: NativePtr | null,
   worldSidPtr: NativePtr,
 ): void {
   withPathLock(api, path, () => {
     const { oldAcl, labelAcl, descriptor } = readCurrentSecurity(api, path)
-    if (oldAcl !== null && labelAcl !== null
-      && hasExactGrant(oldAcl, sidPtr) && hasExactDeny(oldAcl, worldSidPtr)
-      && hasExactLabel(labelAcl, lowLabelSidPtr)) {
-      // The exact ACE, deny, and label stand: releasing the descriptor is the whole operation.
+    const labelStands = lowLabelSidPtr === null
+      || (labelAcl !== null && hasExactLabel(labelAcl, lowLabelSidPtr))
+    if (oldAcl !== null && labelStands
+      && hasExactGrant(oldAcl, sidPtr) && hasExactDeny(oldAcl, worldSidPtr)) {
+      // The exact ACE and deny stand, and the label when one is requested:
+      // releasing the descriptor is the whole operation.
       if (descriptor !== null) {
         const freed = api.localFree(descriptor)
         if (!isNullPtr(freed)) throwLastError(api, 'LocalFree', `grantWrite(${path}) descriptor`)
       }
       return
     }
-    let label: NativePtr
-    try {
-      label = buildLowLabelAcl(api, lowLabelSidPtr)
-    } catch (error) {
-      // The read already owns a descriptor allocation; release it before the
-      // label failure propagates.
-      if (descriptor !== null) api.localFree(descriptor)
-      throw error
+    let label: NativePtr | null = null
+    if (lowLabelSidPtr !== null) {
+      try {
+        label = buildLowLabelAcl(api, lowLabelSidPtr)
+      } catch (error) {
+        // The read already owns a descriptor allocation; release it before the
+        // label failure propagates.
+        if (descriptor !== null) api.localFree(descriptor)
+        throw error
+      }
     }
     mergeAndApply(
       api, path,
@@ -408,7 +417,7 @@ export function grantWrite(
         buildExplicitAccess(worldSidPtr, abi.DENY_ACCESS, abi.FILE_DELETE_CHILD, abi.CONTAINER_INHERIT_ACE),
         buildExplicitAccess(sidPtr, abi.GRANT_ACCESS, abi.GRANT_MASK),
       ]),
-      oldAcl, { kind: 'apply', acl: label }, descriptor, 'grantWrite',
+      oldAcl, label === null ? { kind: 'keep' } : { kind: 'apply', acl: label }, descriptor, 'grantWrite',
     )
   })
 }

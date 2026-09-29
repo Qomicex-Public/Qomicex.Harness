@@ -60,6 +60,20 @@ describe.skipIf(!isWin32)('AclWriteGrant (server-side materialization)', () => {
     expect(icaclsText(standingDir)).toContain('S-1-4-9000-77')
   })
 
+  it('a grant created with applyIntegrityLabel false materializes the DACL alone: the ACE lands, no Low label appears, and dispose still revokes', () => {
+    const dir = scratch()
+    const standingDir = scratch()
+    const grant = AclWriteGrant.create('S-1-4-9000-80', undefined, false)
+    grant.add(dir)
+    grant.add(standingDir, true)
+    expect(icaclsText(dir)).toContain('S-1-4-9000-80')
+    expect(icaclsText(dir)).not.toContain('Mandatory Label')
+    expect(icaclsText(standingDir)).not.toContain('Mandatory Label')
+    grant.dispose()
+    expect(icaclsText(dir)).not.toContain('S-1-4-9000-80')
+    expect(icaclsText(standingDir)).toContain('S-1-4-9000-80')
+  })
+
   it('two grants with different SIDs coexist and revoke independently', () => {
     const dir = scratch()
     const grantA = AclWriteGrant.create('S-1-4-9000-78')

@@ -45,6 +45,7 @@ Load the sandbox service and mount the provider; the defaults below are the sele
 | `runnerCommand` | `[]` | Custom runner argv; bwrap-compatible profile arguments are appended, full enforcement is asserted, and built-in selection and probes are skipped |
 | `runnerFailureSignatures` | `[]` | Case-insensitive stderr substrings identifying the custom runner's own failure dialect; required with `runnerCommand` |
 | `probeTimeoutMs` | `5,000` | Timeout for each functional probe of a competing runner candidate |
+| `applyIntegrityLabel` | `false` | Windows ACL rung only: label granted directories Low and lower the confined token to match. Set true for that labeled write boundary; the default keeps the host's integrity level and grants the DACL alone, so a granted workspace carries no standing integrity label and host build toolchains are unaffected — the write boundary then rests on the restricting-SID intersection alone. Ignored when `runnerCommand` is set |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-sandbox-local) is the exhaustive source for every accepted field and its JSDoc.
 

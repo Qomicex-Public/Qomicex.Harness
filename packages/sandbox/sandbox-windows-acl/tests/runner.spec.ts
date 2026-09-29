@@ -421,7 +421,7 @@ describe.skipIf(!isWin32 || !pwshAvailable())('windows-acl runner', () => {
         `try{[System.IO.File]::Delete(${quoted(victims.inside)});'INSIDE-DELETE: DELETED'}catch{'INSIDE-DELETE: DENIED'}`,
       ].join('')
       const result = runRunner([
-        '--workspace', writableDir, '--temp', isolatedTemp, '--mode', mode,
+        '--workspace', writableDir, '--temp', isolatedTemp, '--mode', mode, '--integrity-label',
         '--', 'pwsh', '/NoLogo', '/NonInteractive', '/NoProfile', '/Command', probe,
       ])
       expect(result.status, `mode: ${mode}\nstderr: ${result.stderr}`).toBe(0)
@@ -606,7 +606,7 @@ TryOpen 'DIRECTORY' '${child}'
     for (const mode of ['read-only', 'workspace-write'] as const) {
       const target = join(worldWritableDir, `${mode}.txt`)
       const result = runRunner([
-        '--workspace', writableDir, '--temp', isolatedTemp, '--mode', mode,
+        '--workspace', writableDir, '--temp', isolatedTemp, '--mode', mode, '--integrity-label',
         '--', process.execPath, '-e', "require('node:fs').writeFileSync(process.argv[1], 'written')", target,
       ])
       expect(result.status, `mode: ${mode}\nstderr: ${result.stderr}`).not.toBe(0)

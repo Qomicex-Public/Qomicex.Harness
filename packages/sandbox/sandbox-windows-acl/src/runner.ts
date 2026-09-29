@@ -10,8 +10,9 @@
  * keep the same contract):
  *   [node, runner.js, '--workspace', <dir>, '--temp', <dir>,
  *    '--mode', <read-only|workspace-write>,
- *    ['--write-sid', <S-1-4-…>,
- *     '--temp-write-sid', <S-1-4-…>], '--', <argv...>]
+ *    '--write-sid', <S-1-4-…>,
+ *     '--temp-write-sid', <S-1-4-…>],
+ *    ['--integrity-label'|'--no-integrity-label'], '--', <argv...>]
  *
  * Modes:
  *  - workspace-write: the workspace and temp directories carry distinct
@@ -69,6 +70,8 @@ interface ParsedArgs {
   mode: 'read-only' | 'workspace-write'
   writeSid: string | undefined
   tempWriteSid: string | undefined
+  /** The DACL-only grant shape: a pinned false pins it; absent keeps the default. */
+  applyIntegrityLabel: boolean | undefined
   grants: string[]
   command: string
   args: string[]
@@ -80,6 +83,7 @@ function parseArgs(raw: string[]): ParsedArgs {
   let mode: string | undefined
   let writeSid: string | undefined
   let parsedTempWriteSid: string | undefined
+  let applyIntegrityLabel: boolean | undefined
   const grants: string[] = []
   let index = 0
   for (; index < raw.length; index++) {
@@ -87,6 +91,12 @@ function parseArgs(raw: string[]): ParsedArgs {
     if (token === '--') {
       index++
       break
+    }
+    // The label switch is a valueless pair: absent leaves the AclSandbox
+    // default in place, and each form pins one side of the matched pair.
+    if (token === '--integrity-label' || token === '--no-integrity-label') {
+      applyIntegrityLabel = token === '--integrity-label'
+      continue
     }
     index++
     const value = raw[index]
@@ -107,7 +117,7 @@ function parseArgs(raw: string[]): ParsedArgs {
   const argv = raw.slice(index)
   const command = argv[0]
   if (command === undefined) fail('missing command after --')
-  return { workspace, temp, mode, writeSid, tempWriteSid: parsedTempWriteSid, grants, command, args: argv.slice(1) }
+  return { workspace, temp, mode, writeSid, tempWriteSid: parsedTempWriteSid, applyIntegrityLabel, grants, command, args: argv.slice(1) }
 }
 
 function requireDirectory(label: string, path: string): void {
@@ -173,6 +183,11 @@ async function main(): Promise<number> {
       ...writeSid === undefined ? {} : { writeSid },
       ...privateTempSid === undefined ? {} : { tempWriteSid: privateTempSid },
       manageDacls: !seamManaged,
+      // Absent flag means "take the AclSandbox default"; each form pins one
+      // side of the matched pair. Deriving a boolean from a negative flag
+      // would pin the option to true and strand the grant side (which
+      // defaults to false) without a label.
+      ...parsed.applyIntegrityLabel === undefined ? {} : { applyIntegrityLabel: parsed.applyIntegrityLabel },
     })
     await sandbox.init()
     initialized = true

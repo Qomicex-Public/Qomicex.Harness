@@ -34,7 +34,7 @@ export class AclWriteGrant {
   readonly writeSid: string
   private readonly api: Win32Bindings
   private readonly sidPtr: NativePtr
-  private readonly lowLabelSidPtr: NativePtr
+  private readonly lowLabelSidPtr: NativePtr | null
   private readonly worldSidPtr: NativePtr
   private readonly revocablePaths: string[] = []
   private readonly standingPaths: string[] = []
@@ -42,7 +42,7 @@ export class AclWriteGrant {
   private constructor(
     api: Win32Bindings,
     sidPtr: NativePtr,
-    lowLabelSidPtr: NativePtr,
+    lowLabelSidPtr: NativePtr | null,
     worldSidPtr: NativePtr,
     writeSid: string,
   ) {
@@ -60,9 +60,14 @@ export class AclWriteGrant {
    * is granted yet.
    * @param writeSid - the workspace (`S-1-4-x-y`) or temp (`S-1-4-x-y-1`) capability SID string.
    * @param api - optional already-resolved bindings (tests).
+   * @param applyIntegrityLabel - when false (the default), grant the DACL alone
+   *   and skip the Low mandatory label, so the granted directory keeps its own
+   *   integrity level and host processes are unaffected. Must match the token
+   *   side: a token that was never lowered to Low needs no labeled tree to
+   *   write into.
    * @returns the ready grant (no ACEs yet).
    */
-  static create(writeSid: string, api?: Win32Bindings): AclWriteGrant {
+  static create(writeSid: string, api?: Win32Bindings, applyIntegrityLabel = false): AclWriteGrant {
     const bindings = api ?? win32Sync()
     const sidSlot = allocPtrSlot()
     if (bindings.convertStringSidToSidW(writeSid, sidSlot) === 0) {
@@ -71,14 +76,16 @@ export class AclWriteGrant {
     const sidPtr = decodePtr(sidSlot)
     if (sidPtr === null) throwLastError(bindings, 'ConvertStringSidToSidW', `null SID for ${writeSid}`)
     try {
-      const lowLabelSidPtr = makeWellKnownSid(bindings, abi.WinLowLabelSid)
+      const lowLabelSidPtr = applyIntegrityLabel
+        ? makeWellKnownSid(bindings, abi.WinLowLabelSid)
+        : null
       try {
         const worldSidPtr = makeWellKnownSid(bindings, abi.WinWorldSid)
         return new AclWriteGrant(bindings, sidPtr, lowLabelSidPtr, worldSidPtr, writeSid)
       } catch (error) {
         // The Low label SID is LocalAlloc'd: release it before the world-SID
         // failure propagates to the sidPtr release below.
-        bindings.localFree(lowLabelSidPtr)
+        if (lowLabelSidPtr !== null) bindings.localFree(lowLabelSidPtr)
         throw error
       }
     } catch (error) {
@@ -127,6 +134,7 @@ export class AclWriteGrant {
       ['Low label SID', this.lowLabelSidPtr],
       ['world SID', this.worldSidPtr],
     ] as const) {
+      if (sidPtr === null) continue
       try {
         const freed = this.api.localFree(sidPtr)
         if (!isNullPtr(freed)) throwLastError(this.api, 'LocalFree', label)

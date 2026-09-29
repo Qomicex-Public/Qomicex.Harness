@@ -63,6 +63,19 @@ export interface Config {
   runnerFailureSignatures?: string[]
   /** Positive timeout for each functional probe; zero would mean unbounded to Node. */
   probeTimeoutMs?: number
+  /**
+   * Whether the Windows ACL rung labels granted directories Low and lowers the
+   * confined token to match (default false). True writes the Low label and
+   * lowers the token, so a confined process can only write labeled trees and a
+   * host process at its own integrity level cannot read them without an
+   * escalation; false grants the DACL alone and leaves the token at the host's
+   * integrity level, so a granted workspace carries no standing integrity label
+   * and host build toolchains are unaffected, at the cost of relying on the
+   * restricting-SID intersection alone for the write boundary. Ignored when
+   * {@link runnerCommand} is set, since an operator-supplied runner owns its
+   * own confinement shape and the labeled boundary stays the default there.
+   */
+  applyIntegrityLabel?: boolean
 }
 
 /** Probe whether `bwrap` can create the profile; the provider caches the bounded result. */
@@ -255,6 +268,7 @@ export class LocalSandboxProvider extends SandboxProvider {
     runnerCommand: z.array(z.string()).default([]),
     runnerFailureSignatures: z.array(z.string()).default([]),
     probeTimeoutMs: z.natural().default(5_000),
+    applyIntegrityLabel: z.boolean().default(false),
   })
 
   /** Test hook (mirrors the bash executors' `internals`). */
@@ -263,6 +277,7 @@ export class LocalSandboxProvider extends SandboxProvider {
   private readonly runnerCommand: string[] | undefined
   private readonly configuredRunnerFailureSignatures: string[]
   private readonly probeTimeoutMs: number
+  private readonly applyIntegrityLabel: boolean
   /** Cached chain verdict; undefined until the first confined wrap needs it. */
   private selectedRunner: SelectedRunner | 'unavailable' | undefined
   /**
@@ -297,6 +312,7 @@ export class LocalSandboxProvider extends SandboxProvider {
     this.configuredRunnerFailureSignatures = runnerFailureSignatures
     this.probeTimeoutMs = config.probeTimeoutMs as number
     assertPositiveFinite('probeTimeoutMs', this.probeTimeoutMs)
+    this.applyIntegrityLabel = this.runnerCommand === undefined ? config.applyIntegrityLabel as boolean : true
     // An operator-supplied runner does not use the ACL backend. The registry
     // remains optional and may be mounted after this provider.
     /* v8 ignore next 3 -- Windows-only registration; the Linux coverage lane cannot take this branch */
@@ -389,6 +405,7 @@ export class LocalSandboxProvider extends SandboxProvider {
       '--mode', policy.mode,
       '--write-sid', workspaceWriteSid(policy.workspaceRoot),
       '--temp-write-sid', temp.writeSid,
+      ...this.applyIntegrityLabel ? [] : ['--no-integrity-label'],
       ...grants.flatMap(root => ['--grant', root]),
     ]
   }
@@ -410,7 +427,7 @@ export class LocalSandboxProvider extends SandboxProvider {
     assertTempRootOutsideWorkspace(workspaceRoot, tmpdir())
     const writeSid = workspaceWriteSid(workspaceRoot)
     if (!this.workspaceGrants.has(workspaceRoot)) {
-      const grant = AclWriteGrant.create(writeSid)
+      const grant = AclWriteGrant.create(writeSid, undefined, this.applyIntegrityLabel)
       try {
         grant.add(workspaceRoot, true)
       } catch (error) {
@@ -440,7 +457,7 @@ export class LocalSandboxProvider extends SandboxProvider {
     const tempSid = tempWriteSid(tempDir)
     let grant: AclWriteGrant | undefined
     try {
-      grant = AclWriteGrant.create(tempSid)
+      grant = AclWriteGrant.create(tempSid, undefined, this.applyIntegrityLabel)
       grant.add(tempDir)
     } catch (error) {
       const cleanupFailures: unknown[] = []
