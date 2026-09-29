@@ -285,6 +285,11 @@ const MAX_JUDGE_TOKENS = 120
 /** The queue's tail observer: an operation's outcome is its caller's business. */
 const settled = (): void => {}
 
+/**
+ * The FunctionGemma-backed {@link LocalJudge}: one model load per judge, local
+ * judgment only, and every failure reported as `undefined` so the caller takes
+ * the rule path instead of the model result.
+ */
 export class LlamaCppJudge implements LocalJudge {
   private readonly options: LocalJudgeOptions
   private loaded: LoadedJudgeModel | undefined

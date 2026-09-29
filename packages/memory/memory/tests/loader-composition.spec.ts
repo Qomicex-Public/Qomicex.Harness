@@ -141,7 +141,7 @@ describe('memory plugin real Loader composition through cordis.yml', () => {
     // Dispose the memory entry's own fiber, not the root: the root owns the
     // peer services this test mounted, and tearing those down would remove the
     // tools registry the assertion reads through.
-    const entry = ctx.loader.entries().find(candidate => candidate.options.name === '@deepseek-ai/dsh-memory')
+    const entry = [...ctx.loader.entries()].find(candidate => candidate.options.name === '@deepseek-ai/dsh-memory')
     expect(entry).toBeDefined()
     await entry?.fiber?.dispose()
     expect(ctx.tools.schemas().map(schema => schema.name)).not.toContain('memory_recall')

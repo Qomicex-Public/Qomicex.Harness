@@ -3,11 +3,11 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write apps/desktop/README.md
 /qomicex-harness-desktop:
-  en: cc8a9e999dafd764
-  zh: 3e251be8b64882f9
+  en: d873da92f1b79e94
+  zh: 218b7bd9c89a9302
 /qomicex-harness-desktop/closing-the-window-and-quitting:
-  en: fb852f3bd70d8602
-  zh: 42bf5e88e80ce89d
+  en: c323e02e3f0305fe
+  zh: 36a20848e7ea1c7b
 /qomicex-harness-desktop/key-technical-decisions:
   en: d0f3902c39d6a414
   zh: 48c747e2854907d7
@@ -15,14 +15,14 @@
   en: 31cbb7452be8e1ad
   zh: 502ec556e2ec301e
 /qomicex-harness-desktop/installation-ownership:
-  en: 18bbfeabc9067e17
-  zh: 2255e84e0ef3f981
+  en: 1972189044f87ec1
+  zh: c734ce08775147a7
 /qomicex-harness-desktop/installation-ownership/runtime-and-plugin-activation:
   en: b8c51a2afa658561
   zh: 9fb9820a9626f11b
 /qomicex-harness-desktop/develop:
-  en: 9b9b362a9865e763
-  zh: c748901168e2db8c
+  en: 40d2ad4014bf445b
+  zh: 6a08de06df9ed042
 /qomicex-harness-desktop/develop/startup-onboarding:
   en: c879b8f6c8203771
   zh: 5fb863d4906f4a67

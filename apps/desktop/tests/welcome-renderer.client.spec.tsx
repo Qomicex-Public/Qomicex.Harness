@@ -16,6 +16,8 @@ function mount(language = 'zh-CN', takeNotice = vi.fn<() => Promise<WelcomeNotic
   const stopAccount = vi.fn()
   const api = {
     takeNotice,
+    analytics: vi.fn(async (_event: string, _attributes: object) => {}),
+    analyticsEnabled: async () => true,
     onAccountState: vi.fn((_listener: (state: AccountView) => void) => stopAccount),
     startSignIn: vi.fn(async (): Promise<AccountView> => ({ links: { usageUrl: 'http://localhost/usage', topUpUrl: 'http://localhost/top_up' }, status: 'signed-out', attempt: null })),
     cancelSignIn: vi.fn(async (): Promise<AccountView> => ({ links: { usageUrl: 'http://localhost/usage', topUpUrl: 'http://localhost/top_up' }, status: 'signed-out', attempt: null })),
