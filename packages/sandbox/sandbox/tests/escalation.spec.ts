@@ -103,6 +103,19 @@ describe('approveEscalation', () => {
       .resolves.toBe(mode)
   })
 
+  it('carries the caller signal and omits it when absent', async () => {
+    const seen: Record<string, unknown>[] = []
+    const record = (r: unknown) => seen.push(r as Record<string, unknown>)
+    const controller = new AbortController()
+    await approveEscalation(req(), ingredients({ approver: approver('allowed-once', record), signal: controller.signal }))
+    expect(seen[0]?.signal).toBe(controller.signal)
+
+    seen.length = 0
+    const { signal: _absent, ...withoutSignal } = ingredients({ approver: approver('allowed-once', record), signal: controller.signal })
+    await approveEscalation(req(), withoutSignal)
+    expect(seen[0]).not.toHaveProperty('signal')
+  })
+
   it('a narrower or unsupported target fails closed without asking', async () => {
     const seen: unknown[] = []
     const spy = ingredients({ approver: approver('allowed-once', r => seen.push(r)) })

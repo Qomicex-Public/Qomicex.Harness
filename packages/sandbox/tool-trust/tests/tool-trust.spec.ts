@@ -36,6 +36,9 @@ interface SetupOptions {
   readonly outcome?: ApprovalOutcome
   readonly trustedCommands?: string[]
   readonly mountTrust?: boolean
+  readonly mountPolicy?: boolean
+  readonly mountApproval?: boolean
+  readonly mountSettings?: boolean
 }
 
 const signal = new AbortController().signal
@@ -87,24 +90,30 @@ async function setup(options: SetupOptions = {}) {
   await ctx.plugin(ToolRuntime)
   await ctx.plugin(AgentRegistry)
   await ctx.plugin(SessionProjectionRegistry)
-  await ctx.plugin(SandboxPolicyService, { mode: 'workspace-write', workspaceRoot: 'C:\\ws' })
+  if (options.mountPolicy !== false) {
+    await ctx.plugin(SandboxPolicyService, { mode: 'workspace-write', workspaceRoot: 'C:\\ws' })
+  }
   if (options.mountTrust !== false) {
     await ctx.plugin(SandboxTrustService, { trustedCommands: options.trustedCommands ?? [] })
   }
+  const mutations: Array<{ ns: string; ops: readonly SettingsOp[] }> = []
   const requests: Array<{ reason: string }> = []
   const outcome = options.outcome ?? 'allowed-once'
-  ctx.provide('approval', {
-    request: async (req: { reason?: string }) => {
-      requests.push({ reason: req.reason ?? '' })
-      return outcome
-    },
-  } as never)
-  const mutations: Array<{ ns: string; ops: readonly SettingsOp[] }> = []
-  ctx.provide('settings', {
-    mutate: async (ns: string, ops: readonly SettingsOp[]) => {
-      mutations.push({ ns, ops })
-    },
-  } as never)
+  if (options.mountApproval !== false) {
+    ctx.provide('approval', {
+      request: async (req: { reason?: string }) => {
+        requests.push({ reason: req.reason ?? '' })
+        return outcome
+      },
+    } as never)
+  }
+  if (options.mountSettings !== false) {
+    ctx.provide('settings', {
+      mutate: async (ns: string, ops: readonly SettingsOp[]) => {
+        mutations.push({ ns, ops })
+      },
+    } as never)
+  }
   await ctx.plugin({ name, inject: ['tools'], apply })
   const agent = await makeAgent(ctx)
   return { ctx, agent, requests, mutations }
@@ -114,6 +123,13 @@ async function setup(options: SetupOptions = {}) {
 async function call(ctx: Context, agent: Agent, args: Record<string, unknown>) {
   return await ctx.tools.execute({
     signal, callId: ToolCallId('call-1'), name: 'sandbox_trust', arguments: args, agent,
+  })
+}
+
+/** Dispatch a call that carries no agent Session, for the agent guard. */
+async function callWithoutAgent(ctx: Context, args: Record<string, unknown>) {
+  return await ctx.tools.execute({
+    signal, callId: ToolCallId('call-1'), name: 'sandbox_trust', arguments: args, agent: undefined as never,
   })
 }
 
@@ -152,6 +168,35 @@ describe('sandbox_trust validation', () => {
     const result = await call(ctx, agent, { kind: 'command', value: 'cargo', reason: 'registry fetch' })
     expect(result.isError).toBe(true)
     expect(result.error?.message).toContain('command trust is not available')
+  })
+
+  it('fails clearly when the path trust service is not mounted', async () => {
+    const directory = freshDir('dsh-tool-trust-policy-')
+    const { ctx, agent } = await setup({ mountPolicy: false })
+    const result = await call(ctx, agent, { kind: 'path', value: directory, reason: 'the build writes its output here' })
+    expect(result.isError).toBe(true)
+    expect(result.error?.message).toContain('path trust is not available')
+  })
+
+  it('fails clearly when the call carries no agent Session', async () => {
+    const { ctx } = await setup()
+    const result = await callWithoutAgent(ctx, { kind: 'command', value: 'cargo', reason: 'registry fetch' })
+    expect(result.isError).toBe(true)
+    expect(result.error?.message).toContain('requires an agent Session')
+  })
+
+  it('fails clearly when no approval channel is composed', async () => {
+    const { ctx, agent } = await setup({ mountApproval: false })
+    const result = await call(ctx, agent, { kind: 'command', value: 'cargo', reason: 'registry fetch' })
+    expect(result.isError).toBe(true)
+    expect(result.error?.message).toContain('requires an approval channel')
+  })
+
+  it('fails clearly when no settings service is composed', async () => {
+    const { ctx, agent } = await setup({ mountSettings: false })
+    const result = await call(ctx, agent, { kind: 'command', value: 'cargo', reason: 'registry fetch' })
+    expect(result.isError).toBe(true)
+    expect(result.error?.message).toContain('requires a settings service')
   })
 })
 
