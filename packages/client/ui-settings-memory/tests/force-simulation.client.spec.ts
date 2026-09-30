@@ -123,6 +123,32 @@ describe('step', () => {
     expect(first.nodes.map(node => [node.x, node.y, node.z]))
       .toEqual(second.nodes.map(node => [node.x, node.y, node.z]))
   })
+
+  it('stays finite and settles when one node anchors most of the graph', () => {
+    // The memory graph's same-scope edges form a star per scope, so a scope
+    // with more memories than the integrator's stability range used to fling
+    // the layout to 1e64 during warmup. The framing camera then parked far
+    // enough back that every node projected to a single point.
+    const ids = Array.from({ length: 144 }, (_unused, index) => `m${index}`)
+    const anchor = ids[0]!
+    const state = createSimulation(ids, ids.slice(1).map(id => ({ source: anchor, target: id })))
+    for (let i = 0; i < 120; i += 1) step(state)
+    let steps = 0
+    while (energy(state.nodes) > 0.05 && steps < 5000) {
+      step(state)
+      steps += 1
+    }
+    expect(steps).toBeLessThan(5000)
+    for (const node of state.nodes) {
+      expect(Number.isFinite(node.x)).toBe(true)
+      expect(Number.isFinite(node.y)).toBe(true)
+      expect(Number.isFinite(node.z)).toBe(true)
+    }
+    // A settled layout occupies the graph's own scale: neither collapsed nor
+    // thrown out to distances that frame the camera off the graph.
+    expect(spreadRadius(state.nodes)).toBeGreaterThan(50)
+    expect(spreadRadius(state.nodes)).toBeLessThan(5000)
+  })
 })
 
 describe('pinned nodes', () => {

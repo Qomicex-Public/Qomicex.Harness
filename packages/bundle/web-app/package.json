@@ -199,7 +199,7 @@
     "@deepseek-ai/dsh-workspace-changes": "workspace:*",
     "@deepseek-ai/schemastery": "workspace:~",
     "commander": "^15.0.0",
-    "dshmarket": "1.65.1",
+    "dshmarket": "1.66.6",
     "open": "^11.0.0",
     "@deepseek-ai/dsh-api-account-controller": "workspace:*",
     "@deepseek-ai/dsh-client-ui-settings-account": "workspace:*",
