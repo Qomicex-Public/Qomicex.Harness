@@ -80,6 +80,21 @@ const DEFAULTS: ResolvedOptions = {
   damping: 0.86,
 }
 
+/**
+ * Separation the repulsion force may never act across, in world units.
+ *
+ * The force is `repulsion / distance²`, and the integration is explicit, so a
+ * near-coincident pair — two memories passing within a hair of each other
+ * while a hub's springs pull its star together — would otherwise multiply to a
+ * velocity of millions per step and fling the layout to astronomical
+ * distances. That framing parks the camera far enough back that every node
+ * projects to one point. The floor keeps the strongest push finite, and its
+ * radius is chosen so the capped force's own slope stays inside the
+ * integrator's stability range: a weaker push that still separates
+ * coincident nodes, without a limit cycle that never settles.
+ */
+const MIN_REPULSION_SEPARATION = 20
+
 /** One position in simulation space. */
 export interface Point3 {
   x: number
@@ -152,6 +167,35 @@ export interface SimulationState {
 }
 
 /**
+ * Substeps one step needs for the explicit integration to converge.
+ *
+ * The stiffest spring set is a hub's: every edge contributes `spring`, and the
+ * capped repulsion contributes its own slope at the minimum separation. Their
+ * sum times the damping must stay below 2, or the update overshoots its own
+ * correction and the layout diverges instead of settling.
+ * @param nodes - The laid-out nodes.
+ * @param edges - The live edges.
+ * @param options - The resolved tuning.
+ * @returns Substep count; 1 for every graph whose stiffness already fits.
+ */
+function integrationSubsteps(
+  nodes: readonly SimulationNode[],
+  edges: readonly SimulationEdge[],
+  options: ResolvedOptions,
+): number {
+  const degree = new Map<string, number>()
+  for (const edge of edges) {
+    degree.set(edge.source, (degree.get(edge.source) ?? 0) + 1)
+    degree.set(edge.target, (degree.get(edge.target) ?? 0) + 1)
+  }
+  let maxDegree = 0
+  for (const node of nodes) maxDegree = Math.max(maxDegree, degree.get(node.id) ?? 0)
+  const repulsionSlope = (2 * options.repulsion) / (MIN_REPULSION_SEPARATION * MIN_REPULSION_SEPARATION * MIN_REPULSION_SEPARATION)
+  const stiffness = maxDegree * options.spring + repulsionSlope
+  return Math.max(1, Math.ceil((stiffness * options.damping) / 2))
+}
+
+/**
  * Advance the layout one step.
  *
  * Mutates the nodes in place: this runs every animation frame, and allocating a
@@ -163,95 +207,101 @@ export function step(state: SimulationState): void {
   const { nodes, edges, options } = state
   if (nodes.length === 0) return
 
-  // Repulsion: every pair pushes apart. O(n²) is the honest cost of the
-  // textbook algorithm; a quadtree is the upgrade if a store grows past a few
-  // hundred nodes and the preview starts dropping frames.
-  for (const node of nodes) {
-    node.vx = 0
-    node.vy = 0
-    node.vz = 0
-  }
-  for (let i = 0; i < nodes.length; i += 1) {
-    const left = nodes[i]
-    if (left === undefined) continue
-    for (let j = i + 1; j < nodes.length; j += 1) {
-      const right = nodes[j]
-      if (right === undefined) continue
-      let dx = right.x - left.x
-      let dy = right.y - left.y
-      let dz = right.z - left.z
-      let distanceSq = dx * dx + dy * dy + dz * dz
-      if (distanceSq < 1e-6) {
-        // Coincident nodes would divide by zero; nudge them apart
-        // deterministically instead of drawing a random offset.
-        dx = (i - j) * 0.01 + 0.01
-        dy = 0.01
-        dz = 0.01
-        distanceSq = dx * dx + dy * dy + dz * dz
-      }
-      const distance = Math.sqrt(distanceSq)
-      const force = options.repulsion / distanceSq
-      const fx = (dx / distance) * force
-      const fy = (dy / distance) * force
-      const fz = (dz / distance) * force
-      // A pinned node is the pointer's, not the layout's: it pushes others away
-      // but takes no push itself, so dragging one does not fight the springs.
-      if (left.pinned !== true) {
-        left.vx -= fx
-        left.vy -= fy
-        left.vz -= fz
-      }
-      if (right.pinned !== true) {
-        right.vx += fx
-        right.vy += fy
-        right.vz += fz
-      }
-    }
-  }
-
-  // Springs: each edge pulls its endpoints to the rest length.
-  const index = new Map(nodes.map(node => [node.id, node]))
-  for (const edge of edges) {
-    const source = index.get(edge.source)
-    const target = index.get(edge.target)
-    if (source === undefined || target === undefined) continue
-    const dx = target.x - source.x
-    const dy = target.y - source.y
-    const dz = target.z - source.z
-    const distance = Math.max(Math.sqrt(dx * dx + dy * dy + dz * dz), 1e-6)
-    const displacement = (distance - options.linkDistance) * options.spring
-    const fx = (dx / distance) * displacement
-    const fy = (dy / distance) * displacement
-    const fz = (dz / distance) * displacement
-    if (source.pinned !== true) {
-      source.vx += fx
-      source.vy += fy
-      source.vz += fz
-    }
-    if (target.pinned !== true) {
-      target.vx -= fx
-      target.vy -= fy
-      target.vz -= fz
-    }
-  }
-
-  // Gravity and integration.
-  for (const node of nodes) {
-    if (node.pinned === true) {
+  const substeps = integrationSubsteps(nodes, edges, options)
+  const damping = Math.pow(options.damping, 1 / substeps)
+  for (let substep = 0; substep < substeps; substep += 1) {
+    // Repulsion: every pair pushes apart. O(n²) is the honest cost of the
+    // textbook algorithm; a quadtree is the upgrade if a store grows past a few
+    // hundred nodes and the preview starts dropping frames.
+    for (const node of nodes) {
       node.vx = 0
       node.vy = 0
       node.vz = 0
-      continue
     }
-    node.vx -= node.x * options.gravity
-    node.vy -= node.y * options.gravity
-    node.vz -= node.z * options.gravity
-    node.vx *= options.damping
-    node.vy *= options.damping
-    node.vz *= options.damping
-    node.x += node.vx
-    node.y += node.vy
-    node.z += node.vz
+    for (let i = 0; i < nodes.length; i += 1) {
+      const left = nodes[i]
+      if (left === undefined) continue
+      for (let j = i + 1; j < nodes.length; j += 1) {
+        const right = nodes[j]
+        if (right === undefined) continue
+        let dx = right.x - left.x
+        let dy = right.y - left.y
+        let dz = right.z - left.z
+        let distanceSq = dx * dx + dy * dy + dz * dz
+        if (distanceSq < 1e-6) {
+          // Coincident nodes would divide by zero; nudge them apart
+          // deterministically instead of drawing a random offset.
+          dx = (i - j) * 0.01 + 0.01
+          dy = 0.01
+          dz = 0.01
+          distanceSq = dx * dx + dy * dy + dz * dz
+        }
+        const distance = Math.sqrt(distanceSq)
+        const force = options.repulsion / Math.max(distanceSq, MIN_REPULSION_SEPARATION * MIN_REPULSION_SEPARATION)
+        const fx = (dx / distance) * force
+        const fy = (dy / distance) * force
+        const fz = (dz / distance) * force
+        // A pinned node is the pointer's, not the layout's: it pushes others away
+        // but takes no push itself, so dragging one does not fight the springs.
+        if (left.pinned !== true) {
+          left.vx -= fx
+          left.vy -= fy
+          left.vz -= fz
+        }
+        if (right.pinned !== true) {
+          right.vx += fx
+          right.vy += fy
+          right.vz += fz
+        }
+      }
+    }
+
+    // Springs: each edge pulls its endpoints to the rest length.
+    const index = new Map(nodes.map(node => [node.id, node]))
+    for (const edge of edges) {
+      const source = index.get(edge.source)
+      const target = index.get(edge.target)
+      if (source === undefined || target === undefined) continue
+      const dx = target.x - source.x
+      const dy = target.y - source.y
+      const dz = target.z - source.z
+      const distance = Math.max(Math.sqrt(dx * dx + dy * dy + dz * dz), 1e-6)
+      const displacement = (distance - options.linkDistance) * options.spring
+      const fx = (dx / distance) * displacement
+      const fy = (dy / distance) * displacement
+      const fz = (dz / distance) * displacement
+      if (source.pinned !== true) {
+        source.vx += fx
+        source.vy += fy
+        source.vz += fz
+      }
+      if (target.pinned !== true) {
+        target.vx -= fx
+        target.vy -= fy
+        target.vz -= fz
+      }
+    }
+
+    // Gravity and integration. Each substep applies its share of the force,
+    // so the step's total impulse is unchanged while the per-substep
+    // displacement the stiffness acts through shrinks with the substep count.
+    for (const node of nodes) {
+      if (node.pinned === true) {
+        node.vx = 0
+        node.vy = 0
+        node.vz = 0
+        continue
+      }
+      node.vx -= node.x * options.gravity
+      node.vy -= node.y * options.gravity
+      node.vz -= node.z * options.gravity
+      node.vx *= damping / substeps
+      node.vy *= damping / substeps
+      node.vz *= damping / substeps
+      node.x += node.vx
+      node.y += node.vy
+      node.z += node.vz
+    }
   }
 }
 
