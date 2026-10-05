@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The `security/` group holds security tooling that ships as part of the built-in **渗透测试模式** (pentest) preset. `wsl-pentest` exposes model-facing tools (`wsl-run`, `wsl-tool-check`, `wsl-install`, `wsl-nmap`, `wsl-sqlmap`, `wsl-nikto`) that run penetration-testing commands inside the WSL Linux environment with full host identity. These packages are referenced only by the `pentest` preset's `agent.cordis.yml`, so ordinary non-pentest sessions never load them.
+The `security/` group holds security tooling that ships as part of the built-in **渗透测试模式** (pentest) preset. `wsl-pentest` exposes model-facing tools (`wsl-run`, `wsl-tool-check`, `wsl-install`, `wsl-nmap`, `wsl-sqlmap`, `wsl-nikto`, `wsl-curl`, `wsl-hydra`, `wsl-httpx`, `wsl-dirsearch`) that run penetration-testing commands inside the WSL Linux environment with full host identity. These packages are referenced only by the `pentest` preset's `agent.cordis.yml`, so ordinary non-pentest sessions never load them.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ The `security/` group holds security tooling that ships as part of the built-in 
 
 | Package | What it provides |
 |---|---|
-| [`wsl-pentest/`](wsl-pentest/README.md) | Model-facing WSL pentest tools (nmap, sqlmap, nikto, and general WSL command execution), mounted by the pentest preset |
+| [`wsl-pentest/`](wsl-pentest/README.md) | Model-facing WSL pentest tools (nmap, sqlmap, nikto, curl, hydra, httpx, dirsearch, and general WSL command execution), mounted by the pentest preset |
 
 -----
 

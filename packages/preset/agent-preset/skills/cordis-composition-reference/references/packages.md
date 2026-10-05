@@ -378,7 +378,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 
 | Package | Config | Description |
 |---|---|---|
-| `@deepseek-ai/dsh-tool-wsl-pentest` | no | Model-facing WSL pentest tools (wsl-run/wsl-tool-check/wsl-install/wsl-nmap/wsl-sqlmap/wsl-nikto) that execute penetration-testing commands in the WSL Linux environment with full host identity |
+| `@deepseek-ai/dsh-tool-wsl-pentest` | no | Model-facing WSL pentest tools (wsl-run/wsl-tool-check/wsl-install/wsl-nmap/wsl-sqlmap/wsl-nikto/wsl-curl/wsl-hydra/wsl-httpx/wsl-dirsearch) that execute penetration-testing commands in the WSL Linux environment with full host identity |
 
 ## session
 
