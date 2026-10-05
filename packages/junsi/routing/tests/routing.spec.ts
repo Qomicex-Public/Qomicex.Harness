@@ -38,8 +38,11 @@ describe('junsi-routing section', () => {
     const arg = section.mock.calls[0]![0] as { text: string }
     expect(arg.text).toContain('junsi-dev-toolkit 开发任务路由')
     expect(arg.text).toContain('📌 路由宣告: <skill-id>')
+    expect(arg.text).toContain('前置知识加载（强制，先于一切调查）')
+    expect(arg.text).toContain('禁止用 glob/grep/read/bash 扫描或阅读项目文件')
     expect(arg.text).toContain('发现错路由')
     expect(arg.text).toContain('store-decision')
+    expect(arg.text).toContain('写回完成才算任务闭环')
   })
 })
 
