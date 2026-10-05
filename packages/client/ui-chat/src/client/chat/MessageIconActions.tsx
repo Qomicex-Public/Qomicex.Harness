@@ -3,8 +3,8 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import {
-  IconBranchOutlineRegular, IconCheckOutlineRegular, IconCopyOutlineRegular,
-  IconEditOutlineRegular, IconTrashOutlineRegular, Tooltip, writeClipboard,
+  IconArrowUndoOutlineRegular, IconBranchOutlineRegular, IconCheckOutlineRegular, IconCopyOutlineRegular,
+  IconEditOutlineRegular, Tooltip, writeClipboard,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ChatViewSlotProps } from '../contract/slots.ts'
 import { formatMessageClock } from './message-chrome.ts'
@@ -95,7 +95,7 @@ export function MessageIconActions({
       {onRetract !== undefined && (
         <Tooltip label={t('message.retract')} side="bottom">
           <button type="button" className={css.action} aria-label={t('message.retract')} onClick={onRetract}>
-            <IconTrashOutlineRegular />
+            <IconArrowUndoOutlineRegular />
           </button>
         </Tooltip>
       )}

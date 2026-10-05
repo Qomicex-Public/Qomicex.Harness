@@ -203,6 +203,8 @@ class TestPersistence extends SessionPersistence {
   }
 
   async delete(): Promise<void> {}
+
+  async truncate(): Promise<void> {}
 }
 
 async function liveContext(config: ConstructorParameters<typeof SqliteSessionQueryEngine>[1] = { path: ':memory:' }): Promise<Context> {

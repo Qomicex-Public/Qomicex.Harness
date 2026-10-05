@@ -384,6 +384,52 @@ export interface ForkSessionInjected {
   forkSession: (sessionId: SessionId) => void
 }
 
+/** Delete action share: the row only raises the confirmation request. */
+export interface DeleteSessionInjected {
+  hooks: {
+    /** Archived Session ids: an archived row deletes without the stop hop. */
+    archived: HostObservable<ReadonlySet<SessionId>>
+  }
+  /**
+   * Ask for the permanent-delete confirmation. `archived` reports whether the
+   * row is archived, so the request can note that no live work can exist.
+   */
+  deleteSession: (sessionId: SessionId, archived: boolean) => void
+}
+
+/**
+ * A permanent-delete confirmation the delete action asked for: the request
+ * notes whether work still runs, so the dialog can name the stop before the
+ * erase.
+ */
+export interface SessionDeleteConfirmRequest {
+  /** Session to erase. */
+  sessionId: SessionId
+  /** The row's display title, named in the dialog. */
+  displayTitle: string
+  /** Whether the Session still runs; confirming stops it before the erase. */
+  running: boolean
+}
+
+/**
+ * Delete dialog share: the pending confirmation, its settlement, and the
+ * stop-and-erase hop the dialog confirms with.
+ */
+export interface SessionDeleteConfirmInjected {
+  hooks: {
+    /** The confirmation asked for, until the dialog consumes or cancels it. */
+    deleteRequest: HostObservable<SessionDeleteConfirmRequest | null>
+  }
+  /** Consume or cancel the pending confirmation. */
+  settleSessionDelete: () => void
+  /**
+   * Erase a Session after the Host stops its running work (the durable
+   * stop-and-archive the retraction flow uses); resolves once the durable
+   * log is gone. Irreversible.
+   */
+  stopAndDeleteSession: (sessionId: SessionId) => Promise<void>
+}
+
 /** Rename action share: the row only raises the request; the dialog entry answers it. */
 export interface RenameSessionInjected {
   /** Ask for the rename dialog, seeded with the row's current title. */
@@ -437,6 +483,13 @@ export type SessionArchiveConfirmProps =
   & PropsLocale<'workspace'>
   & Omit<SessionArchiveConfirmInjected, 'hooks'>
   & PropsHooks<SessionArchiveConfirmInjected['hooks']>
+
+/** Props of the delete dialog entry in `shell.overlay`. */
+export type SessionDeleteConfirmProps =
+  PropsRuntime<'shell.overlay'>
+  & PropsLocale<'workspace'>
+  & Omit<SessionDeleteConfirmInjected, 'hooks'>
+  & PropsHooks<SessionDeleteConfirmInjected['hooks']>
 
 /**
  * Props of the row toast entry in `shell.overlay`. The declared viewing store

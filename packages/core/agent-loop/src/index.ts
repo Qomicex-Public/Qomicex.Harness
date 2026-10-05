@@ -618,7 +618,9 @@ export class AgentLoop extends Service implements AgentFactory {
             detachSession = agent.ctx.sessions.enter(session)
             // The mounted backend routes announced live events into the active
             // write handle by session id; the loop only owns the handle itself.
-            detachAgent = loopCtx.agents.enter(agent, parentAgent)
+            // The dispose closure rides the entry, so a service without the
+            // handle (truncate-then-resume) can retire this exact agent.
+            detachAgent = loopCtx.agents.enter(agent, parentAgent, dispose)
             agent.ctx.sessions.announce(session)
             assertLive()
             await loopCtx.agents.announce(agent, source, abort.signal)

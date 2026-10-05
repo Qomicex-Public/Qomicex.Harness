@@ -885,6 +885,15 @@ workspaceDesktop(): { name: string; available: boolean; fileManager: 'finder' | 
 @Remote('fork') fork(request: SessionForkRequest): Promise<SessionForkValue>
 
 /**
+ * Truncate one Session in place: keep its first `atSeq` events and durably
+ * discard the tail. A live Agent is disposed first (its next prompt resumes
+ * from the kept prefix); a Session with running work is refused.
+ * @param request - Session identity and the exclusive event cut.
+ * @returns acknowledgement that the durable log now ends at the cut.
+ */
+@Remote('truncate') truncate(request: SessionTruncateRequest): Promise<SessionTruncateValue>
+
+/**
  * Admit one prompt after explicitly resuming its Session.
  * @param request - Session identity, prompt content, source metadata, and delivery mode.
  * @param signal - caller cancellation before prompt admission begins.

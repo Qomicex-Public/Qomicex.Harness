@@ -273,10 +273,17 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the awaitable Cordis effect disposer (single-shot; a repeat call returns undefined without awaiting an in-flight teardown). Exact identity is load-bearing: a composite (generator) effect that owns a teardown ORDER — the agent factory\'s lifecycle chain — must yield THIS function so Cordis nests the unregistration at that yield position; yielding a wrapper would leave it disposing as a concurrent sibling on owner unload, unregistering the agent (and emitting `agent/disposed`) while its final turn is still draining.',
       },
       {
-        signature: 'enter(agent: Agent, owner: Agent | undefined): () => void',
+        signature: 'enter(agent: Agent, owner: Agent | undefined, disposition?: () => Promise<void>): () => void',
         description: 'Insert an already-constructed agent without announcing it. This is the advanced ordered-lifecycle primitive used by the async agent factory: it first completes setup while the agent is unpublished, then assigns the returned detach closure into its pre-installed composite teardown before calling announce. Ordinary callers use register.',
-        parameters: [{ name: 'agent', description: 'the prepared, unpublished agent.' }, { name: 'owner', description: 'explicitly supplied live runtime owner, or undefined for a top-level runtime root. This is runtime ownership, not the resumed session\'s durable parent lineage.' }],
+        parameters: [{ name: 'agent', description: 'the prepared, unpublished agent.' }, { name: 'owner', description: 'explicitly supplied live runtime owner, or undefined for a top-level runtime root. This is runtime ownership, not the resumed session\'s durable parent lineage.' }, { name: 'disposition', description: 'optional factory teardown for this exact agent; registering one enables {@link disposeAgent}. Its rejection propagates to the disposing caller.' }],
         returns: 'an idempotent closure that removes this exact entry and emits `agent/disposed` with listener failures contained. When called from a `agent/created` listener, removal and disposal wait until the serial creation dispatch settles.',
+      },
+      {
+        signature: 'async disposeAgent(id: SessionId): Promise<void>',
+        description: 'Dispose one live agent through the teardown its factory registered at enter: stop the loop, drain, release persistence write ownership, and unregister. Use it when a service must retire an agent it does not own a returned AgentHandle for — a truncate-then-resume flow, for example — after which `get(id)` returns undefined and a later resume re-creates the agent from the (rewritten) durable log.',
+        parameters: [{ name: 'id', description: 'the live agent/session identity to dispose.' }],
+        returns: 'resolution once the agent is fully torn down.',
+        throws: ['when no live agent has the id, or when the registered teardown rejects (the agent is still unregistered; treat the failure as a durability warning, not a liveness signal).'],
       },
       {
         signature: 'async announce(agent: Agent, source: SessionStartSource, signal?: AbortSignal): Promise<void>',
@@ -2095,6 +2102,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the new Session identity.',
       },
       {
+        signature: '@Remote(\'truncate\') truncate(request: SessionTruncateRequest): Promise<SessionTruncateValue>',
+        description: 'Truncate one Session in place: keep its first `atSeq` events and durably discard the tail. A live Agent is disposed first (its next prompt resumes from the kept prefix); a Session with running work is refused.',
+        parameters: [{ name: 'request', description: 'Session identity and the exclusive event cut.' }],
+        returns: 'acknowledgement that the durable log now ends at the cut.',
+      },
+      {
         signature: '@Remote(\'prompt\') prompt(request: SessionPromptRequest, signal: AbortSignal): Promise<SessionPromptValue>',
         description: 'Admit one prompt after explicitly resuming its Session.',
         parameters: [{ name: 'request', description: 'Session identity, prompt content, source metadata, and delivery mode.' }, { name: 'signal', description: 'caller cancellation before prompt admission begins.' }],
@@ -2219,6 +2232,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'id', description: 'the stored session to erase.' }, { name: 'options', description: 'optional cancellation.' }],
         returns: 'resolution once every durable artifact of the session is gone.',
         throws: ['{SessionPersistenceNotFoundError} when no stored session has the id.', '{SessionAlreadyOwnedError} while a write owner holds the session, in this process or another.'],
+      },
+      {
+        signature: 'abstract truncate(id: SessionId, keepSeq: number, options?: SessionPersistenceDeleteOptions): Promise<void>',
+        description: 'Rewrite one stored session\'s log to its first `keepSeq` events, durably discarding the tail. The log stays contiguous from seq 0 and the header is unchanged, so a cut is a smaller valid session: resumed agents replay the kept prefix exactly. A cut at or below the fork-inherited prefix is refused — lineage events cannot be discarded. Not cancellable in effect once the physical replacement starts.',
+        parameters: [{ name: 'id', description: 'the stored session to truncate.' }, { name: 'keepSeq', description: 'number of leading events to keep (the exclusive cut).' }, { name: 'options', description: 'optional cancellation.' }],
+        returns: 'resolution once the replaced artifact is durable.',
+        throws: ['{SessionPersistenceNotFoundError} when no stored session has the id.', '{SessionAlreadyOwnedError} while a write owner holds the session, in this process or another.', '{SessionTruncateBelowInheritedError} when the cut would cross the fork-inherited prefix.'],
       },
     ],
   },
@@ -7078,6 +7098,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SessionTitleUserMessage',
     declaration: 'export interface SessionTitleUserMessage {\n    readonly seq: SessionSeq;\n    readonly text: string;\n}',
+  },
+  {
+    name: 'SessionTruncateRequest',
+    declaration: 'export interface SessionTruncateRequest {\n    readonly sessionId: SessionId;\n    readonly atSeq: number;\n}',
+  },
+  {
+    name: 'SessionTruncateValue',
+    declaration: 'export interface SessionTruncateValue {\n    readonly truncated: true;\n}',
   },
   {
     name: 'SessionUpdateQueueRequest',

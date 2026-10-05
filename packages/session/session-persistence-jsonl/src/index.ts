@@ -14,7 +14,7 @@ import {
   sessionFormatCatalog,
 } from '@deepseek-ai/dsh-session-format-catalog'
 import { readdirSync, type Dirent } from 'node:fs'
-import { open, mkdir, readdir, realpath, link, rm, stat, truncate } from 'node:fs/promises'
+import { open, mkdir, readdir, realpath, link, rename, rm, stat, truncate } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { scheduler } from 'node:timers/promises'
@@ -22,7 +22,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import {
   SessionPersistence, SessionPersistenceRevision, SessionFormatUnsupportedError,
   SessionPersistenceCorruptionError, SessionAlreadyExistsError, SessionAlreadyOwnedError,
-  SessionPersistenceNotFoundError,
+  SessionPersistenceNotFoundError, SessionTruncateBelowInheritedError,
   assertStoredId, materializeCreateHeader, sessionFormatVersionRefusal, validateStoredEvents,
   type SessionAccess, type SessionHandle,
   type SessionHandleReadResult,
@@ -536,6 +536,56 @@ class JsonlSessionPersistence extends SessionPersistence {
       await lease.release()
     }
     // A stale memo entry would only serve an id whose artifact is gone.
+    this.coldLogMemo.delete(id)
+  }
+
+  /**
+   * Rewrite the stored log to its first `keepSeq` events, durably discarding
+   * the tail. The rewrite is a controlled same-id publication — temp-write,
+   * fsync, rename over the current artifact — under the cross-process write
+   * lease, so a concurrent writer in another process refuses instead of
+   * racing the replacement. The header line is re-encoded unchanged; a cut
+   * at or below the inherited fork prefix would forge lineage and is refused.
+   * @param id - the stored session to truncate.
+   * @param keepSeq - number of leading events to keep (the exclusive cut).
+   * @param options - optional cancellation.
+   * @returns resolution once the replaced artifact is durable.
+   * @throws {SessionPersistenceNotFoundError} when the session does not exist.
+   * @throws {SessionAlreadyOwnedError} while a write owner holds the session,
+   *   in this process or another.
+   * @throws {SessionTruncateBelowInheritedError} when the cut would cross the
+   *   fork-inherited prefix.
+   */
+  async truncate(id: SessionId, keepSeq: number, options?: SessionPersistenceDeleteOptions): Promise<void> {
+    options?.signal?.throwIfAborted()
+    await this.ensureRootEncoding()
+    options?.signal?.throwIfAborted()
+    if (this.tracker.hasWriteOwner(id)) throw new SessionAlreadyOwnedError(id)
+    const selected = await this.findLog(id, options?.signal)
+    if (selected === undefined) throw new SessionPersistenceNotFoundError(id)
+    options?.signal?.throwIfAborted()
+    const stored = await this.readStoredLog(selected.currentPath, id, options?.signal)
+    if (keepSeq < stored.inheritedEventCount) {
+      throw new SessionTruncateBelowInheritedError(id, keepSeq, stored.inheritedEventCount)
+    }
+    if (keepSeq >= stored.events.length) return // nothing to discard
+    const kept = stored.events.slice(0, keepSeq)
+    const content = await this.encodeMaterialization(stored.meta, stored.inheritedEventCount, kept)
+    const dir = dirname(selected.currentPath)
+    const lease = await SessionWriteLease.acquire(dir, id)
+    try {
+      options?.signal?.throwIfAborted()
+      const tmp = await this.writeSyncedTempFile(selected.currentPath, content)
+      try {
+        await rename(tmp, selected.currentPath)
+      } catch (error) {
+        await rm(tmp, { force: true })
+        throw error
+      }
+      if (process.platform !== 'win32') await this.syncDirPosix(dir)
+    } finally {
+      await lease.release()
+    }
     this.coldLogMemo.delete(id)
   }
 

@@ -224,6 +224,10 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
     'session/steer-unavailable': { readonly itemId: MessageId }
     'session/title-invalid': { readonly sessionId: SessionId }
     'session/fork-unavailable': { readonly sessionId: SessionId }
+    'session/truncate-unavailable': {
+      readonly sessionId: SessionId
+      readonly reason: 'inherited-cut' | 'not-found' | 'busy'
+    }
     'subagent/not-found': {
       readonly parentSessionId: SessionId
       readonly childSessionId: SessionId
@@ -327,6 +331,18 @@ export interface SessionForkRequest {
 /** Identity of a newly forked Session. */
 export interface SessionForkValue {
   readonly sessionId: SessionId
+}
+
+/** Session truncate request: keep the first `atSeq` events, discard the tail. */
+export interface SessionTruncateRequest {
+  readonly sessionId: SessionId
+  /** Number of leading events to keep (the exclusive cut; the kept prefix is [0, atSeq)). */
+  readonly atSeq: number
+}
+
+/** Session truncate response value. */
+export interface SessionTruncateValue {
+  readonly truncated: true
 }
 
 /** Session prompt request. */

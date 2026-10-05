@@ -136,6 +136,17 @@ export interface ISessions {
     onCreated?: (childId: SessionId) => void
   }): Promise<SessionId>
   /**
+   * Truncate a session in place: keep its first `atSeq` events and durably
+   * discard the tail, without forking a new session. A live agent is disposed
+   * Host-side; the session's client history should be resynced after success.
+   * @param opts - session id and the exclusive event cut (the kept prefix is
+   *   [0, atSeq); the cut must stay above the fork-inherited prefix).
+   * @throws when the session is running (`session/truncate-unavailable`, reason
+   *   `busy`), the cut crosses the inherited prefix (`inherited-cut`), or the
+   *   session is unknown (`not-found`).
+   */
+  truncate(opts: { sessionId: SessionId; atSeq: number }): Promise<void>
+  /**
    * Borrow an already-retained Agent-scoped Context without extending its lifetime.
    * @param id - session id.
    * @returns the live scoped Context, or undefined without a retained generation.

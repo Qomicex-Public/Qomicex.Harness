@@ -151,6 +151,8 @@ class TestPersistence extends SessionPersistence {
 
   async delete(): Promise<void> {}
 
+  async truncate(): Promise<void> {}
+
   private handle(stored: StoredSession, access: SessionAccess): SessionHandle {
     let closed = false
     const handle: SessionHandle = {

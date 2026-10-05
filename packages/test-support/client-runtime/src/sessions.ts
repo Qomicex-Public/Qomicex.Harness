@@ -147,6 +147,14 @@ export class FixtureSession implements SessionFace {
   }
 
   /**
+   * Fail-loud stub; supply `resync` on the fixture's session face to exercise it.
+   * @returns never — always throws.
+   */
+  resync(): never {
+    throw new Error(`test session "${this.sessionId}": resync is not stubbed — supply it on the fixture's session face`)
+  }
+
+  /**
    * Fail-loud stub; supply `command` on the fixture's session face to exercise it.
    * @returns never — always throws.
    */
@@ -311,7 +319,7 @@ export class TestSessions implements ISessions {
 
   /** Calls observed on the service-level face, newest last. */
   readonly calls: {
-    method: 'create' | 'refreshProjections' | 'refresh' | 'search' | 'fork'
+    method: 'create' | 'refreshProjections' | 'refresh' | 'search' | 'fork' | 'truncate'
     args: unknown[]
   }[] = []
 
@@ -680,6 +688,11 @@ export class TestSessions implements ISessions {
   fork(opts: Parameters<ISessions['fork']>[0]): Promise<SessionId> {
     this.calls.push({ method: 'fork', args: [opts] })
     return Promise.resolve(opts.sessionId)
+  }
+
+  async truncate(opts: Parameters<ISessions['truncate']>[0]): Promise<void> {
+    this.calls.push({ method: 'truncate', args: [opts] })
+    await Promise.resolve()
   }
 
   /**

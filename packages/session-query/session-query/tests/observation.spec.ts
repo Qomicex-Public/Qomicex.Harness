@@ -514,6 +514,7 @@ describe('SessionObservationReader cold path', () => {
       }
 
       async delete(): Promise<void> {}
+      async truncate(): Promise<void> {}
     }
 
     const ctx = await readerContext()

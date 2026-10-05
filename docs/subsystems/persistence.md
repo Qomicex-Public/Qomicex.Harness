@@ -421,6 +421,25 @@ abstract list(options?: SessionPersistenceListOptions): Promise<readonly Session
  *   in this process or another.
  */
 abstract delete(id: SessionId, options?: SessionPersistenceDeleteOptions): Promise<void>
+
+/**
+ * Rewrite one stored session's log to its first `keepSeq` events, durably
+ * discarding the tail. The log stays contiguous from seq 0 and the header
+ * is unchanged, so a cut is a smaller valid session: resumed agents replay
+ * the kept prefix exactly. A cut at or below the fork-inherited prefix is
+ * refused — lineage events cannot be discarded. Not cancellable in effect
+ * once the physical replacement starts.
+ * @param id - the stored session to truncate.
+ * @param keepSeq - number of leading events to keep (the exclusive cut).
+ * @param options - optional cancellation.
+ * @returns resolution once the replaced artifact is durable.
+ * @throws {SessionPersistenceNotFoundError} when no stored session has the id.
+ * @throws {SessionAlreadyOwnedError} while a write owner holds the session,
+ *   in this process or another.
+ * @throws {SessionTruncateBelowInheritedError} when the cut would cross the
+ *   fork-inherited prefix.
+ */
+abstract truncate(id: SessionId, keepSeq: number, options?: SessionPersistenceDeleteOptions): Promise<void>
 ```
 
 Types: [SessionId](core.md)

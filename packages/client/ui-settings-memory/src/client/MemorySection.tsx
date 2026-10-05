@@ -149,6 +149,7 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
   const [mounted, setMounted] = useState<boolean | undefined>(undefined)
   const [failure, setFailure] = useState<string | undefined>(undefined)
   const [selected, setSelected] = useState<MemoryNodeView | undefined>(undefined)
+  const [query, setQuery] = useState('')
   const [distillTargets, setDistillTargets] = useState<DistillTargets>({ providers: [] })
 
   const refresh = useCallback(async (): Promise<void> => {
@@ -185,6 +186,23 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
   }, [loadDistillTargets])
 
   const layout = useMemo(() => (graph === undefined ? undefined : toGraph(graph)), [graph])
+
+  // Search matches against the verbatim content, scope, and kind. Case and
+  // whitespace folding only; the store holds plain prose, so a fuzzy matcher
+  // would add machinery without helping recall.
+  const needle = query.trim().toLowerCase()
+  const matches = useMemo(() => {
+    if (graph === undefined || needle === '') return undefined
+    const hits = graph.nodes.filter(node =>
+      node.raw.toLowerCase().includes(needle)
+      || node.scope.toLowerCase().includes(needle)
+      || node.kind.toLowerCase().includes(needle))
+    return new Set(hits.map(node => node.id))
+  }, [graph, needle])
+  const matchedNodes = useMemo(() => {
+    if (graph === undefined || matches === undefined) return []
+    return graph.nodes.filter(node => matches.has(node.id))
+  }, [graph, matches])
 
   if (mounted === false) {
     return (
@@ -224,6 +242,31 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
 
       <h3 className={css.subtitle}>{t('graphTitle')}</h3>
       <p className={css.hint}>{t('graphHint')}</p>
+      <input
+        type="search"
+        className={css.searchInput}
+        placeholder={t('searchPlaceholder')}
+        aria-label={t('searchPlaceholder')}
+        value={query}
+        onChange={(e) => { setQuery(e.target.value) }}
+      />
+      {matches !== undefined && (
+        <p className={css.hint}>
+          {t('searchMatches', { n: matches.size })}
+        </p>
+      )}
+      {matches !== undefined && matchedNodes.length > 0 && (
+        <ul className={css.searchResults} aria-label={t('searchResults')}>
+          {matchedNodes.slice(0, 50).map(node => (
+            <li key={node.id}>
+              <button type="button" className={css.searchResult} onClick={() => { setSelected(node) }}>
+                <span className={css.searchResultRaw}>{node.raw.slice(0, 120)}</span>
+                <span className={css.searchResultMeta}>{node.scope} · {node.kind}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       {layout === undefined || layout.nodes.length === 0
         ? <p className={css.muted}>{t('graphEmpty')}</p>
         : (
@@ -231,6 +274,7 @@ export function MemorySection(props: MemorySectionProps): ReactNode {
             nodes={layout.nodes}
             edges={layout.edges}
             selectedId={selected?.id}
+            matchIds={matches}
             onSelect={(id) => {
               setSelected(graph?.nodes.find(node => node.id === id))
             }}

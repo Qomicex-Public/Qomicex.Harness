@@ -48,6 +48,22 @@ export class SessionReadOnlyError extends Error {
   }
 }
 
+/** A truncate cut fell at or below the session's fork-inherited prefix. */
+export class SessionTruncateBelowInheritedError extends Error {
+  /**
+   * @param sessionId - the session the cut named.
+   * @param keepSeq - the refused cut.
+   * @param inheritedEventCount - the fork-inherited prefix length the cut must stay above.
+   */
+  constructor(readonly sessionId: SessionId, readonly keepSeq: number, readonly inheritedEventCount: number) {
+    super(
+      `session "${sessionId}": cannot truncate to ${String(keepSeq)}; `
+      + `the fork-inherited prefix keeps the first ${String(inheritedEventCount)} events`,
+    )
+    this.name = 'SessionTruncateBelowInheritedError'
+  }
+}
+
 /**
  * A write handle's ownership is permanently gone: its lease expired, a renewal
  * failed, or the durable ownership record no longer names this handle. The

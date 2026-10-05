@@ -473,6 +473,21 @@ export class ClientSessions implements ISessions {
   }
 
   /**
+   * Truncate a session in place: keep its first `atSeq` events and durably
+   * discard the tail, without forking. The Host disposes a live agent; the
+   * caller resyncs the client session history after success.
+   * @param opts - session id and the exclusive event cut.
+   * @throws when the Host refuses or the transport fails, with the code in
+   *   the message.
+   */
+  async truncate(opts: { sessionId: SessionId; atSeq: number }): Promise<void> {
+    const result = await this.manager.truncate(opts)
+    if (!result.ok) {
+      throw new Error(`session truncate failed: ${result.error.code}: ${result.error.message}`)
+    }
+  }
+
+  /**
    * Borrow an already-retained Agent-scoped Context.
    * @param id - session id (the agent identity — 1:1 same axis).
    * @returns the scoped Context, or undefined without a retained generation.

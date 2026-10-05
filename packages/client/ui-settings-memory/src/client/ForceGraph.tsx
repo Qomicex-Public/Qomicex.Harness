@@ -71,6 +71,12 @@ export interface ForceGraphProps {
   readonly edges: readonly GraphEdge[]
   /** Id of the currently selected node, if any. */
   readonly selectedId: string | undefined
+  /**
+   * Ids the page's search matched, when a search is active. Matched nodes stay
+   * fully lit and gain a ring; everything else fades, so a large graph still
+   * shows where the hits live. Absent means no search is in effect.
+   */
+  readonly matchIds?: ReadonlySet<string> | undefined
   /** Called with a node id when one is clicked; `undefined` when the background is clicked. */
   readonly onSelect: (id: string | undefined) => void
   readonly labels: ForceGraphLabels
@@ -165,7 +171,7 @@ function nodeColor(lifecycle: string): string {
  * @returns the graph element tree.
  */
 export function ForceGraph(props: ForceGraphProps): ReactNode {
-  const { nodes, edges, selectedId, onSelect, labels } = props
+  const { nodes, edges, selectedId, matchIds, onSelect, labels } = props
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [size, setSize] = useState({ width: 640, height: 460 })
   const [hoveredId, setHoveredId] = useState<string | undefined>(undefined)
@@ -308,19 +314,30 @@ export function ForceGraph(props: ForceGraphProps): ReactNode {
       // farther ones instead of being cut by them.
       const drawOrder = [...projected].filter(entry => entry.visible).sort((left, right) => right.depth - left.depth)
       const showLabels = camera.distance < framedDistance * 0.75
+      // A search dims everything it did not match; without one, hover owns
+      // the dimming.
+      const activeMatches = matchIds !== undefined && matchIds.size > 0 ? matchIds : undefined
       for (const entry of drawOrder) {
         const { node, x, y, depth } = entry
         const isSelected = node.id === selectedId
         const isHovered = node.id === hoveredId
         const isNeighbour = hoveredNeighbours.has(node.id)
+        const isMatch = activeMatches !== undefined && activeMatches.has(node.id)
         const detail = nodeById.get(node.id)
         const scale = pixelsPerUnit(depth, viewport)
         const radius = Math.max(1.5, (NODE_RADIUS + (detail?.weight ?? 0) * 4) * scale + (isSelected ? 3 : 0))
-        context.globalAlpha = hoveredId === undefined || isHovered || isNeighbour || isSelected ? 1 : 0.25
+        context.globalAlpha = (activeMatches !== undefined
+          ? (isMatch || isHovered || isSelected ? 1 : 0.12)
+          : (hoveredId === undefined || isHovered || isNeighbour || isSelected ? 1 : 0.25))
         context.fillStyle = nodeColor(detail?.lifecycle ?? 'active')
         context.beginPath()
         context.arc(x, y, radius, 0, Math.PI * 2)
         context.fill()
+        if (isMatch && !isSelected) {
+          context.strokeStyle = '#e0af68'
+          context.lineWidth = 2
+          context.stroke()
+        }
         if (isSelected || isHovered) {
           context.strokeStyle = '#c0caf5'
           context.lineWidth = 2
@@ -343,7 +360,7 @@ export function ForceGraph(props: ForceGraphProps): ReactNode {
       redrawRef.current = undefined
       window.cancelAnimationFrame(frame)
     }
-  }, [state, size, camera, viewport, hoveredId, selectedId, edges, nodeById, framedDistance])
+  }, [state, size, camera, viewport, hoveredId, selectedId, matchIds, edges, nodeById, framedDistance])
 
   const pointerPosition = (event: { clientX: number; clientY: number; currentTarget: HTMLElement }): Point => {
     const rect = event.currentTarget.getBoundingClientRect()

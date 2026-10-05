@@ -66,6 +66,13 @@ export interface ISession {
   /** Host-computed projection values by key (the useProjection seat). */
   readonly projections: ProjectionsFace
   /**
+   * Rebuild the opened history window from the Host's durable log. Use it
+   * after a Host-side history rewrite (an in-place truncate, for example):
+   * in-flight opens are invalidated and the window reloads from the new
+   * baseline. Never opened, it resolves without work.
+   */
+  resync(): Promise<void>
+  /**
    * Register one local submission echo in `snapshot.pendingSubmissions`,
    * synchronously, before the caller serializes and sends the prompt. The
    * Chat echoes persist until durable admission; transcript identities also

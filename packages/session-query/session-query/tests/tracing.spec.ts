@@ -134,6 +134,8 @@ class TracePersistence extends SessionPersistence {
   }
 
   async delete(): Promise<void> {}
+
+  async truncate(): Promise<void> {}
 }
 
 async function queryContext(): Promise<Context> {

@@ -48,6 +48,7 @@ function sessionFakeFor() {
     })),
     prompt: vi.fn<ISession['prompt']>(() => Promise.resolve({ ok: true, value: { accepted: true } })),
     cancel: vi.fn<ISession['cancel']>(() => Promise.resolve({ ok: true, value: { accepted: true } })),
+    resync: vi.fn<ISession['resync']>(() => Promise.resolve()),
   } satisfies SessionBehaviorOverrides
 }
 
@@ -212,51 +213,49 @@ describe('Chat inject API', () => {
     await b.runtime.dispose()
   })
 
-  it('retracts a sent message through the preceding prefix and retires the source', async () => {
+  it('retracts a sent message by truncating the session in place and resyncing its history', async () => {
     const b = await bench()
     const { injected } = b.chatViewApi(b.rootReference)
     injected.retractAt(17)
     await vi.waitFor(() => {
       expect(b.runtime.sessions.calls).toContainEqual({
-        method: 'fork', args: [{ sessionId: ROOT, atSeq: 16, increaseTitle: true }],
+        method: 'truncate', args: [{ sessionId: ROOT, atSeq: 17 }],
       })
     })
-    expect(b.openSession).toHaveBeenCalledWith(ROOT)
-    await vi.waitFor(() => {
-      expect(b.archiveSession).toHaveBeenCalledWith(ROOT, { stopActivity: true })
-    })
-    expect(b.deleteSession).toHaveBeenCalledWith(ROOT)
+    // No fork, no openSession switch: the session keeps its identity.
+    expect(b.openSession).not.toHaveBeenCalledWith(expect.not.stringMatching(ROOT))
     await b.runtime.dispose()
   })
 
-  it('keeps the retracted source archived when the Host refuses the erase', async () => {
+  it('surfaces a refused retract as a console warning without touching the session', async () => {
     const b = await bench()
-    b.deleteSession.mockRejectedValueOnce(new Error('session is live'))
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     try {
+      const truncate = vi.spyOn(b.runtime.sessions, 'truncate').mockRejectedValueOnce(new Error('session is running'))
       const { injected } = b.chatViewApi(b.rootReference)
       injected.retractAt(17)
       await vi.waitFor(() => {
-        expect(b.deleteSession).toHaveBeenCalledWith(ROOT)
+        expect(truncate).toHaveBeenCalledWith({ sessionId: ROOT, atSeq: 17 })
+        expect(warn).toHaveBeenCalled()
       })
-      expect(b.archiveSession).toHaveBeenCalledWith(ROOT, { stopActivity: true })
-      expect(warn).toHaveBeenCalled()
+      expect(b.archiveSession).not.toHaveBeenCalled()
+      expect(b.deleteSession).not.toHaveBeenCalled()
     } finally {
       warn.mockRestore()
       await b.runtime.dispose()
     }
   })
 
-  it('edits a sent message through a retract that refills the child composer', async () => {
+  it('edits a sent message by truncating in place and refilling the same composer', async () => {
     const b = await bench()
     const { injected } = b.chatViewApi(b.rootReference)
     injected.editAt(18, 'refilled text')
     await vi.waitFor(() => {
       expect(b.runtime.sessions.calls).toContainEqual({
-        method: 'fork', args: [{ sessionId: ROOT, atSeq: 17, increaseTitle: true }],
+        method: 'truncate', args: [{ sessionId: ROOT, atSeq: 18 }],
       })
     })
-    expect(b.openSession).toHaveBeenCalledWith(ROOT)
+    expect(b.openSession).not.toHaveBeenCalledWith(expect.not.stringMatching(ROOT))
     const input = b.runtime.ctx.conversation.input.for(b.runtime.sessions.scope(ROOT)!)
     await vi.waitFor(() => {
       expect(input.state.getSnapshot().draft).toBe('refilled text')

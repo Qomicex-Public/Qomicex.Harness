@@ -217,6 +217,12 @@ interface AgentEntry {
   announced: boolean
   announcing: boolean
   detachRequested: boolean
+  /**
+   * The factory-registered teardown for this exact agent, or undefined when
+   * the creator registered an already-constructed agent without one. Waiting
+   * on it reaches the same quiescence the owner's own dispose observes.
+   */
+  dispose: (() => Promise<void>) | undefined
 }
 
 /** One tracked boundary plus its inherited nesting chain. */
@@ -451,12 +457,15 @@ export class AgentRegistry extends Service {
    * @param owner - explicitly supplied live runtime owner, or
    *   undefined for a top-level runtime root. This is runtime ownership, not
    *   the resumed session's durable parent lineage.
+   * @param disposition - optional factory teardown for this exact agent;
+   *   registering one enables {@link disposeAgent}. Its rejection propagates
+   *   to the disposing caller.
    * @returns an idempotent closure that removes this exact entry and emits
    *   `agent/disposed` with listener failures contained. When called from a
    *   `agent/created` listener, removal and disposal wait until the serial
    *   creation dispatch settles.
    */
-  enter(agent: Agent, owner: Agent | undefined): () => void {
+  enter(agent: Agent, owner: Agent | undefined, disposition?: () => Promise<void>): () => void {
     const id = agent.id
     if (id !== agent.session.id) {
       throw new Error(`agent id "${id}" does not match session id "${agent.session.id}"`)
@@ -473,6 +482,7 @@ export class AgentRegistry extends Service {
       announced: false,
       announcing: false,
       detachRequested: false,
+      dispose: disposition,
     }
     this.store.set(id, entry)
     let entered = true
@@ -491,6 +501,33 @@ export class AgentRegistry extends Service {
       this.detachEntered(entry)
     }
     return detach
+  }
+
+  /**
+   * Dispose one live agent through the teardown its factory registered at
+   * {@link enter}: stop the loop, drain, release persistence write ownership,
+   * and unregister. Use it when a service must retire an agent it does not
+   * own a returned {@link AgentHandle} for — a truncate-then-resume flow, for
+   * example — after which `get(id)` returns undefined and a later resume
+   * re-creates the agent from the (rewritten) durable log.
+   * @param id - the live agent/session identity to dispose.
+   * @returns resolution once the agent is fully torn down.
+   * @throws when no live agent has the id, or when the registered teardown
+   *   rejects (the agent is still unregistered; treat the failure as a
+   *   durability warning, not a liveness signal).
+   */
+  async disposeAgent(id: SessionId): Promise<void> {
+    const entry = this.store.get(id)
+    if (entry === undefined) throw new Error(`no live agent "${id}" to dispose`)
+    const dispose = entry.dispose
+    // The teardown unregisters the entry itself through its own detach path;
+    // run it first so listeners observe the same dispose-then-removed order
+    // an owner-triggered disposal produces.
+    if (dispose !== undefined) {
+      await dispose()
+      return
+    }
+    this.detachEntered(entry)
   }
 
   /** Remove one exact entered agent and emit its paired disposal when announced. */

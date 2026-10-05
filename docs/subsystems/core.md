@@ -698,12 +698,30 @@ register(agent: Agent): ReturnType<Context['effect']>
  * @param owner - explicitly supplied live runtime owner, or
  *   undefined for a top-level runtime root. This is runtime ownership, not
  *   the resumed session's durable parent lineage.
+ * @param disposition - optional factory teardown for this exact agent;
+ *   registering one enables {@link disposeAgent}. Its rejection propagates
+ *   to the disposing caller.
  * @returns an idempotent closure that removes this exact entry and emits
  *   `agent/disposed` with listener failures contained. When called from a
  *   `agent/created` listener, removal and disposal wait until the serial
  *   creation dispatch settles.
  */
-enter(agent: Agent, owner: Agent | undefined): () => void
+enter(agent: Agent, owner: Agent | undefined, disposition?: () => Promise<void>): () => void
+
+/**
+ * Dispose one live agent through the teardown its factory registered at
+ * {@link enter}: stop the loop, drain, release persistence write ownership,
+ * and unregister. Use it when a service must retire an agent it does not
+ * own a returned {@link AgentHandle} for — a truncate-then-resume flow, for
+ * example — after which `get(id)` returns undefined and a later resume
+ * re-creates the agent from the (rewritten) durable log.
+ * @param id - the live agent/session identity to dispose.
+ * @returns resolution once the agent is fully torn down.
+ * @throws when no live agent has the id, or when the registered teardown
+ *   rejects (the agent is still unregistered; treat the failure as a
+ *   durability warning, not a liveness signal).
+ */
+async disposeAgent(id: SessionId): Promise<void>
 
 /**
  * Announce an agent previously inserted with {@link enter}.

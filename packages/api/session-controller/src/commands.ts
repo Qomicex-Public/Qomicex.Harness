@@ -20,6 +20,7 @@ import { SessionLogOffset, SessionSeq } from '@deepseek-ai/dsh-session'
 import type { SessionEvent, SessionHeader, SessionId, UserMessage } from '@deepseek-ai/dsh-session'
 import { SessionQueryError, type SessionObservation } from '@deepseek-ai/dsh-session-query'
 import { SessionTitleInvalidError } from '@deepseek-ai/dsh-session-title'
+import { SessionPersistenceNotFoundError, SessionTruncateBelowInheritedError } from '@deepseek-ai/dsh-session-persistence'
 import { canonicalClientTimeZone } from '@deepseek-ai/dsh-util-time'
 import { assertNever } from '@deepseek-ai/dsh-util-values'
 import { RemoteError, remoteErrorOf } from '@deepseek-ai/dsh-typert-protocol'
@@ -43,6 +44,8 @@ import type {
   SessionCreateValue,
   SessionForkRequest,
   SessionForkValue,
+  SessionTruncateRequest,
+  SessionTruncateValue,
   SessionPromptRequest,
   SessionPromptValue,
   SessionRenameRequest,
@@ -209,6 +212,61 @@ export class SessionCommandController {
         {},
       )
     }
+  }
+
+  /**
+   * Truncate one Session in place: keep its first `atSeq` events and durably
+   * discard the tail. A live Agent is disposed first — its next prompt
+   * resumes from the kept prefix — but a Session with work still running is
+   * refused, because disposal would abandon it mid-turn. The rewrite refuses
+   * a cut crossing the fork-inherited prefix.
+   * @param request - Session identity and the exclusive event cut.
+   * @returns acknowledgement that the durable log now ends at the cut.
+   */
+  async truncate(request: SessionTruncateRequest): Promise<SessionTruncateValue> {
+    const { sessionId, atSeq } = request
+    if (!Number.isSafeInteger(atSeq) || atSeq < 0) {
+      throw new RemoteError('gateway/bad-request', 'atSeq must be a non-negative safe integer', {})
+    }
+    const live = this.ctx.agents.get(sessionId)
+    if (live !== undefined && live.status === 'running') {
+      throw new RemoteError(
+        'session/truncate-unavailable',
+        `session "${sessionId}" is running; wait for the turn to finish before retracting`,
+        { sessionId, reason: 'busy' },
+      )
+    }
+    if (live !== undefined) {
+      try {
+        await this.ctx.agents.disposeAgent(sessionId)
+      } catch (error: unknown) {
+        // Disposal surfaced a durability failure; the agent is unregistered
+        // either way, so the truncate below still sees a free write path.
+        this.ctx.logger.warn(`session-controller: agent disposal during truncate warned: ${String(error)}`)
+      }
+    }
+    try {
+      await this.ctx.sessionPersistence.truncate(sessionId, atSeq)
+    } catch (error: unknown) {
+      if (error instanceof SessionTruncateBelowInheritedError) {
+        throw new RemoteError(
+          'session/truncate-unavailable',
+          error.message,
+          { sessionId, reason: 'inherited-cut' },
+          { cause: error },
+        )
+      }
+      if (error instanceof SessionPersistenceNotFoundError) {
+        throw new RemoteError(
+          'session/truncate-unavailable',
+          error.message,
+          { sessionId, reason: 'not-found' },
+          { cause: error },
+        )
+      }
+      throw error
+    }
+    return { truncated: true }
   }
 
   /**

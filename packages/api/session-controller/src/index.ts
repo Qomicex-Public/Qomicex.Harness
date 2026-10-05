@@ -42,6 +42,8 @@ import type {
   SessionFollowRequest,
   SessionForkRequest,
   SessionForkValue,
+  SessionTruncateRequest,
+  SessionTruncateValue,
   SessionListRequest,
   SessionListValue,
   SessionOpenWorkspacePathRequest,
@@ -417,6 +419,18 @@ export class SessionController extends TypertRemoteService {
   @Remote('fork')
   fork(request: SessionForkRequest): Promise<SessionForkValue> {
     return this.commands.fork(request)
+  }
+
+  /**
+   * Truncate one Session in place: keep its first `atSeq` events and durably
+   * discard the tail. A live Agent is disposed first (its next prompt resumes
+   * from the kept prefix); a Session with running work is refused.
+   * @param request - Session identity and the exclusive event cut.
+   * @returns acknowledgement that the durable log now ends at the cut.
+   */
+  @Remote('truncate')
+  truncate(request: SessionTruncateRequest): Promise<SessionTruncateValue> {
+    return this.commands.truncate(request)
   }
 
   /**

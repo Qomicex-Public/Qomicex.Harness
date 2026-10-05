@@ -177,6 +177,8 @@ class TestPersistence extends SessionPersistence {
   }
 
   async delete(): Promise<void> {}
+
+  async truncate(): Promise<void> {}
 }
 
 async function liveContext(config: ConstructorParameters<typeof TestSessionQueryEngine>[1] = {}): Promise<Context> {

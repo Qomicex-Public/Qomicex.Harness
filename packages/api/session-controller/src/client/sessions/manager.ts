@@ -551,6 +551,21 @@ export class SessionManager {
   }
 
   /**
+   * Contract session.truncate; a success leaves the durable log ending at the
+   * cut. Callers rebuild the affected client session's history window.
+   * @param opts - session id and the exclusive event cut.
+   * @returns the Remote acknowledgement or failure.
+   */
+  async truncate(
+    opts: { sessionId: SessionId; atSeq: number },
+  ): Promise<RemoteResult<{ truncated: true }>> {
+    return this.remote.session.truncate({
+      sessionId: opts.sessionId,
+      atSeq: SessionSeq(opts.atSeq),
+    })
+  }
+
+  /**
    * Rename a Session and update its title projection without opening its history.
    * @param sessionId - Session to rename.
    * @param title - raw title text for Host normalization.

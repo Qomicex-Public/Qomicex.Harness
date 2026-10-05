@@ -70,6 +70,35 @@ describe('MemorySection', () => {
     expect(screen.getByText('Same scope')).toBeTruthy()
   })
 
+  it('filters memories by search and lists the hits with their scope and kind', async () => {
+    const { container } = render(<MemorySection {...props()} />)
+    await waitFor(() => {
+      expect(container.querySelector('canvas')).not.toBeNull()
+    })
+    fireEvent.change(screen.getByLabelText('Search memory content, scope, or kind…'), { target: { value: 'pnpm' } })
+    await waitFor(() => {
+      expect(screen.getByText('2 memories matched; the graph highlights them and fades the rest.')).toBeTruthy()
+    })
+    const results = screen.getByRole('list', { name: 'Search matches' })
+    expect(results.querySelectorAll('li')).toHaveLength(2)
+    expect(results.textContent).toContain('prefers pnpm')
+    expect(results.textContent).not.toContain('lone fact')
+    // Opening a hit selects it in the detail panel.
+    fireEvent.click(results.querySelector('button')!)
+    await waitFor(() => {
+      expect(screen.getAllByText('prefers pnpm').length).toBeGreaterThanOrEqual(2)
+      expect(screen.getByText('project:p1')).toBeTruthy()
+    })
+  })
+
+  it('shows no match list while the query is blank', async () => {
+    render(<MemorySection {...props()} />)
+    await waitFor(() => {
+      expect(screen.getByText('Memories')).toBeTruthy()
+    })
+    expect(screen.queryByRole('list', { name: 'Search matches' })).toBeNull()
+  })
+
   it('shows the empty message instead of a canvas when nothing is stored', async () => {
     const empty: MemoryGraphValue = { nodes: [], edges: [], scopes: [], stats: { total: 0, byLifecycle: {}, byKind: {}, linked: 0 } }
     const { container } = render(<MemorySection {...props({ loadGraph: async () => ({ kind: 'ok', value: empty }) })} />)

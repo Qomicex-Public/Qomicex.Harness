@@ -21,11 +21,13 @@ import { en as commonEn } from '@deepseek-ai/dsh-client-locale/src/locales/en.ts
 import { zh as commonZh } from '@deepseek-ai/dsh-client-locale/src/locales/zh.ts'
 import type {
   MenuOpenState, RowToast, RowToastState, SessionArchiveConfirmInjected, SessionArchiveConfirmRequest,
+  SessionDeleteConfirmInjected, SessionDeleteConfirmRequest,
   SessionRenameDialogInjected, SessionRenameTarget,
 } from '../src/client/contract/slots.ts'
 import {
   ArchiveSessionMenuItem, ArchiveSessionRowButton, SessionArchiveConfirmDialog,
 } from '../src/client/session-actions/ArchiveSession.tsx'
+import { SessionDeleteConfirmDialog } from '../src/client/session-actions/DeleteSession.tsx'
 import { ForkSessionMenuItem } from '../src/client/session-actions/ForkSession.tsx'
 import { PinSessionMenuItem, PinSessionRowButton } from '../src/client/session-actions/PinSession.tsx'
 import { RenameSessionMenuItem, SessionRenameDialog } from '../src/client/session-actions/RenameSession.tsx'
@@ -477,6 +479,62 @@ describe('SessionArchiveConfirmDialog', () => {
       '2 scheduled reminders: check the build, stand-up',
       '1 other item of work (probe)',
     ])
+  })
+})
+
+describe('SessionDeleteConfirmDialog', () => {
+  /** The dialog over a test-owned request source; settling clears the request the way apply does. */
+  function deleteDialog(stopAndDeleteSession: SessionDeleteConfirmInjected['stopAndDeleteSession']) {
+    const request = createSnapshotStore<SessionDeleteConfirmRequest | null>(null)
+    const settleSessionDelete = vi.fn(() => { request.set(null) })
+    render(
+      <SessionDeleteConfirmDialog
+        {...overlay}
+        useDeleteRequest={bindSnapshotSelector(request)}
+        settleSessionDelete={settleSessionDelete}
+        stopAndDeleteSession={stopAndDeleteSession}
+      />,
+    )
+    const ask = (running: boolean): void => {
+      act(() => { request.set({ sessionId: sid('one'), displayTitle: 'Old chat', running }) })
+    }
+    return { settleSessionDelete, ask }
+  }
+
+  it('renders nothing until a confirmation is requested', () => {
+    deleteDialog(vi.fn(async () => {}))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('names the session, warns about running work, and stops and erases on confirm', async () => {
+    const pending = Promise.withResolvers<undefined>()
+    const stopAndDeleteSession = vi.fn(() => pending.promise)
+    const { settleSessionDelete, ask } = deleteDialog(stopAndDeleteSession)
+    ask(true)
+    const dialog = screen.getByRole('dialog', { name: '永久删除此会话？' })
+    expect(dialog.textContent).toContain('“Old chat”')
+    expect(screen.getByRole('note').textContent).toContain('先停止')
+    fireEvent.click(screen.getByRole('button', { name: '永久删除' }))
+    expect(stopAndDeleteSession).toHaveBeenCalledWith(sid('one'))
+    expect(screen.getByRole('status').textContent).toBe('正在删除…')
+    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    expect(settleSessionDelete).not.toHaveBeenCalled()
+    await act(async () => { pending.resolve(undefined) })
+    expect(settleSessionDelete).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('omits the running-work note for an idle session and surfaces a rejection without settling', async () => {
+    const stopAndDeleteSession = vi.fn<SessionDeleteConfirmInjected['stopAndDeleteSession']>()
+      .mockRejectedValueOnce(new Error('erase refused'))
+    const { settleSessionDelete, ask } = deleteDialog(stopAndDeleteSession)
+    ask(false)
+    expect(screen.queryByRole('note')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '永久删除' }))
+    await waitFor(() => { expect(screen.getByRole('alert').textContent).toBe('erase refused') })
+    expect(settleSessionDelete).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    expect(settleSessionDelete).toHaveBeenCalledOnce()
   })
 })
 
