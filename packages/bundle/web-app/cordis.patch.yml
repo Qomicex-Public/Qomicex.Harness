@@ -653,9 +653,11 @@
 
 # The preset selection registry. The shipped preset declarations follow as
 # separate patch files under `presets/`, listed after this file in
-# `package.json` `dsh.bundle.patch`.
+# `package.json` `dsh.bundle.patch`. JunSi mode ships as this deployment's
+# default preset; users who picked another one in Settings keep their choice
+# (`selectedDefault` overrides this row).
 - insert:
     - id: agent-preset-registry
       name: '@deepseek-ai/dsh-agent-preset-registry'
       config:
-        default: standard
+        default: junsi
