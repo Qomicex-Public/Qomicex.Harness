@@ -1,6 +1,6 @@
 /** Resolve packaged Office engine manifests from their complete, unpacked resource directories. */
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { registerHooks, type ModuleHooks } from 'node:module'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, sep } from 'node:path'
@@ -39,6 +39,33 @@ export function runtimeArchivePath(runtimeDir: string): string | undefined {
 }
 
 /**
+ * Fingerprint the engine packages an update must invalidate: each package's
+ * own manifest plus, for platform engines, the native binary's size and
+ * modification time. The hash keys the short tree, so an application update
+ * that ships new engine files builds a fresh tree instead of reusing a stale
+ * one at the same archive path.
+ * @param engines - Unpacked `node_modules/@deepseek-ai` directory.
+ * @returns Content-derived hash, or undefined when nothing is fingerprinted.
+ */
+function engineFingerprint(engines: string): string | undefined {
+  if (!existsSync(engines)) return undefined
+  const hash = createHash('sha1')
+  let found = false
+  for (const entry of readdirSync(engines, { withFileTypes: true })) {
+    if (!ENGINE_PACKAGE.test(entry.name) || !entry.isDirectory()) continue
+    found = true
+    hash.update(`${entry.name}\0${readFileSync(join(engines, entry.name, 'package.json'))}`)
+    if (!entry.name.includes('-kit-')) continue
+    for (const file of readdirSync(join(engines, entry.name), { withFileTypes: true })) {
+      if (!file.isFile()) continue
+      const stats = statSync(join(engines, entry.name, file.name))
+      hash.update(`${file.name}\0${stats.size}\0${stats.mtimeMs}`)
+    }
+  }
+  return found ? hash.digest('hex').slice(0, 12) : undefined
+}
+
+/**
  * Copy the unpacked engine packages and the wrapper's dependency closure to a
  * short temp-directory tree.
  *
@@ -52,8 +79,9 @@ export function runtimeArchivePath(runtimeDir: string): string | undefined {
  *
  * The skill CLI runs as its own Node process whose `require.resolve` bypasses
  * module hooks, so the wrapper's runtime dependency closure travels with it.
- * The tree is keyed by the archive, so an application update copies fresh
- * packages rather than reusing a stale tree.
+ * The tree is keyed by the engine package fingerprint, so an application
+ * update with new engine files copies fresh packages rather than reusing a
+ * stale tree.
  * @param archive - Application ASAR path beside its unpacked directory.
  * @param runtimeSegment - Unpacked runtime directory name relative to the archive.
  * @returns The tree root holding `node_modules/@deepseek-ai`, or undefined off Windows.
@@ -61,14 +89,18 @@ export function runtimeArchivePath(runtimeDir: string): string | undefined {
 export function shortEngineTree(archive: string, runtimeSegment: string): string | undefined {
   if (process.platform !== 'win32') return undefined
   const engines = join(`${archive}.unpacked`, runtimeSegment, 'node_modules', '@deepseek-ai')
-  if (!existsSync(engines)) return undefined
-  const tree = join(tmpdir(), `dsh-office-engine-${createHash('sha1').update(archive).digest('hex').slice(0, 12)}`)
+  const fingerprint = engineFingerprint(engines)
+  if (fingerprint === undefined) return undefined
+  const tree = join(tmpdir(), `dsh-office-engine-${fingerprint}`)
   const modules = join(tree, 'node_modules')
+  if (existsSync(join(tree, '.complete'))) return tree
+  rmSync(tree, { recursive: true, force: true })
   mkdirSync(join(modules, '@deepseek-ai'), { recursive: true })
   for (const entry of readdirSync(engines, { withFileTypes: true })) {
     if (!ENGINE_PACKAGE.test(entry.name)) continue
     copyPackage(`@deepseek-ai/${entry.name}`, dirname(engines), modules)
   }
+  writeFileSync(join(tree, '.complete'), fingerprint)
   return tree
 }
 /**
